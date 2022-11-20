@@ -22,5 +22,5 @@ fn main() {
     let prefixed_op_codes: HashMap<String, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
     let cartridge_header = read_cartridge("snake.gb");  //TODO should be parameter
 
-    println!("{}", read_cartridge("snake2.gb"));
+    println!("{}", read_cartridge("snake.gb"));
 }
