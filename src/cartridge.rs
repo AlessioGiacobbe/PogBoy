@@ -74,6 +74,9 @@ pub mod cartridge {
         }
     }
 
+    const HEX_HEADER_START_ADDRESS: usize = 256; //0x0100
+    const HEX_HEADER_END_ADDRESS: usize = 335; //0x014F
+
     //TODO should return a real cartridge, not only Header
     pub fn read_cartridge(file_name: &str) -> CartridgeInfo {
         let mut rom = File::open(format!("./src/{}", file_name)).expect("rom not found");
@@ -81,9 +84,7 @@ pub mod cartridge {
         let mut rom_bugger = Vec::new();
         rom.read_to_end(&mut rom_bugger);
 
-        let header_start = usize::from_str_radix("0100", 16).expect("invalid hex");
-        let header_end = usize::from_str_radix("014F", 16).expect("invalid hex");
-        let rom_header: &[u8] = &rom_bugger[header_start..header_end+1];
+        let rom_header: &[u8] = &rom_bugger[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
 
         bincode::deserialize(rom_header).unwrap()
     }
