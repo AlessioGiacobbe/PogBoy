@@ -27,7 +27,7 @@ pub mod op_codes_parser {
         operands: Vec<Operand>,
         cycles: Vec<u8>,
         bytes: u8,
-        mnemonic: &'static str,
+        mnemonic: String,
         comment: &'static str
     }
 
@@ -62,13 +62,15 @@ pub mod op_codes_parser {
 
             let op_code_as_integer = u8::from_str_radix(op_code.trim_start_matches("0x"), 16).expect("invalid hex value");
 
+            println!("{:?}", op_info);
+
             let instruction = Instruction {
                 opcode: op_code_as_integer,
                 immediate: op_info["immediate"].as_bool().expect("invalid bool"),
                 operands: collection_of_op,
                 cycles: vec![],
                 bytes: op_info["bytes"].as_i64().expect("invalid number").to_le_bytes()[0],
-                mnemonic: "",
+                mnemonic: op_info["mnemonic"].as_str().expect("invalid string").parse().unwrap(),
                 comment: ""
             };
             (op_code, instruction)

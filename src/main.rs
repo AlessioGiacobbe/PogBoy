@@ -23,4 +23,6 @@ fn main() {
     let cartridge_header = read_cartridge("snake.gb");  //TODO should be parameter
 
     println!("{}", read_cartridge("snake.gb"));
+
+    println!("{:?}", unprefixed_op_codes["0x00"]);
 }
