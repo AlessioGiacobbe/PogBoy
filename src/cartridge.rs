@@ -81,10 +81,10 @@ pub mod cartridge {
     pub fn read_cartridge(file_name: &str) -> CartridgeInfo {
         let mut rom = File::open(format!("./src/{}", file_name)).expect("rom not found");
 
-        let mut rom_bugger = Vec::new();
-        rom.read_to_end(&mut rom_bugger);
+        let mut rom_buffer = Vec::new();
+        rom.read_to_end(&mut rom_buffer);
 
-        let rom_header: &[u8] = &rom_bugger[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
+        let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
 
         bincode::deserialize(rom_header).unwrap()
     }

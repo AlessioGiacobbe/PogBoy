@@ -1,6 +1,6 @@
 pub mod op_codes_parser {
     use std::collections::HashMap;
-    use std::fmt;
+    use std::{fmt, u8};
     use std::fmt::Formatter;
     use serde_json::Value;
 
@@ -44,10 +44,14 @@ pub mod op_codes_parser {
     }
 
 
-    pub fn get_instructions_from_json(json_op_codes: &Value, category: &str) -> HashMap<String, Instruction> {
+    pub fn get_instructions_from_json(json_op_codes: &Value, category: &str) -> HashMap<u8, Instruction> {
         json_op_codes[category].as_object().unwrap().into_iter().map(|op_object| {
-            let op_code: String = op_object.0.as_str().to_owned();
+            let op_code: String = op_object.0.to_owned();
             let op_info = op_object.1.as_object().unwrap();
+
+            let op_code_without_prefix = op_code.trim_start_matches("0x");
+            let op_code_as_int =     u8::from_str_radix(op_code_without_prefix, 16).expect("invalid hex");
+
 
             let collection_of_op: Vec<Operand> = op_info["operands"].as_array().unwrap().into_iter().map(|operand| {
                 let operand_object = operand.as_object().unwrap();
@@ -73,7 +77,7 @@ pub mod op_codes_parser {
                 mnemonic: op_info["mnemonic"].as_str().expect("invalid string").parse().unwrap(),
                 comment: ""
             };
-            (op_code, instruction)
+            (op_code_as_int, instruction)
         }).collect()
     }
 
