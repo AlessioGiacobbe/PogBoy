@@ -43,6 +43,7 @@ pub mod op_codes_parser {
         }
     }
 
+
     impl fmt::Display for OperandValue {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match *self {
@@ -69,6 +70,7 @@ pub mod op_codes_parser {
         }
     }
 
+    //TODO could be cleaner
     impl fmt::Display for Operand {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             let mut valueAsString;
@@ -107,6 +109,7 @@ pub mod op_codes_parser {
         }
     }
 
+    //TODO could be cleaner
     impl fmt::Display for Instruction {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             write!(f, "{: <6}", self.mnemonic)?;
@@ -133,7 +136,7 @@ pub mod op_codes_parser {
             let op_info = op_object.1.as_object().unwrap();
 
             let op_code_without_prefix = op_code.trim_start_matches("0x");
-            let op_code_as_int =     u8::from_str_radix(op_code_without_prefix, 16).expect("invalid hex");
+            let op_code_as_int = u8::from_str_radix(op_code_without_prefix, 16).expect("invalid hex");
 
 
             let collection_of_op: Vec<Operand> = op_info["operands"].as_array().unwrap().into_iter().map(|operand| {
@@ -152,7 +155,6 @@ pub mod op_codes_parser {
             }).collect::<Vec<Operand>>();
 
             let op_code_as_integer = u8::from_str_radix(op_code.trim_start_matches("0x"), 16).expect("invalid hex value");
-
 
             let cycles = {
                 let mut cycles = vec![];
