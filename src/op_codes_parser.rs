@@ -15,7 +15,7 @@ pub mod op_codes_parser {
     pub struct Operand {
         immediate: bool,
         name: String,
-        bytes: u8,
+        bytes: Option<u8>,
         value: Option<u8>,
         adjust: Option<AdjustTypes>
     }
@@ -39,7 +39,7 @@ pub mod op_codes_parser {
 
     impl fmt::Display for Operand {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{name} ha {bytes} bytes", name = self.name, bytes = self.bytes)
+            write!(f, "{name} ha {bytes} bytes", name = self.name, bytes = self.bytes.expect("No bytes"))
         }
     }
 
@@ -58,7 +58,11 @@ pub mod op_codes_parser {
                 Operand {
                     immediate: operand_object["immediate"].as_bool().expect("operand should be boolean"),
                     name: operand_object["name"].as_str().expect("operand should be string").parse().unwrap(),
-                    bytes: op_info["bytes"].as_i64().expect("invalid number").to_le_bytes()[0],
+                    bytes: if operand_object.contains_key("bytes") {
+                        Some(operand_object["bytes"].as_i64().expect("invalid number").to_le_bytes()[0])
+                    } else {
+                        None
+                    },
                     value: None,
                     adjust: None
                 }
@@ -66,13 +70,21 @@ pub mod op_codes_parser {
 
             let op_code_as_integer = u8::from_str_radix(op_code.trim_start_matches("0x"), 16).expect("invalid hex value");
 
-            println!("{:?}", op_info);
+
+            let cycles = {
+                let mut cycles = vec![];
+                for cycle in op_info["cycles"].as_array().unwrap() {
+                    cycles.push(cycle.as_i64().unwrap().to_le_bytes()[0])
+                };
+                cycles
+            };
+
 
             let instruction = Instruction {
                 opcode: op_code_as_integer,
                 immediate: op_info["immediate"].as_bool().expect("invalid bool"),
                 operands: collection_of_op,
-                cycles: vec![],
+                cycles,
                 bytes: op_info["bytes"].as_i64().expect("invalid number").to_le_bytes()[0],
                 mnemonic: op_info["mnemonic"].as_str().expect("invalid string").parse().unwrap(),
                 comment: ""
