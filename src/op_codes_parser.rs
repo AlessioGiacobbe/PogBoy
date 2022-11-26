@@ -1,34 +1,40 @@
 pub mod op_codes_parser {
     use std::collections::HashMap;
     use std::{fmt, u8};
-    use std::fmt::Formatter;
+    use std::fmt::{Formatter, write};
     use serde_json::Value;
 
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub enum AdjustTypes {
         POSITIVE,
         NEGATIVE
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
+    pub enum OperandValue {
+        u8(u8),
+        u16(u16)
+    }
+
+    #[derive(Debug, Clone)]
     pub struct Operand {
         immediate: bool,
         name: String,
-        bytes: Option<u8>,
-        value: Option<u8>,
+        pub(crate) bytes: Option<u8>,
+        pub(crate) value: Option<OperandValue>,
         adjust: Option<AdjustTypes>
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Instruction {
         opcode: u8,
         immediate: bool,
-        operands: Vec<Operand>,
+        pub(crate) operands: Vec<Operand>,
         cycles: Vec<u8>,
         bytes: u8,
         mnemonic: String,
-        comment: &'static str
+        comment: Option<&'static str>
     }
 
     impl fmt::Display for AdjustTypes {
@@ -37,9 +43,86 @@ pub mod op_codes_parser {
         }
     }
 
+    impl fmt::Display for OperandValue {
+        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            match *self {
+                OperandValue::u8(value) => {
+                    write!(f, "{:?}", value)
+                }
+                OperandValue::u16(value) => {
+                    write!(f, "{:?}", value)
+                }
+            }
+        }
+    }
+
+    impl fmt::UpperHex for OperandValue {
+        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            match *self {
+                OperandValue::u8(value) => {
+                    write!(f, "{:#02X}", value)
+                }
+                OperandValue::u16(value) => {
+                    write!(f, "{:#04X}", value)
+                }
+            }
+        }
+    }
+
     impl fmt::Display for Operand {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{name} ha {bytes} bytes", name = self.name, bytes = self.bytes.expect("No bytes"))
+            let mut valueAsString;
+            match self.value {
+                None => {
+                    valueAsString = self.name.clone();
+                }
+                Some(_) => {
+                    valueAsString = self.name.clone();
+                    let byteIsNone = self.bytes != None;
+                    let unwrappedValue = self.value.clone().unwrap();
+                    match unwrappedValue {
+                        OperandValue::u8(_) => {
+                            if byteIsNone {
+                                valueAsString = format!("{:#04X}", unwrappedValue)
+                            } else {
+                                valueAsString = format!("{}", unwrappedValue)
+                            }
+                        }
+                        OperandValue::u16(_) => {
+                            if byteIsNone {
+                                valueAsString = format!("{:#04X}", unwrappedValue)
+                            } else {
+                                valueAsString = format!("{}", unwrappedValue)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if self.immediate {
+                write!(f, "{}", valueAsString)
+            }else{
+                write!(f, "({})", valueAsString)
+            }
+        }
+    }
+
+    impl fmt::Display for Instruction {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(f, "{: <6}", self.mnemonic)?;
+
+            for (pos, operand) in self.operands.iter().enumerate() {
+                if pos == self.operands.len()-1 {
+                    write!(f, "{}", operand)?;
+                }else{
+                    write!(f, "{}, ", operand)?;
+                }
+            }
+
+            if self.comment != None {
+                write!(f, " ; {: <4}", self.comment.unwrap())?;
+            }
+            write!(f, "")
         }
     }
 
@@ -87,7 +170,7 @@ pub mod op_codes_parser {
                 cycles,
                 bytes: op_info["bytes"].as_i64().expect("invalid number").to_le_bytes()[0],
                 mnemonic: op_info["mnemonic"].as_str().expect("invalid string").parse().unwrap(),
-                comment: ""
+                comment: None
             };
             (op_code_as_int, instruction)
         }).collect()
