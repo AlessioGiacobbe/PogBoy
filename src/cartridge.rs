@@ -82,7 +82,7 @@ pub mod cartridge {
         let mut rom = File::open(format!("./src/{}", file_name)).expect("rom not found");
 
         let mut rom_buffer = Vec::new();
-        rom.read_to_end(&mut rom_buffer);
+        rom.read_to_end(&mut rom_buffer).expect("Can't read ROM");
 
         let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
 
