@@ -1,9 +1,9 @@
 pub mod op_codes_parser {
-    use std::collections::HashMap;
     use std::{fmt, u8};
-    use std::fmt::{Formatter, write};
-    use serde_json::Value;
+    use std::collections::HashMap;
+    use std::fmt::{Formatter};
 
+    use serde_json::Value;
 
     #[derive(Debug, Clone)]
     pub enum AdjustTypes {
@@ -13,8 +13,8 @@ pub mod op_codes_parser {
 
     #[derive(Debug, Clone)]
     pub enum OperandValue {
-        u8(u8),
-        u16(u16)
+        U8(u8),
+        U16(u16)
     }
 
     #[derive(Debug, Clone)]
@@ -47,10 +47,10 @@ pub mod op_codes_parser {
     impl fmt::Display for OperandValue {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match *self {
-                OperandValue::u8(value) => {
+                OperandValue::U8(value) => {
                     write!(f, "{:?}", value)
                 }
-                OperandValue::u16(value) => {
+                OperandValue::U16(value) => {
                     write!(f, "{:?}", value)
                 }
             }
@@ -60,10 +60,10 @@ pub mod op_codes_parser {
     impl fmt::UpperHex for OperandValue {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             match *self {
-                OperandValue::u8(value) => {
+                OperandValue::U8(value) => {
                     write!(f, "{:#02X}", value)
                 }
-                OperandValue::u16(value) => {
+                OperandValue::U16(value) => {
                     write!(f, "{:#04X}", value)
                 }
             }
@@ -73,28 +73,25 @@ pub mod op_codes_parser {
     //TODO could be cleaner
     impl fmt::Display for Operand {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            let mut valueAsString;
+            let mut value_as_string= self.name.clone();
             match self.value {
-                None => {
-                    valueAsString = self.name.clone();
-                }
+                None => {}
                 Some(_) => {
-                    valueAsString = self.name.clone();
-                    let byteIsNone = self.bytes != None;
-                    let unwrappedValue = self.value.clone().unwrap();
-                    match unwrappedValue {
-                        OperandValue::u8(_) => {
-                            if byteIsNone {
-                                valueAsString = format!("{:#04X}", unwrappedValue)
+                    let byte_is_none = self.bytes != None;
+                    let unwrapped_value = self.value.clone().unwrap();
+                    match unwrapped_value {
+                        OperandValue::U8(_) => {
+                            if byte_is_none {
+                                value_as_string = format!("{:#04X}", unwrapped_value)
                             } else {
-                                valueAsString = format!("{}", unwrappedValue)
+                                value_as_string = format!("{}", unwrapped_value)
                             }
                         }
-                        OperandValue::u16(_) => {
-                            if byteIsNone {
-                                valueAsString = format!("{:#04X}", unwrappedValue)
+                        OperandValue::U16(_) => {
+                            if byte_is_none {
+                                value_as_string = format!("{:#04X}", unwrapped_value)
                             } else {
-                                valueAsString = format!("{}", unwrappedValue)
+                                value_as_string = format!("{}", unwrapped_value)
                             }
                         }
                     }
@@ -102,16 +99,16 @@ pub mod op_codes_parser {
             }
 
             if self.immediate {
-                write!(f, "{}", valueAsString)
+                write!(f, "{}", value_as_string)
             }else{
-                write!(f, "({})", valueAsString)
+                write!(f, "({})", value_as_string)
             }
         }
     }
 
     //TODO could be cleaner
     impl fmt::Display for Instruction {
-        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fn fmt(&self, f: &mut Formatter) -> fmt::Result {
             write!(f, "{: <6}", self.mnemonic)?;
 
             for (pos, operand) in self.operands.iter().enumerate() {

@@ -1,6 +1,6 @@
 pub mod disassembler {
     use std::collections::HashMap;
-    use byteorder::{BigEndian as byteorderBigEndian, LittleEndian as byteorderLittleEndian, ReadBytesExt};
+    use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand, OperandValue};
 
     const INSTRUCTIONS_PREFIX: u8 = 203; //0xCB
@@ -27,7 +27,7 @@ pub mod disassembler {
         pub(crate) fn decode(&self, mut address: i32) -> (i32, Instruction) {
             let mut op_code = Self::read(&self, address, 1);
             address = address + 1;
-            let mut instruction = {
+            let instruction = {
                 if op_code[0] == INSTRUCTIONS_PREFIX {
                     op_code = Self::read(&self, address, 1);
                     address = address + 1;
@@ -42,15 +42,15 @@ pub mod disassembler {
                 for operand in instruction.operands.iter() {
                     if operand.bytes != None {
                         let bytes = operand.bytes.unwrap();
-                        let mut operandValue = Self::read(&self, address, bytes);
+                        let mut operand_value = Self::read(&self, address, bytes);
                         address = address + i32::from(bytes);
                         let mut operand_to_be_pushed = operand.clone();
-                        let operandValue: OperandValue = match bytes {
-                            1 => OperandValue::u8(operandValue.read_u8().unwrap()),
-                            2 => OperandValue::u16(operandValue.read_u16::<byteorderLittleEndian>().unwrap()),
+                        let operand_value: OperandValue = match bytes {
+                            1 => OperandValue::U8(operand_value.read_u8().unwrap()),
+                            2 => OperandValue::U16(operand_value.read_u16::<byteorderLittleEndian>().unwrap()),
                             _ => panic!("no operand value")
                         };
-                        operand_to_be_pushed.value = Some(operandValue);
+                        operand_to_be_pushed.value = Some(operand_value);
                         new_operands.push(operand_to_be_pushed);
                     }else{
                         new_operands.push(operand.clone());

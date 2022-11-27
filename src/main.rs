@@ -4,18 +4,15 @@ mod op_codes_parser;
 mod cartridge;
 mod disassembler;
 
-use std::{fmt, fs, usize};
+use std::{fs};
 use std::collections::HashMap;
-use std::fmt::Formatter;
-use std::fs::{File, read};
-use std::io::{Cursor, Read};
-use bincode::config::{BigEndian, LittleEndian};
+use std::fs::{File};
+use std::io::{Read};
 use serde_json::{Value};
+use crate::cartridge::cartridge::read_cartridge;
 use crate::disassembler::disassembler::{Disassembler};
-use crate::cartridge::cartridge::{CartridgeInfo, read_cartridge};
-use crate::op_codes_parser::op_codes_parser::{AdjustTypes, Instruction, Operand, OperandValue};
+use crate::op_codes_parser::op_codes_parser::{Instruction};
 use crate::op_codes_parser::op_codes_parser::get_instructions_from_json;
-use byteorder::{BigEndian as byteorderBigEndian, LittleEndian as byteorderLittleEndian, ReadBytesExt};
 
 
 fn main() {
@@ -26,9 +23,12 @@ fn main() {
     let prefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
     let cartridge_header = read_cartridge("snake.gb");  //TODO should be parameter
 
+    println!("{}", cartridge_header);
+
+    //TODO should disassembler should accept Cartridge struct
     let mut rom = File::open(format!("./src/{}", "snake.gb")).expect("rom not found");
     let mut rom_buffer: Vec<u8> = Vec::new();
-    rom.read_to_end(&mut rom_buffer);
+    rom.read_to_end(&mut rom_buffer).expect("can't read ROM");
 
 
     let decoder: Disassembler = Disassembler {
