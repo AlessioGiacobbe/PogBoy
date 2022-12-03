@@ -36,6 +36,11 @@ impl fmt::Display for Registers {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum RegistersValue {
+    U8(u8),
+    U16(u16)
+}
 
 const LOW_REGISTERS: phf::Map<&'static str, &'static str> = phf_map! {
          "F" => "AF",
@@ -73,6 +78,18 @@ impl Registers {
         };
     }
 
+    fn set_register_value_from_name(&mut self, name: &str, value: u16) {
+        match name {
+            "AF" => self.AF = value,
+            "BC" => self.BC = value,
+            "DE" => self.DE = value,
+            "HL" => self.HL = value,
+            "PC" => self.PC = value,
+            "SP" => self.SP = value,
+            _ => panic!("register {} does not exists", name)
+        };
+    }
+
     fn get_item(&self, item: &str) -> u16 {
         if LOW_REGISTERS.contains_key(item) {
             let register_name = LOW_REGISTERS[item];
@@ -90,6 +107,42 @@ impl Registers {
         }
         if REGISTERS.contains(&item) {
             return self.get_register_value_from_name(item);
+        }
+        panic!("item {} not fonud", item);
+    }
+
+    fn set_item(&mut self, item: &str, value: u16) {
+        if LOW_REGISTERS.contains_key(item) {
+            let register_name = LOW_REGISTERS[item];
+            let register_value = self.get_register_value_from_name(register_name);
+            let updated_register_value = (register_value & 65280) | value;  // clear last 8 bits masking with 0xFF00 then OR with passed value
+            self.set_register_value_from_name(register_name, updated_register_value);
+            return;
+        }
+        if HIGH_REGISTERS.contains_key(item) {
+            let register_name = HIGH_REGISTERS[item];
+            let register_value = self.get_register_value_from_name(register_name);
+            let updated_register_value = (register_value & 255) | value << 8;  // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
+            self.set_register_value_from_name(register_name, updated_register_value);
+            return;
+        }
+        if FLAGS.contains_key(item) {
+            if value != 0 && value != 1 {
+                panic!("invalid value {} to set registry flag", value);
+            }
+            let mut register_value = self.get_register_value_from_name("AF");
+            let bit_position = FLAGS[item];
+            if value == 1 {
+                register_value |= (1 << bit_position);  // set flag at x position by OR-ing with 1 shifted by x positions
+            }else{
+                register_value &= !(1 << bit_position); // unset flag at x position by NAND (& !something) with 1 shifted by x positions
+            }
+            self.set_register_value_from_name("AF", register_value);
+            return;
+        }
+        if REGISTERS.contains(&item) {
+            self.set_register_value_from_name(item, value);
+            return
         }
         panic!("item {} not fonud", item);
     }
@@ -125,7 +178,7 @@ fn main() {
 
     decoder.disassemble(336, 16);
 
-    let registers = Registers {
+    let mut registers = Registers {
         AF: u16::from_str_radix("CEAF",   16).unwrap(),
         BC: u16::from_str_radix("BEAF",   16).unwrap(),
         DE: u16::from_str_radix("AFCE",   16).unwrap(),
@@ -138,9 +191,30 @@ fn main() {
         FLAGS
     };
 
-    println!("{:#01x}", registers.get_item("F"));
+    registers.set_item("F", 8);
+    println!("{:#01x}", registers.get_item("AF"));
+
+    registers.set_item("A", 8);
+    println!("{:#01x}", registers.get_item("AF"));
+
+    registers.set_item("AF", 44975);
+    println!("{:#01x}", registers.get_item("AF"));
+
+
     println!("{:#01x}", registers.get_item("B"));
     println!("{:#01x}", registers.get_item("D"));
     println!("{:#01x}", registers.get_item("c"));
     println!("{:#01x}", registers.get_item("BC"));
+    println!("{:#01x}", registers.get_item("AF"));
+
+    registers.set_item("AF", 0);
+    registers.set_item("c", 1);
+    registers.set_item("h", 1);
+    registers.set_item("n", 1);
+    registers.set_item("z", 1);
+    registers.set_item("AF", 65535);
+    registers.set_item("c", 0);
+    registers.set_item("h", 0);
+    registers.set_item("n", 0);
+    registers.set_item("z", 0);
 }
