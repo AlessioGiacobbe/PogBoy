@@ -33,7 +33,7 @@ pub mod op_codes_parser {
         pub(crate) operands: Vec<Operand>,
         cycles: Vec<u8>,
         bytes: u8,
-        mnemonic: String,
+        pub(crate) mnemonic: String,
         comment: Option<&'static str>
     }
 

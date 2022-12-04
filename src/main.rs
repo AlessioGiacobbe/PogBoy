@@ -1,3 +1,5 @@
+extern crate core;
+
 mod op_codes_parser;
 mod cartridge;
 mod decoder;
@@ -9,7 +11,11 @@ use crate::decoder::decoder::Decoder;
 
 
 fn main() {
-    let Cartridge: Cartridge = read_cartridge("snake.gb");
+    let Cartridge: Cartridge = read_cartridge("output.gb");
+    println!("{}", Cartridge.CartridgeInfo);
     let Decoder: Decoder = Decoder::new(Cartridge);
-    let CPU: CPU = CPU::new(Decoder);
+    //Decoder.disassemble(336, 16);
+    //Decoder.disassemble(0, 0);
+    let mut CPU: CPU = CPU::new(Decoder);
+    CPU.run();
 }

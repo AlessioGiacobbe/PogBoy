@@ -12,7 +12,7 @@ pub mod cartridge {
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct CartridgeInfo {
-        entry_point: [u16; 2],
+        entry_point: [u8; 4],
         nintendo_logo: [u16; 24],
         title: [u8; 15],
         //unused
@@ -40,7 +40,7 @@ pub mod cartridge {
     impl fmt::Display for CartridgeInfo {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             write!(f, "Cartridge : {{
-            entry_point: 0x{:04X} 0x{:04X}
+            entry_point: 0x{:04X} 0x{:04X} 0x{:04X} 0x{:04X}
             cgb: {:?}
             game_title: {:?}
             sgb_flag: {}
@@ -51,7 +51,7 @@ pub mod cartridge {
             header_checksum: 0x{:04X}
             global_checksum: 0x{:04X}
         }}",
-                   self.entry_point[0], self.entry_point[1],
+                   self.entry_point[0], self.entry_point[1], self.entry_point[2], self.entry_point[3],
                    self.cgb_flag,
                    self.game_title(),
                    self.sgb_flag,
