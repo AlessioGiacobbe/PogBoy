@@ -5,7 +5,7 @@ pub mod decoder {
     use std::io::Read;
     use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
     use serde_json::Value;
-    use crate::cartridge::cartridge::read_cartridge;
+    use crate::cartridge::cartridge::{Cartridge, read_cartridge};
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand, OperandValue};
 
     const INSTRUCTIONS_PREFIX: u8 = 203; //0xCB
@@ -20,20 +20,16 @@ pub mod decoder {
 
     impl Decoder {
 
-        pub(crate) fn new() -> Decoder {
+        pub(crate) fn new(Cartridge: Cartridge) -> Decoder {
             let op_codes_content = fs::read_to_string("./src/opcodes.json").expect("error reading file");
             let json_op_codes: Value = serde_json::from_str(&op_codes_content).unwrap();
 
             let unprefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
             let prefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
 
-            let mut rom = File::open(format!("./src/{}", "snake.gb")).expect("rom not found");
-            let mut rom_buffer: Vec<u8> = Vec::new();
-            rom.read_to_end(&mut rom_buffer).expect("can't read ROM");
-
 
             Decoder {
-                data: rom_buffer,
+                data: Cartridge.DataBuffer,
                 address: 0,
                 unprefixed_op_codes,
                 prefixed_op_codes

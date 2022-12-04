@@ -5,6 +5,11 @@ pub mod cartridge {
     use std::io::Read;
     use serde::{Serialize, Deserialize};
 
+    pub struct Cartridge {
+        pub(crate) CartridgeInfo: CartridgeInfo,
+        pub(crate) DataBuffer: Vec<u8>
+    }
+
     #[derive(Serialize, Deserialize, Debug)]
     pub struct CartridgeInfo {
         entry_point: [u16; 2],
@@ -77,8 +82,7 @@ pub mod cartridge {
     const HEX_HEADER_START_ADDRESS: usize = 256; //0x0100
     const HEX_HEADER_END_ADDRESS: usize = 335; //0x014F
 
-    //TODO should return a real cartridge, not only Header
-    pub fn read_cartridge(file_name: &str) -> CartridgeInfo {
+    pub fn read_cartridge(file_name: &str) -> Cartridge {
         let mut rom = File::open(format!("./src/{}", file_name)).expect("rom not found");
 
         let mut rom_buffer = Vec::new();
@@ -86,6 +90,11 @@ pub mod cartridge {
 
         let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
 
-        bincode::deserialize(rom_header).unwrap()
+        let CartridgeInfo: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
+
+        Cartridge {
+            CartridgeInfo,
+            DataBuffer: rom_buffer
+        }
     }
 }
