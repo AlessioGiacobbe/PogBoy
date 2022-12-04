@@ -10,9 +10,8 @@ pub mod CPU{
     }
 
     impl CPU {
-        pub(crate) fn new() -> CPU {
+        pub(crate) fn new(Decoder: Decoder) -> CPU {
             let mut Registers: Registers = Registers::new();
-            let Decoder: Decoder = Decoder::new();
 
             CPU {
                 Registers,
