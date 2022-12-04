@@ -17,3 +17,5 @@ Cargo.lock
 # custom
 
 /src/snake.gb
+
+.DS_Store
