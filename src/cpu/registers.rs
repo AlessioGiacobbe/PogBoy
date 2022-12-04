@@ -49,12 +49,12 @@ pub mod Registers {
     impl Registers {
         pub(crate) fn new() -> Registers {
             Registers {
-                AF: u16::from_str_radix("CEAF",   16).unwrap(),
-                BC: u16::from_str_radix("BEAF",   16).unwrap(),
-                DE: u16::from_str_radix("AFCE",   16).unwrap(),
-                HL: u16::from_str_radix("AFAF",   16).unwrap(),
-                PC: u16::from_str_radix("AFAF",   16).unwrap(),
-                SP: u16::from_str_radix("AFAF",   16).unwrap(),
+                AF: 0,
+                BC: 0,
+                DE: 0,
+                HL: 0,
+                PC: 256,    // 0x100 : rom entry point
+                SP: 0,
                 LOW_REGISTERS,
                 HIGH_REGISTERS,
                 REGISTERS,
