@@ -25,7 +25,7 @@ pub mod decoder {
             let json_op_codes: Value = serde_json::from_str(&op_codes_content).unwrap();
 
             let unprefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
-            let prefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
+            let prefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"cbprefixed");
 
 
             Decoder {

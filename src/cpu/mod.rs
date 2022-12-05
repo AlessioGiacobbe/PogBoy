@@ -30,24 +30,39 @@ pub mod CPU{
         }
 
         pub(crate) fn execute(&mut self, Instruction: Instruction) {
-            match Instruction.opcode {
-                0 => println!("NOPE!"),
-                //JR e
-                24 => {
-                    let current_instruction = self.Registers.get_item("PC");
-                    //TODO OperandValue could be replaced with u16? (u8 values can be casted safely)
-                    let to_add: u16 = match Instruction.operands[0].value.clone().unwrap() {
-                        OperandValue::U8(value) => value as u16,
-                        OperandValue::U16(value) => value
-                    };
+            if Instruction.prefixed {
+                match Instruction.opcode {
+                    0 => {
+                        println!("RLC B")
+                    }
+                    _ => panic!("⚠️NOT IMPLEMENTED⚠️ PREFIXED opcode : {}, mnemonic : {}, operands : {:?}", Instruction.opcode, Instruction.mnemonic, Instruction.operands )
+                }
+            }else{
+                match Instruction.opcode {
+                    0 => println!("NOPE!"),
+                    //JR e
+                    24 => {
+                        let current_instruction = self.Registers.get_item("PC");
+                        //TODO OperandValue could be replaced with u16? (u8 values can be casted safely)
+                        let to_add: u16 = match Instruction.operands[0].value.clone().unwrap() {
+                            OperandValue::U8(value) => value as u16,
+                            OperandValue::U16(value) => value
+                        };
 
-                    self.Registers.set_item("PC", current_instruction + to_add)
-                },
-                //DI
-                243 => {
-                    //TODO
-                },
-                _ => panic!("⚠️NOT IMPLEMENTED⚠️ opcode : {}, mnemonic : {}, operands : {:?}", Instruction.opcode, Instruction.mnemonic, Instruction.operands )
+                        self.Registers.set_item("PC", current_instruction + to_add)
+                    },
+                    //DI
+                    243 => {
+                        //TODO
+                    },
+                    87 => {
+                        //TODO
+                    },
+                    88 => {
+                        //TODO
+                    },
+                    _ => panic!("⚠️NOT IMPLEMENTED⚠️ opcode : {}, mnemonic : {}, operands : {:?}", Instruction.opcode, Instruction.mnemonic, Instruction.operands )
+                }
             }
         }
     }
