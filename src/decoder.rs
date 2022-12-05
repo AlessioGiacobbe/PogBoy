@@ -6,7 +6,7 @@ pub mod decoder {
     use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
     use serde_json::Value;
     use crate::cartridge::cartridge::{Cartridge, read_cartridge};
-    use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand, OperandValue};
+    use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 203; //0xCB
 
@@ -66,9 +66,9 @@ pub mod decoder {
                         let mut operand_value = Self::read(&self, address, bytes);
                         address = address + i32::from(bytes);
                         let mut operand_to_be_pushed = operand.clone();
-                        let operand_value: OperandValue = match bytes {
-                            1 => OperandValue::U8(operand_value.read_u8().unwrap()),
-                            2 => OperandValue::U16(operand_value.read_u16::<byteorderLittleEndian>().unwrap()),
+                        let operand_value: u16 = match bytes {
+                            1 => operand_value.read_u8().unwrap() as u16,
+                            2 => operand_value.read_u16::<byteorderLittleEndian>().unwrap(),
                             _ => panic!("no operand value")
                         };
                         operand_to_be_pushed.value = Some(operand_value);

@@ -12,17 +12,11 @@ pub mod op_codes_parser {
     }
 
     #[derive(Debug, Clone)]
-    pub enum OperandValue {
-        U8(u8),
-        U16(u16)
-    }
-
-    #[derive(Debug, Clone)]
     pub struct Operand {
         immediate: bool,
         name: String,
         pub(crate) bytes: Option<u8>,
-        pub(crate) value: Option<OperandValue>,
+        pub(crate) value: Option<u16>,
         adjust: Option<AdjustTypes>
     }
 
@@ -45,32 +39,6 @@ pub mod op_codes_parser {
     }
 
 
-    impl fmt::Display for OperandValue {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            match *self {
-                OperandValue::U8(value) => {
-                    write!(f, "{:?}", value)
-                }
-                OperandValue::U16(value) => {
-                    write!(f, "{:?}", value)
-                }
-            }
-        }
-    }
-
-    impl fmt::UpperHex for OperandValue {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            match *self {
-                OperandValue::U8(value) => {
-                    write!(f, "{:#02X}", value)
-                }
-                OperandValue::U16(value) => {
-                    write!(f, "{:#04X}", value)
-                }
-            }
-        }
-    }
-
     //TODO could be cleaner
     impl fmt::Display for Operand {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -80,21 +48,10 @@ pub mod op_codes_parser {
                 Some(_) => {
                     let byte_is_none = self.bytes != None;
                     let unwrapped_value = self.value.clone().unwrap();
-                    match unwrapped_value {
-                        OperandValue::U8(_) => {
-                            if byte_is_none {
-                                value_as_string = format!("{:#04X}", unwrapped_value)
-                            } else {
-                                value_as_string = format!("{}", unwrapped_value)
-                            }
-                        }
-                        OperandValue::U16(_) => {
-                            if byte_is_none {
-                                value_as_string = format!("{:#04X}", unwrapped_value)
-                            } else {
-                                value_as_string = format!("{}", unwrapped_value)
-                            }
-                        }
+                    if byte_is_none {
+                        value_as_string = format!("{:#04X}", unwrapped_value)
+                    } else {
+                        value_as_string = format!("{}", unwrapped_value)
                     }
                 }
             }
