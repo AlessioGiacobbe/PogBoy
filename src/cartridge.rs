@@ -40,7 +40,7 @@ pub mod cartridge {
     impl fmt::Display for CartridgeInfo {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             write!(f, "Cartridge : {{
-            entry_point: 0x{:04X} 0x{:04X} 0x{:04X} 0x{:04X}
+            entry_point: 0x{:02X} 0x{:02X} 0x{:02X} 0x{:02X}
             cgb: {:?}
             game_title: {:?}
             sgb_flag: {}

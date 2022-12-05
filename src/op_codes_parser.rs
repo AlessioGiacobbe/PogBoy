@@ -28,7 +28,7 @@ pub mod op_codes_parser {
 
     #[derive(Debug, Clone)]
     pub struct Instruction {
-        opcode: u8,
+        pub(crate) opcode: u8,
         immediate: bool,
         pub(crate) operands: Vec<Operand>,
         cycles: Vec<u8>,
