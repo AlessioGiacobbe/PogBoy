@@ -1,6 +1,7 @@
 mod registers;
 
 pub mod CPU{
+    use std::io::Error;
     use crate::cpu::registers::Registers::Registers;
     use crate::decoder::decoder::Decoder;
     use crate::op_codes_parser::op_codes_parser::{Instruction};
@@ -25,17 +26,24 @@ pub mod CPU{
                 let address = self.Registers.get_item("PC");
                 let (next_address, instruction) = self.Decoder.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
-                self.execute(instruction)
+                match self.execute(instruction) {
+                    Err(instruction) => {
+                        self.Decoder.disassemble(address as i32, 12);
+                        panic!("⚠️NOT IMPLEMENTED⚠️ {:?}", instruction)
+                    },
+                    _ => {}
+                };
             }
         }
 
-        pub(crate) fn execute(&mut self, Instruction: Instruction) {
+        pub(crate) fn execute(&mut self, Instruction: Instruction) -> std::result::Result<(), Instruction> {
             if Instruction.prefixed {
                 match Instruction.opcode {
                     0 => {
-                        println!("RLC B")
+                        println!("RLC B");
                     }
-                    _ => panic!("⚠️NOT IMPLEMENTED⚠️ PREFIXED opcode : {}, mnemonic : {}, operands : {:?}", Instruction.opcode, Instruction.mnemonic, Instruction.operands )
+
+                    _ => return Err(Instruction)
                 }
             }else{
                 match Instruction.opcode {
@@ -58,9 +66,11 @@ pub mod CPU{
                     88 => {
                         //TODO
                     },
-                    _ => panic!("⚠️NOT IMPLEMENTED⚠️ opcode : {}, mnemonic : {}, operands : {:?}", Instruction.opcode, Instruction.mnemonic, Instruction.operands )
+                    _ => return Err(Instruction)
                 }
             }
+
+            Ok(())
         }
     }
 }
