@@ -53,7 +53,7 @@ pub mod Registers {
                 BC: 0,
                 DE: 0,
                 HL: 0,
-                PC: 256,    // 0x100 : rom entry point
+                PC: 512,    // 0x100 : rom entry point
                 SP: 0,
                 LOW_REGISTERS,
                 HIGH_REGISTERS,
