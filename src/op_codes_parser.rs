@@ -34,7 +34,8 @@ pub mod op_codes_parser {
         cycles: Vec<u8>,
         bytes: u8,
         pub(crate) mnemonic: String,
-        comment: Option<&'static str>
+        comment: Option<&'static str>,
+        pub(crate) prefixed: bool
     }
 
     impl fmt::Display for AdjustTypes {
@@ -169,7 +170,8 @@ pub mod op_codes_parser {
                 cycles,
                 bytes: op_info["bytes"].as_i64().expect("invalid number").to_le_bytes()[0],
                 mnemonic: op_info["mnemonic"].as_str().expect("invalid string").parse().unwrap(),
-                comment: None
+                comment: None,
+                prefixed: category == "cbprefixed"
             };
             (op_code_as_int, instruction)
         }).collect()
