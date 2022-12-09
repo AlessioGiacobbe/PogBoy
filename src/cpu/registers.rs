@@ -42,7 +42,7 @@ pub mod Registers {
 
     impl fmt::Display for Registers {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "AF : {} BC : {} DE : {} HL : {} PC : {} SP : {:b}", self.AF, self.BC, self.DE, self.HL, self.PC, self.SP)
+            write!(f, "AF : 0x{:04X} BC : 0x{:04X} DE : 0x{:04X} HL : 0x{:04X} PC : 0x{:04X} SP : {:b}", self.AF, self.BC, self.DE, self.HL, self.PC, self.SP)
         }
     }
 

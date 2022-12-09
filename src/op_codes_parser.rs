@@ -14,7 +14,7 @@ pub mod op_codes_parser {
     #[derive(Debug, Clone)]
     pub struct Operand {
         immediate: bool,
-        name: String,
+        pub(crate) name: String,
         pub(crate) bytes: Option<u8>,
         pub(crate) value: Option<u16>,
         adjust: Option<AdjustTypes>
