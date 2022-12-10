@@ -48,40 +48,53 @@ pub mod CPU{
             if Instruction.prefixed {
                 match Instruction.opcode {
                     0 => {
-                        println!("RLC B");
+                        //TODO RLC B
                     }
-
                     _ => return Err(Instruction)
                 }
             }else{
                 match Instruction.opcode {
-                    0 => println!("NOPE!"),
-                    //LD BC, d16
+                    //0x00 NOP
+                    0 => {},
+                    //0x01 LD BC, d16
                     1 => {
                         let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
                         self.Registers.set_item("BC", d16.value.expect("Operand d16 has no value"))
                     },
-                    //JR e
+                    //0x11 LD DE, d16
+                    17 => {
+                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+                        self.Registers.set_item("DE", d16.value.expect("Operand d16 has no value"))
+                    },
+                    //0x21 LD HL, d16
+                    33 => {
+                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+                        self.Registers.set_item("HL", d16.value.expect("Operand d16 has no value"))
+                    },
+                    //0x31 LD SP, d16
+                    49 => {
+                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+                        self.Registers.set_item("SP", d16.value.expect("Operand d16 has no value"))
+                    },
+                    //0x18 JR e8
                     24 => {
                         let current_instruction = self.Registers.get_item("PC");
-                        //TODO OperandValue could be replaced with u16? (u8 values can be casted safely)
                         let to_add: u16 = Instruction.operands[0].value.unwrap();
-
                         self.Registers.set_item("PC", current_instruction + to_add)
                     },
-                    //LD a,d8
+                    //0x3E LD a,d8
                     62 => {
                         let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
                         self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))
-                    },
-                    //DI
-                    243 => {
-                        //TODO
                     },
                     87 => {
                         //TODO
                     },
                     88 => {
+                        //TODO
+                    },
+                    //DI
+                    243 => {
                         //TODO
                     },
                     _ => return Err(Instruction)
