@@ -5,7 +5,7 @@ pub mod CPU{
     use std::io::Error;
     use crate::cpu::registers::Registers::Registers;
     use crate::decoder::decoder::Decoder;
-    use crate::op_codes_parser::op_codes_parser::{Instruction};
+    use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 
     pub struct CPU {
         pub(crate) Registers: Registers,
@@ -56,60 +56,48 @@ pub mod CPU{
                 match Instruction.opcode {
                     //0x00 NOP
                     0 => {},
-                    //0x03 INC BC
-                    3 => {
-                        let mut currentValue = self.Registers.get_item("BC");
-                        currentValue += 1;
-                        self.Registers.set_item("BC", currentValue);
-                    }
                     //0x01 LD BC, d16
                     1 => {
-                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
-                        self.Registers.set_item("BC", d16.value.expect("Operand d16 has no value"))
+                        CPU::ld_nn(self, Instruction.operands, "BC");
+                    },
+                    //0x03 INC BC
+                    3 => {
+                        CPU::inc_nn(self, "BC");
                     },
                     //0x11 LD DE, d16
                     17 => {
-                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
-                        self.Registers.set_item("DE", d16.value.expect("Operand d16 has no value"))
+                        CPU::ld_nn(self, Instruction.operands, "DE");
                     },
                     //0x13 INC DE
                     19 => {
-                        let mut currentValue = self.Registers.get_item("DE");
-                        currentValue += 1;
-                        self.Registers.set_item("DE", currentValue);
+                        CPU::inc_nn(self, "DE");
                     },
                     //0x18 JR e8
                     24 => {
-                        let current_instruction = self.Registers.get_item("PC");
+                        /*let current_instruction = self.Registers.get_item("PC");
                         let to_add: u16 = Instruction.operands[0].value.unwrap();
-                        self.Registers.set_item("PC", current_instruction + to_add)
+                        self.Registers.set_item("PC", current_instruction + to_add)*/
                     },
                     //0x21 LD HL, d16
                     33 => {
-                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
-                        self.Registers.set_item("HL", d16.value.expect("Operand d16 has no value"))
+                        CPU::ld_nn(self, Instruction.operands, "HL");
                     },
                     //0x23 INC HL
                     35 => {
-                        let mut currentValue = self.Registers.get_item("HL");
-                        currentValue += 1;
-                        self.Registers.set_item("HL", currentValue);
+                        CPU::inc_nn(self, "HL");
                     },
                     //0x31 LD SP, d16
                     49 => {
-                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
-                        self.Registers.set_item("SP", d16.value.expect("Operand d16 has no value"))
+                        CPU::ld_nn(self, Instruction.operands, "SP");
                     },
                     //0x33 INC SP
                     51 => {
-                        let mut currentValue = self.Registers.get_item("SP");
-                        currentValue += 1;
-                        self.Registers.set_item("SP", currentValue);
+                        CPU::inc_nn(self, "SP");
                     }
                     //0x3E LD a,d8
                     62 => {
-                        let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
-                        self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))
+                        /*let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+                        self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))*/
                     },
                     87 => {
                         //TODO
@@ -126,6 +114,17 @@ pub mod CPU{
             }
 
             Ok(())
+        }
+
+        fn ld_nn(&mut self, Operands: Vec<Operand>, name: &str){
+            let d16 = Operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+            self.Registers.set_item(name, d16.value.expect("Operand d16 has no value"))
+        }
+
+        fn inc_nn(&mut self, name: &str){
+            let mut currentValue = self.Registers.get_item(name);
+            currentValue += 1;
+            self.Registers.set_item(name, currentValue);
         }
     }
 }
