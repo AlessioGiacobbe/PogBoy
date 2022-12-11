@@ -115,8 +115,101 @@ pub mod CPU{
                         /*let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
                         self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))*/
                     },
+                    //0x40 LD B,B
+                    64 => {
+                        self.ld_r_r("B", "B")
+                    },
+                    //0x41 LD B,C
+                    65 => {
+                        self.ld_r_r("C", "B")
+                    },
+                    //0x42 LD B,D
+                    66 => {
+                        self.ld_r_r("D", "B")
+                    },
+                    //0x43 LD B,E
+                    67 => {
+                        self.ld_r_r("E", "B")
+                    },
+                    //0x44 LD B,H
+                    68 => {
+                        self.ld_r_r("H", "B")
+                    },
+                    //0x45 LD B,L
+                    69 => {
+                        self.ld_r_r("L", "B")
+                    },
+                    //0x46 LD B,(HL)
+                    70 => {
+                        //TODO should read from memory
+                    },
+                    //0x47 LD B,A
+                    71 => {
+                        self.ld_r_r("A", "B")
+                    },
+                    //0x48 LD C,B
+                    72 => {
+                        self.ld_r_r("B", "C")
+                    },
+                    //0x49 LD C,C
+                    73 => {
+                        self.ld_r_r("C", "C")
+                    },
+                    //0x4A LD C,D
+                    74 => {
+                        self.ld_r_r("D", "C")
+                    },
+                    //0x4B LD C,E
+                    75 => {
+                        self.ld_r_r("E", "C")
+                    },
+                    //0x4C LD C,H
+                    76 => {
+                        self.ld_r_r("H", "C")
+                    },
+                    //0x4D LD C,L
+                    77 => {
+                        self.ld_r_r("L", "C")
+                    },
+                    //0x4E LD C,(HL)
+                    78 => {
+                        //TODO should read from memory
+                    },
+                    //0x4F LD C,A
+                    79 => {
+                        self.ld_r_r("A", "C")
+                    },
+                    //0x50 LD D,B
+                    80 => {
+                        self.ld_r_r("B", "D")
+                    },
+                    //0x51 LD D,C
+                    81 => {
+                        self.ld_r_r("C", "D")
+                    },
+                    //0x52 LD D,D
+                    82 => {
+                        self.ld_r_r("D", "D")
+                    },
+                    //0x53 LD D,E
+                    83 => {
+                        self.ld_r_r("E", "D")
+                    },
+                    //0x54 LD D,H
+                    84 => {
+                        self.ld_r_r("H", "D")
+                    },
+                    //0x55 LD D,L
+                    85 => {
+                        self.ld_r_r("L", "D")
+                    },
+                    //0x56 LD D,(HL)
+                    86 => {
+                        //TODO should read from memory
+                    },
+                    //0x57 LD D,A
                     87 => {
-                        //TODO
+                        self.ld_r_r("A", "D")
                     },
                     88 => {
                         //TODO
@@ -147,6 +240,11 @@ pub mod CPU{
             let mut currentValue = self.Registers.get_item(name);
             currentValue -= 1;
             self.Registers.set_item(name, currentValue);
+        }
+
+        fn ld_r_r(&mut self, from: &str, to: &str){
+            let fromValue = self.Registers.get_item(from);
+            self.Registers.set_item(to, fromValue);
         }
     }
 }
