@@ -64,6 +64,10 @@ pub mod CPU{
                     3 => {
                         CPU::inc_nn(self, "BC");
                     },
+                    //0x0B DEC BC
+                    11 => {
+                        CPU::dec_nn(self, "BC");
+                    },
                     //0x11 LD DE, d16
                     17 => {
                         CPU::ld_nn(self, Instruction.operands, "DE");
@@ -78,6 +82,10 @@ pub mod CPU{
                         let to_add: u16 = Instruction.operands[0].value.unwrap();
                         self.Registers.set_item("PC", current_instruction + to_add)*/
                     },
+                    //0x1B DEC DE
+                    27 => {
+                        CPU::dec_nn(self, "DE");
+                    },
                     //0x21 LD HL, d16
                     33 => {
                         CPU::ld_nn(self, Instruction.operands, "HL");
@@ -86,6 +94,10 @@ pub mod CPU{
                     35 => {
                         CPU::inc_nn(self, "HL");
                     },
+                    //0x2B DEC HL
+                    43 => {
+                        CPU::dec_nn(self, "HL");
+                    },
                     //0x31 LD SP, d16
                     49 => {
                         CPU::ld_nn(self, Instruction.operands, "SP");
@@ -93,7 +105,11 @@ pub mod CPU{
                     //0x33 INC SP
                     51 => {
                         CPU::inc_nn(self, "SP");
-                    }
+                    },
+                    //0x3B DEC SP
+                    59 => {
+                        CPU::dec_nn(self, "SP");
+                    },
                     //0x3E LD a,d8
                     62 => {
                         /*let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
@@ -124,6 +140,12 @@ pub mod CPU{
         fn inc_nn(&mut self, name: &str){
             let mut currentValue = self.Registers.get_item(name);
             currentValue += 1;
+            self.Registers.set_item(name, currentValue);
+        }
+
+        fn dec_nn(&mut self, name: &str){
+            let mut currentValue = self.Registers.get_item(name);
+            currentValue -= 1;
             self.Registers.set_item(name, currentValue);
         }
     }
