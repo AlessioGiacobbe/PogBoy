@@ -56,6 +56,12 @@ pub mod CPU{
                 match Instruction.opcode {
                     //0x00 NOP
                     0 => {},
+                    //0x03 INC BC
+                    3 => {
+                        let mut currentValue = self.Registers.get_item("BC");
+                        currentValue += 1;
+                        self.Registers.set_item("BC", currentValue);
+                    }
                     //0x01 LD BC, d16
                     1 => {
                         let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
@@ -66,15 +72,11 @@ pub mod CPU{
                         let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
                         self.Registers.set_item("DE", d16.value.expect("Operand d16 has no value"))
                     },
-                    //0x21 LD HL, d16
-                    33 => {
-                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
-                        self.Registers.set_item("HL", d16.value.expect("Operand d16 has no value"))
-                    },
-                    //0x31 LD SP, d16
-                    49 => {
-                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
-                        self.Registers.set_item("SP", d16.value.expect("Operand d16 has no value"))
+                    //0x13 INC DE
+                    19 => {
+                        let mut currentValue = self.Registers.get_item("DE");
+                        currentValue += 1;
+                        self.Registers.set_item("DE", currentValue);
                     },
                     //0x18 JR e8
                     24 => {
@@ -82,6 +84,28 @@ pub mod CPU{
                         let to_add: u16 = Instruction.operands[0].value.unwrap();
                         self.Registers.set_item("PC", current_instruction + to_add)
                     },
+                    //0x21 LD HL, d16
+                    33 => {
+                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+                        self.Registers.set_item("HL", d16.value.expect("Operand d16 has no value"))
+                    },
+                    //0x23 INC HL
+                    35 => {
+                        let mut currentValue = self.Registers.get_item("HL");
+                        currentValue += 1;
+                        self.Registers.set_item("HL", currentValue);
+                    },
+                    //0x31 LD SP, d16
+                    49 => {
+                        let d16 = Instruction.operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+                        self.Registers.set_item("SP", d16.value.expect("Operand d16 has no value"))
+                    },
+                    //0x33 INC SP
+                    51 => {
+                        let mut currentValue = self.Registers.get_item("SP");
+                        currentValue += 1;
+                        self.Registers.set_item("SP", currentValue);
+                    }
                     //0x3E LD a,d8
                     62 => {
                         let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
