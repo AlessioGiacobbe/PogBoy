@@ -85,12 +85,12 @@ pub mod decoder {
             (address, decoded_instruction)
         }
 
-        pub(crate) fn disassemble(&self, mut address: i32, quantity: i32,){
+        pub(crate) fn disassemble(&self, mut address: i32, quantity: i32, mut current_address: i32){
             println!();
             println!("-------------");
             for n in 0..quantity{
                 let (new_address, instruction) = self.decode(address);
-                if n == 0 {
+                if current_address == address {
                     print!("-> ");
                 }
                 println!("{:#04X}       {}", address, instruction);

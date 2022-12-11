@@ -35,7 +35,7 @@ pub mod CPU{
                 self.Registers.set_item("PC", next_address as u16);
                 match self.execute(instruction) {
                     Err(instruction) => {
-                        self.Decoder.disassemble(address as i32, 12);
+                        self.Decoder.disassemble(address as i32 - 12, 25, address as i32);
                         println!("{}", self);
                         panic!("⚠️NOT IMPLEMENTED⚠️ {:?}", instruction)
                     },
@@ -211,9 +211,136 @@ pub mod CPU{
                     87 => {
                         self.ld_r_r("A", "D")
                     },
+                    //0x58 LD E,B
                     88 => {
-                        //TODO
+                        self.ld_r_r("B", "E")
                     },
+                    //0x59 LD E,C
+                    89 => {
+                        self.ld_r_r("C", "E")
+                    },
+                    //0x5A LD E,D
+                    90 => {
+                        self.ld_r_r("D", "E")
+                    },
+                    //0x5B LD E,E
+                    91 => {
+                        self.ld_r_r("E", "E")
+                    },
+                    //0x5C LD E,H
+                    92 => {
+                        self.ld_r_r("H", "E")
+                    },
+                    //0x5D LD E,L
+                    93 => {
+                        self.ld_r_r("L", "E")
+                    },
+                    //0x5E LD E,(HL)
+                    94 => {
+                        //TODO should read from memory
+                    },
+                    //0x5F LD E,A
+                    95 => {
+                        self.ld_r_r("A", "E")
+                    },
+                    //0x60 LD H,B
+                    96 => {
+                        self.ld_r_r("B", "H")
+                    },
+                    //0x61 LD H,C
+                    97 => {
+                        self.ld_r_r("C", "H")
+                    },
+                    //0x62 LD H,D
+                    98 => {
+                        self.ld_r_r("D", "H")
+                    },
+                    //0x63 LD H,E
+                    99 => {
+                        self.ld_r_r("E", "H")
+                    },
+                    //0x64 LD H,H
+                    100 => {
+                        self.ld_r_r("H", "H")
+                    },
+                    //0x65 LD H,L
+                    101 => {
+                        self.ld_r_r("L", "H")
+                    },
+                    //0x66 LD H,(HL)
+                    102 => {
+                        //TODO should read from memory
+                    },
+                    //0x67 LD H,A
+                    103 => {
+                        self.ld_r_r("A", "H")
+                    },
+                    //0x68 LD L,B
+                    104 => {
+                        self.ld_r_r("B", "L")
+                    },
+                    //0x69 LD L,C
+                    105 => {
+                        self.ld_r_r("C", "L")
+                    },
+                    //0x6A LD L,D
+                    106 => {
+                        self.ld_r_r("D", "L")
+                    },
+                    //0x6B LD L,E
+                    107 => {
+                        self.ld_r_r("E", "L")
+                    },
+                    //0x6C LD L,H
+                    108 => {
+                        self.ld_r_r("H", "L")
+                    },
+                    //0x6D LD L,L
+                    109 => {
+                        self.ld_r_r("L", "L")
+                    },
+                    //0x6E LD L,(HL)
+                    110 => {
+                        //TODO should read from memory
+                    },
+                    //0x6F LD L,A
+                    111 => {
+                        self.ld_r_r("A", "L")
+                    },
+
+                    //0x78 LD A,B
+                    120 => {
+                        self.ld_r_r("B", "A")
+                    },
+                    //0x79 LD A,C
+                    121 => {
+                        self.ld_r_r("C", "A")
+                    },
+                    //0x7A LD A,D
+                    122 => {
+                        self.ld_r_r("D", "A")
+                    },
+                    //0x7B LD A,E
+                    123 => {
+                        self.ld_r_r("E", "A")
+                    },
+                    //0x7C LD A,H
+                    124 => {
+                        self.ld_r_r("H", "A")
+                    },
+                    //0x7D LD A,L
+                    125 => {
+                        self.ld_r_r("L", "A")
+                    },
+                    //0x7E LD A,(HL)
+                    126 => {
+                        //TODO should read from memory
+                    },
+                    //0x7F LD A,A
+                    127 => {
+                        self.ld_r_r("A", "A")
+                    },
+
                     //DI
                     243 => {
                         //TODO
