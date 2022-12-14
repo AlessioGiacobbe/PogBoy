@@ -112,8 +112,8 @@ pub mod CPU{
                     },
                     //0x3E LD a,d8
                     62 => {
-                        /*let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
-                        self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))*/
+                        let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+                        self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))
                     },
                     //0x40 LD B,B
                     64 => {
@@ -340,6 +340,10 @@ pub mod CPU{
                     127 => {
                         self.ld_r_r("A", "A")
                     },
+                    //0x80 ADD A,B
+                    128 => {
+                        self.add_a("B")
+                    }
 
                     //DI
                     243 => {
@@ -372,6 +376,27 @@ pub mod CPU{
         fn ld_r_r(&mut self, from: &str, to: &str){
             let fromValue = self.Registers.get_item(from);
             self.Registers.set_item(to, fromValue);
+        }
+
+        fn add_a(&mut self, to_add: &str){
+            let to_add = self.Registers.get_item(to_add);
+            let current_value = self.Registers.get_item("A");
+            let result = current_value + to_add;
+            self.Registers.set_item("c", (result > 255) as u16); //0xFF = 255
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add) as u16); //0xFF = 255
+
+            let rounded_result = result & 255;
+
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", (rounded_result == 0) as u16);
+            self.Registers.set_item("A", rounded_result);
+        }
+
+        //half carry is carry calculated on the first half of a byte (from 3rd bit)
+        fn calculate_half_carry(value: u16, to_add: u16) -> bool{
+            let rounded_value = value & 15; //0xF = 15
+            let rounded_to_add = to_add & 15;
+            (rounded_value + rounded_to_add) > 15
         }
     }
 }

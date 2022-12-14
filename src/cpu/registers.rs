@@ -21,10 +21,10 @@ pub mod Registers {
     const REGISTERS: [&'static str; 6] = ["AF", "BC", "DE", "HL", "PC", "SP"];
 
     const FLAGS: phf::Map<&'static str, u8> = phf_map! {
-        "c" => 4,
-        "h" => 5,
-        "n" => 6,
-        "z" => 7
+        "z" => 7,    //ZERO
+        "n" => 6,   //ADD/SUB
+        "h" => 5,   //HALF CARRY
+        "c" => 4,   //CARRY
     };
 
     pub struct Registers {
@@ -42,7 +42,8 @@ pub mod Registers {
 
     impl fmt::Display for Registers {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "AF : 0x{:04X} BC : 0x{:04X} DE : 0x{:04X} HL : 0x{:04X} PC : 0x{:04X} SP : {:b}", self.AF, self.BC, self.DE, self.HL, self.PC, self.SP)
+            writeln!(f, "REGISTERS - AF : 0x{:04X} BC : 0x{:04X} DE : 0x{:04X} HL : 0x{:04X} PC : 0x{:04X} SP : {:b}", self.AF, self.BC, self.DE, self.HL, self.PC, self.SP);
+            write!(f, "FLAGS - z:{} n:{} h:{} c:{}", self.get_item("z"), self.get_item("n"), self.get_item("h"), self.get_item("c"))
         }
     }
 
