@@ -79,8 +79,8 @@ pub mod cartridge {
         }
     }
 
-    const HEX_HEADER_START_ADDRESS: usize = 256; //0x0100
-    const HEX_HEADER_END_ADDRESS: usize = 335; //0x014F
+    const HEX_HEADER_START_ADDRESS: usize = 0x100;
+    const HEX_HEADER_END_ADDRESS: usize = 0x14F;
 
     pub fn read_cartridge(file_name: &str) -> Cartridge {
         let mut rom = File::open(format!("./src/{}", file_name)).expect("rom not found");
