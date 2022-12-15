@@ -17,6 +17,6 @@ fn main() {
     //Decoder.disassemble(512, 16);
     //Decoder.disassemble(512, 16);
     //Decoder.disassemble(0, 0);
-    let mut CPU: CPU = CPU::new(Decoder);
+    let mut CPU: CPU = CPU::new(Some(Decoder));
     CPU.run();
 }
