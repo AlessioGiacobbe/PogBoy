@@ -63,315 +63,315 @@ pub mod CPU{
                     //0x00 NOP
                     0 => {},
                     //0x01 LD BC, d16
-                    1 => {
+                    0x01 => {
                         CPU::ld_nn(self, Instruction.operands, "BC");
                     },
                     //0x03 INC BC
-                    3 => {
+                    0x03 => {
                         CPU::inc_nn(self, "BC");
                     },
                     //0x0B DEC BC
-                    11 => {
+                    0x0B => {
                         CPU::dec_nn(self, "BC");
                     },
                     //0x11 LD DE, d16
-                    17 => {
+                    0x11 => {
                         CPU::ld_nn(self, Instruction.operands, "DE");
                     },
                     //0x13 INC DE
-                    19 => {
+                    0x13 => {
                         CPU::inc_nn(self, "DE");
                     },
                     //0x18 JR e8
-                    24 => {
+                    0x18 => {
                         /*let current_instruction = self.Registers.get_item("PC");
                         let to_add: u16 = Instruction.operands[0].value.unwrap();
                         self.Registers.set_item("PC", current_instruction + to_add)*/
                     },
                     //0x1B DEC DE
-                    27 => {
+                    0x1B => {
                         CPU::dec_nn(self, "DE");
                     },
                     //0x21 LD HL, d16
-                    33 => {
+                    0x21 => {
                         CPU::ld_nn(self, Instruction.operands, "HL");
                     },
                     //0x23 INC HL
-                    35 => {
+                    0x23 => {
                         CPU::inc_nn(self, "HL");
                     },
                     //0x2B DEC HL
-                    43 => {
+                    0x2B => {
                         CPU::dec_nn(self, "HL");
                     },
                     //0x31 LD SP, d16
-                    49 => {
+                    0x31 => {
                         CPU::ld_nn(self, Instruction.operands, "SP");
                     },
                     //0x33 INC SP
-                    51 => {
+                    0x33 => {
                         CPU::inc_nn(self, "SP");
                     },
                     //0x3B DEC SP
-                    59 => {
+                    0x3B => {
                         CPU::dec_nn(self, "SP");
                     },
                     //0x3E LD a,d8
-                    62 => {
+                    0x3E => {
                         let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
                         self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))
                     },
                     //0x40 LD B,B
-                    64 => {
+                    0x40 => {
                         self.ld_r_r("B", "B")
                     },
                     //0x41 LD B,C
-                    65 => {
+                    0x41 => {
                         self.ld_r_r("C", "B")
                     },
                     //0x42 LD B,D
-                    66 => {
+                    0x42 => {
                         self.ld_r_r("D", "B")
                     },
                     //0x43 LD B,E
-                    67 => {
+                    0x43 => {
                         self.ld_r_r("E", "B")
                     },
                     //0x44 LD B,H
-                    68 => {
+                    0x44 => {
                         self.ld_r_r("H", "B")
                     },
                     //0x45 LD B,L
-                    69 => {
+                    0x45 => {
                         self.ld_r_r("L", "B")
                     },
                     //0x46 LD B,(HL)
-                    70 => {
+                    0x46 => {
                         //TODO should read from memory
                     },
                     //0x47 LD B,A
-                    71 => {
+                    0x47 => {
                         self.ld_r_r("A", "B")
                     },
                     //0x48 LD C,B
-                    72 => {
+                    0x48 => {
                         self.ld_r_r("B", "C")
                     },
                     //0x49 LD C,C
-                    73 => {
+                    0x49 => {
                         self.ld_r_r("C", "C")
                     },
                     //0x4A LD C,D
-                    74 => {
+                    0x4A => {
                         self.ld_r_r("D", "C")
                     },
                     //0x4B LD C,E
-                    75 => {
+                    0x4B => {
                         self.ld_r_r("E", "C")
                     },
                     //0x4C LD C,H
-                    76 => {
+                    0x4C => {
                         self.ld_r_r("H", "C")
                     },
                     //0x4D LD C,L
-                    77 => {
+                    0x4D => {
                         self.ld_r_r("L", "C")
                     },
                     //0x4E LD C,(HL)
-                    78 => {
+                    0x4E => {
                         //TODO should read from memory
                     },
                     //0x4F LD C,A
-                    79 => {
+                    0x4F => {
                         self.ld_r_r("A", "C")
                     },
                     //0x50 LD D,B
-                    80 => {
+                    0x50 => {
                         self.ld_r_r("B", "D")
                     },
                     //0x51 LD D,C
-                    81 => {
+                    0x51 => {
                         self.ld_r_r("C", "D")
                     },
                     //0x52 LD D,D
-                    82 => {
+                    0x52 => {
                         self.ld_r_r("D", "D")
                     },
                     //0x53 LD D,E
-                    83 => {
+                    0x53 => {
                         self.ld_r_r("E", "D")
                     },
                     //0x54 LD D,H
-                    84 => {
+                    0x54 => {
                         self.ld_r_r("H", "D")
                     },
                     //0x55 LD D,L
-                    85 => {
+                    0x55 => {
                         self.ld_r_r("L", "D")
                     },
                     //0x56 LD D,(HL)
-                    86 => {
+                    0x56 => {
                         //TODO should read from memory
                     },
                     //0x57 LD D,A
-                    87 => {
+                    0x57 => {
                         self.ld_r_r("A", "D")
                     },
                     //0x58 LD E,B
-                    88 => {
+                    0x58 => {
                         self.ld_r_r("B", "E")
                     },
                     //0x59 LD E,C
-                    89 => {
+                    0x59 => {
                         self.ld_r_r("C", "E")
                     },
                     //0x5A LD E,D
-                    90 => {
+                    0x5A => {
                         self.ld_r_r("D", "E")
                     },
                     //0x5B LD E,E
-                    91 => {
+                    0x5B => {
                         self.ld_r_r("E", "E")
                     },
                     //0x5C LD E,H
-                    92 => {
+                    0x5C => {
                         self.ld_r_r("H", "E")
                     },
                     //0x5D LD E,L
-                    93 => {
+                    0x5D => {
                         self.ld_r_r("L", "E")
                     },
                     //0x5E LD E,(HL)
-                    94 => {
+                    0x5E => {
                         //TODO should read from memory
                     },
                     //0x5F LD E,A
-                    95 => {
+                    0x5F => {
                         self.ld_r_r("A", "E")
                     },
                     //0x60 LD H,B
-                    96 => {
+                    0x60 => {
                         self.ld_r_r("B", "H")
                     },
                     //0x61 LD H,C
-                    97 => {
+                    0x61 => {
                         self.ld_r_r("C", "H")
                     },
                     //0x62 LD H,D
-                    98 => {
+                    0x62 => {
                         self.ld_r_r("D", "H")
                     },
                     //0x63 LD H,E
-                    99 => {
+                    0x63 => {
                         self.ld_r_r("E", "H")
                     },
                     //0x64 LD H,H
-                    100 => {
+                    0x64 => {
                         self.ld_r_r("H", "H")
                     },
                     //0x65 LD H,L
-                    101 => {
+                    0x65 => {
                         self.ld_r_r("L", "H")
                     },
                     //0x66 LD H,(HL)
-                    102 => {
+                    0x66 => {
                         //TODO should read from memory
                     },
                     //0x67 LD H,A
-                    103 => {
+                    0x67 => {
                         self.ld_r_r("A", "H")
                     },
                     //0x68 LD L,B
-                    104 => {
+                    0x68 => {
                         self.ld_r_r("B", "L")
                     },
                     //0x69 LD L,C
-                    105 => {
+                    0x69 => {
                         self.ld_r_r("C", "L")
                     },
                     //0x6A LD L,D
-                    106 => {
+                    0x6A => {
                         self.ld_r_r("D", "L")
                     },
                     //0x6B LD L,E
-                    107 => {
+                    0x6B => {
                         self.ld_r_r("E", "L")
                     },
                     //0x6C LD L,H
-                    108 => {
+                    0x6C => {
                         self.ld_r_r("H", "L")
                     },
                     //0x6D LD L,L
-                    109 => {
+                    0x6D => {
                         self.ld_r_r("L", "L")
                     },
                     //0x6E LD L,(HL)
-                    110 => {
+                    0x6E => {
                         //TODO should read from memory
                     },
                     //0x6F LD L,A
-                    111 => {
+                    0x6F => {
                         self.ld_r_r("A", "L")
                     },
 
                     //0x78 LD A,B
-                    120 => {
+                    0x78 => {
                         self.ld_r_r("B", "A")
                     },
                     //0x79 LD A,C
-                    121 => {
+                    0x79 => {
                         self.ld_r_r("C", "A")
                     },
                     //0x7A LD A,D
-                    122 => {
+                    0x7A => {
                         self.ld_r_r("D", "A")
                     },
                     //0x7B LD A,E
-                    123 => {
+                    0x7B => {
                         self.ld_r_r("E", "A")
                     },
                     //0x7C LD A,H
-                    124 => {
+                    0x7C => {
                         self.ld_r_r("H", "A")
                     },
                     //0x7D LD A,L
-                    125 => {
+                    0x7D => {
                         self.ld_r_r("L", "A")
                     },
                     //0x7E LD A,(HL)
-                    126 => {
+                    0x7E => {
                         //TODO should read from memory
                     },
                     //0x7F LD A,A
-                    127 => {
+                    0x7F => {
                         self.ld_r_r("A", "A")
                     },
                     //0x80 ADD A,B
-                    128 => {
+                    0x80 => {
                         self.add_a("B")
                     },
                     //0x81 ADD A,C
-                    129 => {
+                    0x81 => {
                         self.add_a("C")
                     },
                     //0x82 ADD A,D
-                    130 => {
+                    0x82 => {
                         self.add_a("D")
                     },
                     //0x83 ADD A,E
-                    131 => {
+                    0x83 => {
                         self.add_a("E")
                     },
                     //0x84 ADD A,H
-                    132 => {
+                    0x84 => {
                         self.add_a("H")
                     },
                     //0x85 ADD A,L
-                    133 => {
+                    0x85 => {
                         self.add_a("L")
                     },
-                    //0x85 ADD A,A
-                    135 => {
+                    //0x87 ADD A,A
+                    0x87 => {
                         self.add_a("A")
                     }
 
@@ -412,21 +412,31 @@ pub mod CPU{
             let to_add = self.Registers.get_item(to_add);
             let current_value = self.Registers.get_item("A");
             let result = current_value + to_add;
-            self.Registers.set_item("c", (result > 255) as u16); //0xFF = 255
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add) as u16); //0xFF = 255
+            self.Registers.set_item("c", (result > 0xFF) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add) as u16);
 
-            let rounded_result = result & 255;
+            let rounded_result = result & 0xFF;
 
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (rounded_result == 0) as u16);
             self.Registers.set_item("A", rounded_result);
         }
 
+        fn adc_a(&mut self, to_add: &str){
+            let to_add = self.Registers.get_item(to_add);
+            let current_value = self.Registers.get_item("A");
+            let carry = self.Registers.get_item("c");
+
+
+            self.Registers.set_item("n", 0);
+
+        }
+
         //half carry is carry calculated on the first half of a byte (from 3rd bit)
         fn calculate_half_carry(value: u16, to_add: u16) -> bool{
-            let rounded_value = value & 15; //0xF = 15
-            let rounded_to_add = to_add & 15;
-            (rounded_value + rounded_to_add) > 15
+            let rounded_value = value & 0xF;
+            let rounded_to_add = to_add & 0xF;
+            (rounded_value + rounded_to_add) > 0xF
         }
     }
 }

@@ -54,7 +54,7 @@ pub mod Registers {
                 BC: 0,
                 DE: 0,
                 HL: 0,
-                PC: 512,    // 0x100 : rom entry point
+                PC: 0x200,    // 0x100 : rom entry point
                 SP: 0,
                 LOW_REGISTERS,
                 HIGH_REGISTERS,
@@ -91,7 +91,7 @@ pub mod Registers {
             if LOW_REGISTERS.contains_key(item) {
                 let register_name = LOW_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                return register_value & 255 // bitmask with 0xFF, get lower 8 bits
+                return register_value & 0xFF // bitmask with 0xFF, get lower 8 bits
             }
             if HIGH_REGISTERS.contains_key(item) {
                 let register_name = HIGH_REGISTERS[item];
@@ -112,14 +112,14 @@ pub mod Registers {
             if LOW_REGISTERS.contains_key(item) {
                 let register_name = LOW_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                let updated_register_value = (register_value & 65280) | value;  // clear last 8 bits masking with 0xFF00 then OR with passed value
+                let updated_register_value = (register_value & 0xFF00) | value;  // clear last 8 bits masking with 0xFF00 then OR with passed value
                 self.set_register_value_from_name(register_name, updated_register_value);
                 return;
             }
             if HIGH_REGISTERS.contains_key(item) {
                 let register_name = HIGH_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                let updated_register_value = (register_value & 255) | value << 8;  // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
+                let updated_register_value = (register_value & 0xFF) | value << 8;  // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
                 self.set_register_value_from_name(register_name, updated_register_value);
                 return;
             }
