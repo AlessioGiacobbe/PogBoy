@@ -19,12 +19,18 @@ pub mod CPU{
     }
 
     impl CPU {
-        pub(crate) fn new(Decoder: Decoder) -> CPU {
-            let mut Registers: Registers = Registers::new();
 
+        pub(crate) fn new(Decoder: Option<Decoder>) -> CPU {
+            let mut Registers: Registers = Registers::new();
+            let decoder = Decoder.unwrap_or(Decoder{
+                data: vec![],
+                address: 0,
+                unprefixed_op_codes: Default::default(),
+                prefixed_op_codes: Default::default()
+            });
             CPU {
                 Registers,
-                Decoder
+                Decoder: decoder
             }
         }
 
@@ -343,6 +349,30 @@ pub mod CPU{
                     //0x80 ADD A,B
                     128 => {
                         self.add_a("B")
+                    },
+                    //0x81 ADD A,C
+                    129 => {
+                        self.add_a("C")
+                    },
+                    //0x82 ADD A,D
+                    130 => {
+                        self.add_a("D")
+                    },
+                    //0x83 ADD A,E
+                    131 => {
+                        self.add_a("E")
+                    },
+                    //0x84 ADD A,H
+                    132 => {
+                        self.add_a("H")
+                    },
+                    //0x85 ADD A,L
+                    133 => {
+                        self.add_a("L")
+                    },
+                    //0x85 ADD A,A
+                    135 => {
+                        self.add_a("A")
                     }
 
                     //DI
