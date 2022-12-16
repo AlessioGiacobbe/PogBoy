@@ -45,12 +45,14 @@ pub mod CPU{
                         println!("{}", self);
                         panic!("⚠️NOT IMPLEMENTED⚠️ {:?}", instruction)
                     },
-                    _ => {}
+                    _ => {
+                        println!("STATUS AFTER EXECUTING 0x{:04X} {}", address, self);
+                    }
                 };
             }
         }
 
-        pub(crate) fn execute(&mut self, Instruction: Instruction) -> std::result::Result<(), Instruction> {
+        pub(crate) fn execute(&mut self, Instruction: Instruction) -> Result<(), Instruction> {
             if Instruction.prefixed {
                 match Instruction.opcode {
                     0 => {
@@ -373,7 +375,11 @@ pub mod CPU{
                     //0x87 ADD A,A
                     0x87 => {
                         self.add_a("A")
-                    }
+                    },
+                    //0x88 ADC A,B
+                    0x88 => {
+                        self.adc_a("B")
+                    },
 
                     //DI
                     243 => {
@@ -408,12 +414,12 @@ pub mod CPU{
             self.Registers.set_item(to, fromValue);
         }
 
-        fn add_a(&mut self, to_add: &str){
-            let to_add = self.Registers.get_item(to_add);
+        pub(crate) fn add_a(&mut self, to_add: &str){
+            let value_to_add = self.Registers.get_item(to_add);
             let current_value = self.Registers.get_item("A");
-            let result = current_value + to_add;
+            let result = current_value + value_to_add;
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0) as u16);
 
             let rounded_result = result & 0xFF;
 
@@ -422,21 +428,25 @@ pub mod CPU{
             self.Registers.set_item("A", rounded_result);
         }
 
-        fn adc_a(&mut self, to_add: &str){
+        pub(crate) fn adc_a(&mut self, to_add: &str){
             let to_add = self.Registers.get_item(to_add);
             let current_value = self.Registers.get_item("A");
             let carry = self.Registers.get_item("c");
+            let result = to_add + current_value + carry;
+            let rounded_result = result & 0xFF;
 
-
+            self.Registers.set_item("c", (result > 0xFF) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry) as u16);
+            self.Registers.set_item("z", (rounded_result == 0) as u16);
             self.Registers.set_item("n", 0);
-
+            self.Registers.set_item("A", rounded_result);
         }
 
         //half carry is carry calculated on the first half of a byte (from 3rd bit)
-        fn calculate_half_carry(value: u16, to_add: u16) -> bool{
+        fn calculate_half_carry(value: u16, to_add: u16, carry: u16) -> bool{
             let rounded_value = value & 0xF;
             let rounded_to_add = to_add & 0xF;
-            (rounded_value + rounded_to_add) > 0xF
+            (rounded_value + rounded_to_add + carry) > 0xF
         }
     }
 }
