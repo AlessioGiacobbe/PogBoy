@@ -12,6 +12,11 @@ pub mod CPU{
         pub(crate) Decoder: Decoder,
     }
 
+    enum halfCarryOperationsMode {
+        ADD,
+        GREATER_THAN
+    }
+
     impl Display for CPU {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             write!(f, "Registers : {}", self.Registers)
@@ -408,6 +413,38 @@ pub mod CPU{
                     0x8F => {
                         self.adc_a("A")
                     },
+                    //0x90 SUB B
+                    0x90 => {
+                        self.sub_a("B")
+                    },
+                    //0x91 SUB C
+                    0x91 => {
+                        self.sub_a("C")
+                    },
+                    //0x92 SUB D
+                    0x92 => {
+                        self.sub_a("D")
+                    },
+                    //0x93 SUB B
+                    0x93 => {
+                        self.sub_a("E")
+                    },
+                    //0x94 SUB H
+                    0x94 => {
+                        self.sub_a("H")
+                    },
+                    //0x90 SUB L
+                    0x95 => {
+                        self.sub_a("L")
+                    },
+                    //0x96 SUB (HL)
+                    0x96 => {
+                        //TODO should read from memory
+                    },
+                    //0x97 SUB A
+                    0x97 => {
+                        self.sub_a("A")
+                    },
 
 
                     //DI
@@ -448,7 +485,7 @@ pub mod CPU{
             let current_value = self.Registers.get_item("A");
             let result = current_value + value_to_add;
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0, halfCarryOperationsMode::ADD) as u16);
 
             let rounded_result = result & 0xFF;
 
@@ -465,21 +502,35 @@ pub mod CPU{
             let rounded_result = result & 0xFF;
 
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry) as u16);
-            self.Registers.set_item("z", (rounded_result == 0) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry, halfCarryOperationsMode::ADD) as u16);
             self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", (rounded_result == 0) as u16);
             self.Registers.set_item("A", rounded_result);
         }
 
         pub(crate) fn sub_a(&mut self, to_sub: &str) {
-
+            let to_sub = self.Registers.get_item(to_sub);
+            let current_value = self.Registers.get_item("A");
+            let rounded_result = (current_value - to_sub) & 0xFF;
+            self.Registers.set_item("c", (to_sub > current_value) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, halfCarryOperationsMode::GREATER_THAN) as u16);
+            self.Registers.set_item("n", 1);
+            self.Registers.set_item("z", (rounded_result == 0) as u16);
+            self.Registers.set_item("A", rounded_result);
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
-        fn calculate_half_carry(value: u16, to_add: u16, carry: u16) -> bool{
+        fn calculate_half_carry(value: u16, second_operator: u16, carry: u16, mode: halfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
-            let rounded_to_add = to_add & 0xF;
-            (rounded_value + rounded_to_add + carry) > 0xF
+            let rounded_second_operator = second_operator & 0xF;
+            match mode {
+                halfCarryOperationsMode::ADD => {
+                    (rounded_second_operator + rounded_value + carry) > 0xF
+                }
+                halfCarryOperationsMode::GREATER_THAN => {
+                    rounded_second_operator > rounded_value
+                }
+            }
         }
     }
 }
