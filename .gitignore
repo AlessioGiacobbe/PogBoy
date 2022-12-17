@@ -16,6 +16,7 @@ Cargo.lock
 
 # custom
 
-/src/snake.gb
+/src/*.gb
+/src/*.jpg
 
 .DS_Store
