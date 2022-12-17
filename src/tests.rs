@@ -1,20 +1,28 @@
 use super::*;
 
-fn test_little_big_endian(){
-    let hex_value = u32::from_str_radix("C0FFEE", 16).unwrap();
-    for to_le_byte in hex_value.to_le_bytes().into_iter() {
-        println!("{:#04x}", to_le_byte);
-    }
-
-    for to_be_byte in hex_value.to_be_bytes().into_iter() {
-        println!("{:#04x}", to_be_byte);
-    }
+fn create_dummy_coder() -> Decoder {
+    let Cartridge: Cartridge = read_cartridge("image.gb");
+    let dummy_cartridge: Cartridge = Cartridge {
+        CartridgeInfo: Cartridge.CartridgeInfo,
+        DataBuffer: vec![0x00, 0x3E, 0x0F]    //NOP - LD A,0x0F
+    };
+    Decoder::new(dummy_cartridge)
 }
 
 fn create_dummy_cpu() -> CPU {
-    let Cartridge: Cartridge = read_cartridge("image.gb");
-    let Decoder: Decoder = Decoder::new(Cartridge);
-    CPU::new(Some(Decoder))
+    let dummy_decoder = create_dummy_coder();
+    CPU::new(Some(dummy_decoder))
+}
+
+#[test]
+fn decoder_can_parse_correctly(){
+    let dummy_decoder = create_dummy_coder();
+    let (_, nop_instruction) = dummy_decoder.decode(0);
+    let (_, ld_a_d8_instruction) = dummy_decoder.decode(1);
+    assert_eq!(nop_instruction.mnemonic, "NOP");
+    let d8 = ld_a_d8_instruction.operands.into_iter().find(|operand| operand.name == "d8").unwrap();
+    assert_eq!(d8.value.unwrap(), 0x0F);
+    //TODO test 16 bit operand
 }
 
 #[test]
@@ -51,6 +59,26 @@ fn adc_sets_right_flags(){
 
     cpu.Registers.set_item("B", 0x1);
     cpu.adc_a("B");
-    assert_eq!(cpu.Registers.get_item("A"), 0); //should be (A (254) + B (1) + Carry (1)) && 0xFF = 256 && 0xFF == 0
+    assert_eq!(cpu.Registers.get_item("A"), 0); //should be (A (254) + B (1) + Carry (1)) && 0xFF == 256 && 0xFF == 0
     assert_eq!(cpu.Registers.get_item("z"), 1); //should be set since result is 0
+}
+
+#[test]
+fn sub_sets_right_flags(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0xFF);
+    cpu.Registers.set_item("B", 0xFF);
+    cpu.sub_a("B");
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+    assert_eq!(cpu.Registers.get_item("n"), 1); //should be set, operation is sub
+
+    cpu.Registers.set_item("B", 0xFF);
+    cpu.Registers.set_item("A", 0x0F);
+    cpu.adc_a("B");
+    assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
+
+    cpu.Registers.set_item("B", 0x0F);
+    cpu.Registers.set_item("A", 0x03);
+    cpu.adc_a("B");
+    assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F) > (a & 0x0F)
 }
