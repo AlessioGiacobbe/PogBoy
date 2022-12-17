@@ -380,6 +380,35 @@ pub mod CPU{
                     0x88 => {
                         self.adc_a("B")
                     },
+                    //0x89 ADC A,C
+                    0x89 => {
+                        self.adc_a("C")
+                    },
+                    //0x8A ADC A,D
+                    0x8A => {
+                        self.adc_a("D")
+                    },
+                    //0x8B ADC A,E
+                    0x8B => {
+                        self.adc_a("E")
+                    },
+                    //0x8C ADC A,H
+                    0x8C => {
+                        self.adc_a("H")
+                    },
+                    //0x8D ADC A,L
+                    0x8D => {
+                        self.adc_a("L")
+                    },
+                    //0x8E ADC A,(HL)
+                    0x8E => {
+                        //TODO should read from memory
+                    },
+                    //0x8F ADC A,A
+                    0x8F => {
+                        self.adc_a("A")
+                    },
+
 
                     //DI
                     243 => {
@@ -442,7 +471,11 @@ pub mod CPU{
             self.Registers.set_item("A", rounded_result);
         }
 
-        //half carry is carry calculated on the first half of a byte (from 3rd bit)
+        pub(crate) fn sub_a(&mut self, to_sub: &str) {
+
+        }
+
+            //half carry is carry calculated on the first half of a byte (from 3rd bit)
         fn calculate_half_carry(value: u16, to_add: u16, carry: u16) -> bool{
             let rounded_value = value & 0xF;
             let rounded_to_add = to_add & 0xF;
