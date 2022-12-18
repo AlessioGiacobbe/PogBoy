@@ -481,8 +481,8 @@ pub mod CPU{
         }
 
         pub(crate) fn add_a(&mut self, to_add: &str){
-            let value_to_add = self.Registers.get_item(to_add);
-            let current_value = self.Registers.get_item("A");
+            let value_to_add = self.Registers.get_item(to_add) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
             let result = current_value + value_to_add;
             self.Registers.set_item("c", (result > 0xFF) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0, halfCarryOperationsMode::ADD) as u16);
@@ -491,13 +491,13 @@ pub mod CPU{
 
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result);
+            self.Registers.set_item("A", rounded_result as u16);
         }
 
         pub(crate) fn adc_a(&mut self, to_add: &str){
-            let to_add = self.Registers.get_item(to_add);
-            let current_value = self.Registers.get_item("A");
-            let carry = self.Registers.get_item("c");
+            let to_add = self.Registers.get_item(to_add) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
+            let carry = self.Registers.get_item("c") as i16;
             let result = to_add + current_value + carry;
             let rounded_result = result & 0xFF;
 
@@ -505,26 +505,36 @@ pub mod CPU{
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry, halfCarryOperationsMode::ADD) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result);
+            self.Registers.set_item("A", rounded_result as u16);
         }
 
         pub(crate) fn sub_a(&mut self, to_sub: &str) {
-            let to_sub = self.Registers.get_item(to_sub);
-            let current_value = self.Registers.get_item("A");
+            let to_sub = self.Registers.get_item(to_sub) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
             let rounded_result = (current_value - to_sub) & 0xFF;
+
             self.Registers.set_item("c", (to_sub > current_value) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, halfCarryOperationsMode::GREATER_THAN) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result);
+            self.Registers.set_item("A", rounded_result as u16);
         }
 
         pub(crate) fn sbc_a(&mut self, to_sub: &str) {
+            let to_sub = self.Registers.get_item(to_sub) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
+            let carry = self.Registers.get_item("c") as i16;
+            let rounded_result = (current_value - to_sub - carry) & 0xFF;
 
+            self.Registers.set_item("c", ((to_sub + carry) > current_value) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, halfCarryOperationsMode::GREATER_THAN) as u16);
+            self.Registers.set_item("n", 1);
+            self.Registers.set_item("z", (rounded_result == 0) as u16);
+            self.Registers.set_item("A", rounded_result as u16);
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
-        fn calculate_half_carry(value: u16, second_operator: u16, carry: u16, mode: halfCarryOperationsMode) -> bool{
+        fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: halfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
             let rounded_second_operator = second_operator & 0xF;
             match mode {
@@ -532,7 +542,7 @@ pub mod CPU{
                     (rounded_second_operator + rounded_value + carry) > 0xF
                 }
                 halfCarryOperationsMode::GREATER_THAN => {
-                    rounded_second_operator > rounded_value
+                    (rounded_second_operator + carry) > rounded_value
                 }
             }
         }

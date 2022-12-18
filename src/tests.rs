@@ -74,12 +74,12 @@ fn sub_sets_right_flags(){
 
     cpu.Registers.set_item("B", 0xFF);
     cpu.Registers.set_item("A", 0x0F);
-    cpu.adc_a("B");
+    cpu.sub_a("B");
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
 
     cpu.Registers.set_item("B", 0x0F);
     cpu.Registers.set_item("A", 0x03);
-    cpu.adc_a("B");
+    cpu.sub_a("B");
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F) > (a & 0x0F)
 }
 
@@ -96,5 +96,6 @@ fn subc_sets_right_flags(){
     cpu.Registers.set_item("c", 1);
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x3);
+    cpu.sbc_a("B");
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F + carry) > (a & 0x0F)
 }
