@@ -66,9 +66,15 @@ fn adc_sets_right_flags(){
 #[test]
 fn sub_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0x9);
+    cpu.Registers.set_item("B", 0x2);
+    cpu.sub_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 7);
+
     cpu.Registers.set_item("A", 0xFF);
     cpu.Registers.set_item("B", 0xFF);
     cpu.sub_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
     assert_eq!(cpu.Registers.get_item("n"), 1); //should be set, operation is sub
 
@@ -163,4 +169,28 @@ fn xor_sets_right_flags(){
 
     assert_eq!(cpu.Registers.get_item("A"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
+}
+
+#[test]
+fn cp_sets_right_flags(){
+    //same as sub but we check that A didn't change
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0xFF);
+    cpu.Registers.set_item("B", 0xFF);
+    cpu.cp_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 0xFF);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+    assert_eq!(cpu.Registers.get_item("n"), 1); //should be set, operation is sub
+
+    cpu.Registers.set_item("B", 0xFF);
+    cpu.Registers.set_item("A", 0x0F);
+    cpu.cp_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 0x0F);
+    assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
+
+    cpu.Registers.set_item("B", 0x0F);
+    cpu.Registers.set_item("A", 0x03);
+    cpu.cp_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 0x03);
+    assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F) > (a & 0x0F)
 }
