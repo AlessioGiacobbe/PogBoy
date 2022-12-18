@@ -113,7 +113,7 @@ pub mod Registers {
                 let value = value & 0xFF;
                 let register_name = LOW_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                let updated_register_value = (register_value & 0xFF00) | value as u16;  // clear last 8 bits masking with 0xFF00 then OR with passed value
+                let updated_register_value = (register_value & 0xFF00) | value;  // clear last 8 bits masking with 0xFF00 then OR with passed value
                 self.set_register_value_from_name(register_name, updated_register_value);
                 return;
             }
@@ -121,7 +121,7 @@ pub mod Registers {
                 let value = value & 0xFF;
                 let register_name = HIGH_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                let updated_register_value = (register_value & 0xFF) | value << 8 as u16;  // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
+                let updated_register_value = (register_value & 0xFF) | value << 8;  // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
                 self.set_register_value_from_name(register_name, updated_register_value);
                 return;
             }
