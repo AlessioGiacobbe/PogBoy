@@ -697,6 +697,12 @@ pub mod CPU{
             self.Registers.set_item("z", (result == 0) as u16);
         }
 
+        pub(crate) fn cp_a(&mut self, to_cp: &str) {
+            let old_a = self.Registers.get_item("A");
+            self.sub_a(to_cp);
+            self.Registers.set_item("A", old_a);
+        }
+
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
         fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: halfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
