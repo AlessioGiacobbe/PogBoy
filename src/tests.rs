@@ -194,3 +194,21 @@ fn cp_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("A"), 0x03);
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F) > (a & 0x0F)
 }
+
+#[test]
+fn inc_sets_right_flags(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0xFF);
+
+    let previous_c_value = cpu.Registers.get_item("c");
+    cpu.inc("A");
+    assert_eq!(cpu.Registers.get_item("c"), previous_c_value); //should not be affected
+    assert_eq!(cpu.Registers.get_item("n"), 0); //should be resetted
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0);
+
+    cpu.Registers.set_item("A", 0x0F);
+    cpu.inc("A");
+    assert_eq!(cpu.Registers.get_item("h"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0x10);
+}
