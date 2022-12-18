@@ -12,11 +12,11 @@ use crate::cpu::CPU::CPU;
 use crate::decoder::decoder::Decoder;
 
 fn main() {
-    let Cartridge: Cartridge = read_cartridge("image.gb");
-    let Decoder: Decoder = Decoder::new(Cartridge);
+    let cartridge: Cartridge = read_cartridge("image.gb");
+    let decoder: Decoder = Decoder::new(cartridge);
     //Decoder.disassemble(512, 16);
     //Decoder.disassemble(512, 16);
     //Decoder.disassemble(0, 0);
-    let mut CPU: CPU = CPU::new(Some(Decoder));
-    CPU.run();
+    let mut cpu: CPU = CPU::new(Some(decoder));
+    cpu.run();
 }

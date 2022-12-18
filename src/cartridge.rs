@@ -6,8 +6,8 @@ pub mod cartridge {
     use serde::{Serialize, Deserialize};
 
     pub struct Cartridge {
-        pub(crate) CartridgeInfo: CartridgeInfo,
-        pub(crate) DataBuffer: Vec<u8>
+        pub(crate) cartridge_info: CartridgeInfo,
+        pub(crate) data_buffer: Vec<u8>
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -90,11 +90,11 @@ pub mod cartridge {
 
         let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
 
-        let CartridgeInfo: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
+        let cartridge_info: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
 
         Cartridge {
-            CartridgeInfo,
-            DataBuffer: rom_buffer
+            cartridge_info,
+            data_buffer: rom_buffer
         }
     }
 }

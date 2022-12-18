@@ -1,11 +1,9 @@
 pub mod decoder {
     use std::collections::HashMap;
     use std::fs;
-    use std::fs::File;
-    use std::io::Read;
     use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
     use serde_json::Value;
-    use crate::cartridge::cartridge::{Cartridge, read_cartridge};
+    use crate::cartridge::cartridge::{Cartridge};
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 203; //0xCB
@@ -29,7 +27,7 @@ pub mod decoder {
 
 
             Decoder {
-                data: Cartridge.DataBuffer,
+                data: Cartridge.data_buffer,
                 address: 0,
                 unprefixed_op_codes,
                 prefixed_op_codes
@@ -85,10 +83,10 @@ pub mod decoder {
             (address, decoded_instruction)
         }
 
-        pub(crate) fn disassemble(&self, mut address: i32, quantity: i32, mut current_address: i32){
+        pub(crate) fn disassemble(&self, mut address: i32, quantity: i32, current_address: i32){
             println!();
             println!("-------------");
-            for n in 0..quantity{
+            for _ in 0..quantity{
                 let (new_address, instruction) = self.decode(address);
                 if current_address == address {
                     print!("-> ");
