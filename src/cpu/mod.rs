@@ -650,6 +650,18 @@ pub mod CPU{
             self.Registers.set_item("z", (result == 0) as u16);
         }
 
+        pub(crate) fn xor_a(&mut self, to_xor: &str) {
+            let to_xor = self.Registers.get_item(to_xor) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
+            let result = current_value ^ to_xor;
+
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", 0);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
+        }
+
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
         fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: halfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
