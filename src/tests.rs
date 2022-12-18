@@ -99,3 +99,22 @@ fn subc_sets_right_flags(){
     cpu.sbc_a("B");
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F + carry) > (a & 0x0F)
 }
+
+#[test]
+fn and_sets_right_flags(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0x3);
+    cpu.Registers.set_item("B", 0x2);
+    cpu.and_a("B");
+
+    assert_eq!(cpu.Registers.get_item("A"), 2);
+    assert_eq!(cpu.Registers.get_item("n"), 0);
+    assert_eq!(cpu.Registers.get_item("h"), 1);
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("z"), 0);
+
+    cpu.Registers.set_item("A", 0x0);
+    cpu.Registers.set_item("B", 0x0);
+    cpu.and_a("B");
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+}
