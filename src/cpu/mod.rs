@@ -78,10 +78,12 @@ pub mod CPU{
                     0x03 => {
                         CPU::inc_nn(self, "BC");
                     },
+                    0x04 => CPU::inc(self, "B"), //0x04 INC B
                     //0x0B DEC BC
                     0x0B => {
                         CPU::dec_nn(self, "BC");
                     },
+                    0x0C => CPU::inc(self, "C"), //0x0C INC C
                     //0x11 LD DE, d16
                     0x11 => {
                         CPU::ld_nn(self, Instruction.operands, "DE");
@@ -90,6 +92,7 @@ pub mod CPU{
                     0x13 => {
                         CPU::inc_nn(self, "DE");
                     },
+                    0x14 => CPU::inc(self, "D"), //0x14 INC D
                     //0x18 JR e8
                     0x18 => {
                         /*let current_instruction = self.Registers.get_item("PC");
@@ -100,6 +103,7 @@ pub mod CPU{
                     0x1B => {
                         CPU::dec_nn(self, "DE");
                     },
+                    0x1C => CPU::inc(self, "E"), //0x1C INC E
                     //0x21 LD HL, d16
                     0x21 => {
                         CPU::ld_nn(self, Instruction.operands, "HL");
@@ -108,10 +112,12 @@ pub mod CPU{
                     0x23 => {
                         CPU::inc_nn(self, "HL");
                     },
+                    0x24 => CPU::inc(self, "H"), //0x24 INC H
                     //0x2B DEC HL
                     0x2B => {
                         CPU::dec_nn(self, "HL");
                     },
+                    0x2C => CPU::inc(self, "L"), //0x2C INC L
                     //0x31 LD SP, d16
                     0x31 => {
                         CPU::ld_nn(self, Instruction.operands, "SP");
@@ -124,6 +130,7 @@ pub mod CPU{
                     0x3B => {
                         CPU::dec_nn(self, "SP");
                     },
+                    0x3C => CPU::inc(self, "A"), //0x3C INC A
                     //0x3E LD a,d8
                     0x3E => {
                         let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
