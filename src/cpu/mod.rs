@@ -445,6 +445,70 @@ pub mod CPU{
                     0x97 => {
                         self.sub_a("A")
                     },
+                    //0x98 SBC A,B
+                    0x98 => {
+                        self.sbc_a("B")
+                    },
+                    //0x99 SBC A,C
+                    0x99 => {
+                        self.sbc_a("C")
+                    },
+                    //0x9A SBC A,D
+                    0x9A => {
+                        self.sbc_a("D")
+                    },
+                    //0x9B SBC A,E
+                    0x9B => {
+                        self.sbc_a("E")
+                    },
+                    //0x9C SBC A,H
+                    0x9C => {
+                        self.sbc_a("H")
+                    },
+                    //0x9D SBC A,L
+                    0x9D => {
+                        self.sbc_a("L")
+                    },
+                    //0x9E SBC A,(HL)
+                    0x9E => {
+                        //TODO should read from memory
+                    },
+                    //0x9F SBC A,A
+                    0x9F => {
+                        self.sbc_a("A")
+                    },
+                    //0xA0 AND B
+                    0xA0 => {
+                        self.and_a("B");
+                    },
+                    //0xA1 AND C
+                    0xA1 => {
+                        self.and_a("C");
+                    },
+                    //0xA2 AND D
+                    0xA2 => {
+                        self.and_a("D");
+                    },
+                    //0xA3 AND E
+                    0xA3 => {
+                        self.and_a("E");
+                    },
+                    //0xA4 AND H
+                    0xA4 => {
+                        self.and_a("H");
+                    },
+                    //0xA5 AND L
+                    0xA5 => {
+                        self.and_a("L");
+                    },
+                    //0xA6 AND (HL)
+                    0xA6 => {
+                        //TODO should read from memory
+                    },
+                    //0xA7 AND A
+                    0xA7 => {
+                        self.and_a("A");
+                    }
 
 
                     //DI
@@ -528,6 +592,18 @@ pub mod CPU{
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, halfCarryOperationsMode::GREATER_THAN) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
+        }
+
+        pub(crate) fn and_a(&mut self, to_and: &str){
+            let to_and = self.Registers.get_item(to_and) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
+            let result = current_value & to_and;
+
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", 0);
+            self.Registers.set_item("h", 1);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
