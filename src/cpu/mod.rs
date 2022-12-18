@@ -508,6 +508,38 @@ pub mod CPU{
                     //0xA7 AND A
                     0xA7 => {
                         self.and_a("A");
+                    },
+                    //0xB0 OR B
+                    0xB0 => {
+                        self.or_a("B");
+                    },
+                    //0xB1 OR C
+                    0xB1 => {
+                        self.or_a("C");
+                    },
+                    //0xB2 OR D
+                    0xB2 => {
+                        self.or_a("D");
+                    },
+                    //0xB3 OR E
+                    0xB3 => {
+                        self.or_a("E");
+                    },
+                    //0xB4 OR H
+                    0xB4 => {
+                        self.or_a("H");
+                    },
+                    //0xB5 OR L
+                    0xB5 => {
+                        self.or_a("L");
+                    },
+                    //0xB6 OR (HL)
+                    0xB6 => {
+                        //TODO should read from memory
+                    },
+                    //0xB7 OR A
+                    0xB7 => {
+                        self.or_a("A");
                     }
 
 
@@ -602,6 +634,18 @@ pub mod CPU{
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", 0);
             self.Registers.set_item("h", 1);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
+        }
+
+        pub(crate) fn or_a(&mut self, to_or: &str){
+            let to_or = self.Registers.get_item(to_or) as i16;
+            let current_value = self.Registers.get_item("A") as i16;
+            let result = current_value | to_or;
+
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", 0);
+            self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (result == 0) as u16);
         }

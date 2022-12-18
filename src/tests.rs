@@ -118,3 +118,29 @@ fn and_sets_right_flags(){
     cpu.and_a("B");
     assert_eq!(cpu.Registers.get_item("z"), 1);
 }
+
+#[test]
+fn or_sets_right_flags(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0x3);
+    cpu.Registers.set_item("B", 0x2);
+    cpu.or_a("B");
+
+    assert_eq!(cpu.Registers.get_item("A"), 3);
+    assert_eq!(cpu.Registers.get_item("n"), 0);
+    assert_eq!(cpu.Registers.get_item("h"), 0);
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("z"), 0);
+
+    cpu.Registers.set_item("A", 0x0);
+    cpu.Registers.set_item("B", 0x0);
+    cpu.or_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 0);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
+
+    cpu.Registers.set_item("A", 0x2);
+    cpu.Registers.set_item("B", 0x3);
+    cpu.or_a("B");
+    assert_eq!(cpu.Registers.get_item("A"), 3);
+}
