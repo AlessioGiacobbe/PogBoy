@@ -14,7 +14,8 @@ pub mod CPU{
 
     enum halfCarryOperationsMode {
         ADD,
-        GREATER_THAN
+        GREATER_THAN,
+        INCREMENT
     }
 
     impl Display for CPU {
@@ -699,7 +700,7 @@ pub mod CPU{
             self.Registers.set_item("c", 0);
             self.Registers.set_item("h", 1);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
         pub(crate) fn or_a(&mut self, to_or: &str){
@@ -711,7 +712,7 @@ pub mod CPU{
             self.Registers.set_item("c", 0);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
         pub(crate) fn xor_a(&mut self, to_xor: &str) {
@@ -723,13 +724,23 @@ pub mod CPU{
             self.Registers.set_item("c", 0);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
         pub(crate) fn cp_a(&mut self, to_cp: &str) {
             let old_a = self.Registers.get_item("A");
             self.sub_a(to_cp);
             self.Registers.set_item("A", old_a);
+        }
+
+        pub(crate) fn inc(&mut self, to_inc: &str) {
+            let current_value = self.Registers.get_item(to_inc) as i16;
+            let result = current_value + 1;
+
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, 0, 0, halfCarryOperationsMode::INCREMENT) as u16);
+            self.Registers.set_item(to_inc, result as u16);
+            self.Registers.set_item("z", (self.Registers.get_item(to_inc) == 0) as u16);
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
@@ -742,6 +753,9 @@ pub mod CPU{
                 }
                 halfCarryOperationsMode::GREATER_THAN => {
                     (rounded_second_operator + carry) > rounded_value
+                }
+                halfCarryOperationsMode::INCREMENT => {
+                    (rounded_value + 1) > 0xF
                 }
             }
         }
