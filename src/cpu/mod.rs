@@ -484,14 +484,12 @@ pub mod CPU{
             let value_to_add = self.Registers.get_item(to_add) as i16;
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value + value_to_add;
+
+            self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0, halfCarryOperationsMode::ADD) as u16);
-
-            let rounded_result = result & 0xFF;
-
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
         pub(crate) fn adc_a(&mut self, to_add: &str){
@@ -499,38 +497,37 @@ pub mod CPU{
             let current_value = self.Registers.get_item("A") as i16;
             let carry = self.Registers.get_item("c") as i16;
             let result = to_add + current_value + carry;
-            let rounded_result = result & 0xFF;
 
+            self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry, halfCarryOperationsMode::ADD) as u16);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
         pub(crate) fn sub_a(&mut self, to_sub: &str) {
             let to_sub = self.Registers.get_item(to_sub) as i16;
             let current_value = self.Registers.get_item("A") as i16;
-            let rounded_result = (current_value - to_sub) & 0xFF;
+            let result = (current_value - to_sub);
 
+            self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (to_sub > current_value) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, halfCarryOperationsMode::GREATER_THAN) as u16);
             self.Registers.set_item("n", 1);
-            self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
         pub(crate) fn sbc_a(&mut self, to_sub: &str) {
             let to_sub = self.Registers.get_item(to_sub) as i16;
             let current_value = self.Registers.get_item("A") as i16;
             let carry = self.Registers.get_item("c") as i16;
-            let rounded_result = (current_value - to_sub - carry) & 0xFF;
+            let result = (current_value - to_sub - carry);
 
+            self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", ((to_sub + carry) > current_value) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, halfCarryOperationsMode::GREATER_THAN) as u16);
             self.Registers.set_item("n", 1);
-            self.Registers.set_item("z", (rounded_result == 0) as u16);
-            self.Registers.set_item("A", rounded_result as u16);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)

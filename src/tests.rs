@@ -54,7 +54,7 @@ fn adc_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0xFF);
     cpu.Registers.set_item("B", 0xFF);
-    cpu.add_a("B");
+    cpu.adc_a("B");
     assert_eq!(cpu.Registers.get_item("A"), 254);
 
     cpu.Registers.set_item("B", 0x1);
