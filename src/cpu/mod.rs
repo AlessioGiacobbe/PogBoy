@@ -541,9 +541,6 @@ pub mod CPU{
                     0xAF => {
                         self.xor_a("A");
                     },
-
-
-
                     //0xB0 OR B
                     0xB0 => {
                         self.or_a("B");
@@ -576,6 +573,38 @@ pub mod CPU{
                     0xB7 => {
                         self.or_a("A");
                     }
+                    //0xB8 CP B
+                    0xB8 => {
+                        self.cp_a("B");
+                    },
+                    //0xB9 CP C
+                    0xB9 => {
+                        self.cp_a("C");
+                    },
+                    //0xBA CP D
+                    0xBA => {
+                        self.cp_a("D");
+                    },
+                    //0xBB CP E
+                    0xBB => {
+                        self.cp_a("E");
+                    },
+                    //0xBC CP H
+                    0xBC => {
+                        self.cp_a("H");
+                    },
+                    //0xBD CP L
+                    0xBD => {
+                        self.cp_a("L");
+                    },
+                    //0xBE CP (HL)
+                    0xBE => {
+                        //TODO should read from memory
+                    },
+                    //0xBF CP A
+                    0xBF => {
+                        self.cp_a("A");
+                    },
 
 
                     //DI
