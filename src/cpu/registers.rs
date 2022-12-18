@@ -1,6 +1,5 @@
 pub mod Registers {
     use std::fmt;
-    use std::default;
     use std::fmt::Formatter;
     use phf::phf_map;
 
@@ -132,7 +131,7 @@ pub mod Registers {
                 let mut register_value = self.get_register_value_from_name("AF");
                 let bit_position = FLAGS[item];
                 if value == 1 {
-                    register_value |= (1 << bit_position);  // set flag at x position by OR-ing with 1 shifted by x positions
+                    register_value |= 1 << bit_position;  // set flag at x position by OR-ing with 1 shifted by x positions
                 }else{
                     register_value &= !(1 << bit_position); // unset flag at x position by NAND (& !something) with 1 shifted by x positions
                 }

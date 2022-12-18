@@ -2,7 +2,6 @@ mod registers;
 
 pub mod CPU{
     use std::fmt::{Display, Formatter};
-    use std::io::Error;
     use crate::cpu::registers::Registers::Registers;
     use crate::decoder::decoder::Decoder;
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
@@ -12,10 +11,10 @@ pub mod CPU{
         pub(crate) Decoder: Decoder,
     }
 
-    enum halfCarryOperationsMode {
-        ADD,
-        GREATER_THAN,
-        INCREMENT
+    enum HalfCarryOperationsMode {
+        Add,
+        GreatherThan,
+        Increment
     }
 
     impl Display for CPU {
@@ -27,7 +26,7 @@ pub mod CPU{
     impl CPU {
 
         pub(crate) fn new(Decoder: Option<Decoder>) -> CPU {
-            let mut Registers: Registers = Registers::new();
+            let Registers: Registers = Registers::new();
             let decoder = Decoder.unwrap_or(Decoder{
                 data: vec![],
                 address: 0,
@@ -58,36 +57,36 @@ pub mod CPU{
             }
         }
 
-        pub(crate) fn execute(&mut self, Instruction: Instruction) -> Result<(), Instruction> {
-            if Instruction.prefixed {
-                match Instruction.opcode {
+        pub(crate) fn execute(&mut self, instruction: Instruction) -> Result<(), Instruction> {
+            if instruction.prefixed {
+                match instruction.opcode {
                     0 => {} //TODO 0x0 RLC B
-                    _ => return Err(Instruction)
+                    _ => return Err(instruction)
                 }
             }else{
-                match Instruction.opcode {
+                match instruction.opcode {
                     0 => {}, //0x00 NOP
-                    0x01 => CPU::ld_nn(self, Instruction.operands, "BC"), //0x01 LD BC, d16
+                    0x01 => CPU::ld_nn(self, instruction.operands, "BC"), //0x01 LD BC, d16
                     0x03 => CPU::inc_nn(self, "BC"), //0x03 INC BC
                     0x04 => CPU::inc(self, "B"), //0x04 INC B
                     0x0B => CPU::dec_nn(self, "BC"), //0x0B DEC BC
                     0x0C => CPU::inc(self, "C"), //0x0C INC C
-                    0x11 => CPU::ld_nn(self, Instruction.operands, "DE"), //0x11 LD DE, d16
+                    0x11 => CPU::ld_nn(self, instruction.operands, "DE"), //0x11 LD DE, d16
                     0x13 => CPU::inc_nn(self, "DE"), //0x13 INC DE
                     0x14 => CPU::inc(self, "D"), //0x14 INC D
                     0x18 => {}, //0x18 JR e8
                     0x1B => CPU::dec_nn(self, "DE"), //0x1B DEC DE
                     0x1C => CPU::inc(self, "E"), //0x1C INC E
-                    0x21 => CPU::ld_nn(self, Instruction.operands, "HL"), //0x21 LD HL, d16
+                    0x21 => CPU::ld_nn(self, instruction.operands, "HL"), //0x21 LD HL, d16
                     0x23 => CPU::inc_nn(self, "HL"), //0x23 INC HL
                     0x24 => CPU::inc(self, "H"), //0x24 INC H
                     0x2B => CPU::dec_nn(self, "HL"), //0x2B DEC HL
                     0x2C => CPU::inc(self, "L"), //0x2C INC L
-                    0x31 => CPU::ld_nn(self, Instruction.operands, "SP"), //0x31 LD SP, d16
+                    0x31 => CPU::ld_nn(self, instruction.operands, "SP"), //0x31 LD SP, d16
                     0x33 => CPU::inc_nn(self, "SP"), //0x33 INC SP
                     0x3B => CPU::dec_nn(self, "SP"), //0x3B DEC SP
                     0x3C => CPU::inc(self, "A"), //0x3C INC A
-                    0x3E => CPU::ld_a_d8(self, Instruction), //0x3E LD a,d8
+                    0x3E => CPU::ld_a_d8(self, instruction), //0x3E LD a,d8
                     0x40 => self.ld_r_r("B", "B"), //0x40 LD B,B
                     0x41 => self.ld_r_r("C", "B"), //0x41 LD B,C
                     0x42 => self.ld_r_r("D", "B"), //0x42 LD B,D
@@ -207,32 +206,32 @@ pub mod CPU{
                     0xBD => self.cp_a("L"), //0xBD CP L
                     0xBE => {}, //TODO 0xBE CP (HL)
                     0xBF => self.cp_a("A"), //0xBF CP A
-                    _ => return Err(Instruction)
+                    _ => return Err(instruction)
                 }
             }
             Ok(())
         }
 
-        fn ld_nn(&mut self, Operands: Vec<Operand>, name: &str){
-            let d16 = Operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
+        fn ld_nn(&mut self, operands: Vec<Operand>, name: &str){
+            let d16 = operands.into_iter().find(|operand| operand.name == "d16").expect("Operand d16 not found");
             self.Registers.set_item(name, d16.value.expect("Operand d16 has no value"))
         }
 
         fn inc_nn(&mut self, name: &str){
-            let mut currentValue = self.Registers.get_item(name);
-            currentValue += 1;
-            self.Registers.set_item(name, currentValue);
+            let mut current_value = self.Registers.get_item(name);
+            current_value += 1;
+            self.Registers.set_item(name, current_value);
         }
 
         fn dec_nn(&mut self, name: &str){
-            let mut currentValue = self.Registers.get_item(name);
-            currentValue -= 1;
-            self.Registers.set_item(name, currentValue);
+            let mut current_value = self.Registers.get_item(name);
+            current_value -= 1;
+            self.Registers.set_item(name, current_value);
         }
 
         fn ld_r_r(&mut self, from: &str, to: &str){
-            let fromValue = self.Registers.get_item(from);
-            self.Registers.set_item(to, fromValue);
+            let from_value = self.Registers.get_item(from);
+            self.Registers.set_item(to, from_value);
         }
 
         pub(crate) fn add_a(&mut self, to_add: &str){
@@ -242,7 +241,7 @@ pub mod CPU{
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0, halfCarryOperationsMode::ADD) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0, HalfCarryOperationsMode::Add) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -255,7 +254,7 @@ pub mod CPU{
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry, halfCarryOperationsMode::ADD) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry, HalfCarryOperationsMode::Add) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -263,11 +262,11 @@ pub mod CPU{
         pub(crate) fn sub_a(&mut self, to_sub: &str) {
             let to_sub = self.Registers.get_item(to_sub) as i16;
             let current_value = self.Registers.get_item("A") as i16;
-            let result = (current_value - to_sub);
+            let result = current_value - to_sub;
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (to_sub > current_value) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, halfCarryOperationsMode::GREATER_THAN) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, HalfCarryOperationsMode::GreatherThan) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -276,11 +275,11 @@ pub mod CPU{
             let to_sub = self.Registers.get_item(to_sub) as i16;
             let current_value = self.Registers.get_item("A") as i16;
             let carry = self.Registers.get_item("c") as i16;
-            let result = (current_value - to_sub - carry);
+            let result = current_value - to_sub - carry;
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", ((to_sub + carry) > current_value) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, halfCarryOperationsMode::GREATER_THAN) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, HalfCarryOperationsMode::GreatherThan) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -332,7 +331,7 @@ pub mod CPU{
             let result = current_value + 1;
 
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, 0, 0, halfCarryOperationsMode::INCREMENT) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, 0, 0, HalfCarryOperationsMode::Increment) as u16);
             self.Registers.set_item(to_inc, result as u16);
             self.Registers.set_item("z", (self.Registers.get_item(to_inc) == 0) as u16);
         }
@@ -343,17 +342,17 @@ pub mod CPU{
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
-        fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: halfCarryOperationsMode) -> bool{
+        fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: HalfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
             let rounded_second_operator = second_operator & 0xF;
             match mode {
-                halfCarryOperationsMode::ADD => {
+                HalfCarryOperationsMode::Add => {
                     (rounded_second_operator + rounded_value + carry) > 0xF
                 }
-                halfCarryOperationsMode::GREATER_THAN => {
+                HalfCarryOperationsMode::GreatherThan => {
                     (rounded_second_operator + carry) > rounded_value
                 }
-                halfCarryOperationsMode::INCREMENT => {
+                HalfCarryOperationsMode::Increment => {
                     (rounded_value + 1) > 0xF
                 }
             }
