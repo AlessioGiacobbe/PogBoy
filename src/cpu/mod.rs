@@ -509,6 +509,41 @@ pub mod CPU{
                     0xA7 => {
                         self.and_a("A");
                     },
+                    //0xA8 XOR B
+                    0xA8 => {
+                        self.xor_a("B");
+                    },
+                    //0xA9 XOR C
+                    0xA9 => {
+                        self.xor_a("C");
+                    },
+                    //0xAA XOR D
+                    0xAA => {
+                        self.xor_a("D");
+                    },
+                    //0xAB XOR E
+                    0xAB => {
+                        self.xor_a("E");
+                    },
+                    //0xAC XOR H
+                    0xAC => {
+                        self.xor_a("H");
+                    },
+                    //0xAD XOR L
+                    0xAD => {
+                        self.xor_a("L");
+                    },
+                    //0xAE XOR (HL)
+                    0xAE => {
+                        //TOD should read from memory
+                    },
+                    //0xAF XOR A
+                    0xAF => {
+                        self.xor_a("A");
+                    },
+
+
+
                     //0xB0 OR B
                     0xB0 => {
                         self.or_a("B");
