@@ -14,7 +14,8 @@ pub mod CPU{
     enum HalfCarryOperationsMode {
         Add,
         GreatherThan,
-        Increment
+        Increment,
+        Decrement,
     }
 
     impl Display for CPU {
@@ -336,6 +337,16 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item(to_inc) == 0) as u16);
         }
 
+        pub(crate) fn dec(&mut self, to_dec: &str) {
+            let current_value = self.Registers.get_item(to_dec) as i16;
+            let result = current_value - 1;
+
+            self.Registers.set_item("n", 1);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, 0, 0, HalfCarryOperationsMode::Decrement) as u16);
+            self.Registers.set_item(to_dec, result as u16);
+            self.Registers.set_item("z", (self.Registers.get_item(to_dec) == 0) as u16);
+        }
+
         pub(crate) fn ld_a_d8(&mut self, instruction: Instruction){
             let d8 = instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
             self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))
@@ -354,6 +365,10 @@ pub mod CPU{
                 }
                 HalfCarryOperationsMode::Increment => {
                     (rounded_value + 1) > 0xF
+                }
+                HalfCarryOperationsMode::Decrement => {
+                    //we carry only if value is 0
+                    rounded_value == 0
                 }
             }
         }
