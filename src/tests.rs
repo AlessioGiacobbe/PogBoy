@@ -3,8 +3,8 @@ use super::*;
 fn create_dummy_coder() -> Decoder {
     let Cartridge: Cartridge = read_cartridge("image.gb");
     let dummy_cartridge: Cartridge = Cartridge {
-        CartridgeInfo: Cartridge.CartridgeInfo,
-        DataBuffer: vec![0x00, 0x3E, 0x0F]    //NOP - LD A,0x0F
+        cartridge_info: Cartridge.cartridge_info,
+        data_buffer: vec![0x00, 0x3E, 0x0F],    //NOP - LD A,0x0F
     };
     Decoder::new(dummy_cartridge)
 }
@@ -211,4 +211,26 @@ fn inc_sets_right_flags(){
     cpu.inc("A");
     assert_eq!(cpu.Registers.get_item("h"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0x10);
+}
+
+
+#[test]
+fn dec_sets_right_flags(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0x1);
+
+    cpu.dec("A");
+    assert_eq!(cpu.Registers.get_item("n"), 1);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0);
+
+    cpu.Registers.set_item("A", 0x10);
+    cpu.dec("A");
+    assert_eq!(cpu.Registers.get_item("h"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0xF);
+
+    cpu.Registers.set_item("A", 0x0);
+    cpu.dec("A");
+    assert_eq!(cpu.Registers.get_item("h"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0xFF);
 }
