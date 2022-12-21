@@ -1,3 +1,4 @@
+use crate::op_codes_parser::op_codes_parser::Instruction;
 use super::*;
 
 fn create_dummy_coder() -> Decoder {
