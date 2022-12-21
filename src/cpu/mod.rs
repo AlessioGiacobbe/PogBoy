@@ -71,30 +71,36 @@ pub mod CPU{
                     0x03 => CPU::inc_nn(self, "BC"), //0x03 INC BC
                     0x04 => CPU::inc(self, "B"), //0x04 INC B
                     0x05 => CPU::dec(self, "B"), //0x05 DEC B
+                    0x06 => CPU::ld_r_d8(self, "B", instruction), //0x06 LD B,d8
                     0x0B => CPU::dec_nn(self, "BC"), //0x0B DEC BC
                     0x0C => CPU::inc(self, "C"), //0x0C INC C
                     0x0D => CPU::dec(self, "C"), //0x0D DEC C
+                    0x0E => CPU::ld_r_d8(self, "C", instruction), //0x0E LD C,d8
                     0x11 => CPU::ld_nn(self, instruction.operands, "DE"), //0x11 LD DE, d16
                     0x13 => CPU::inc_nn(self, "DE"), //0x13 INC DE
                     0x14 => CPU::inc(self, "D"), //0x14 INC D
                     0x15 => CPU::dec(self, "D"), //0x15 DEC D
+                    0x16 => CPU::ld_r_d8(self, "D", instruction), //0x16 LD D,d8
                     0x18 => {}, //0x18 JR e8
                     0x1B => CPU::dec_nn(self, "DE"), //0x1B DEC DE
                     0x1C => CPU::inc(self, "E"), //0x1C INC E
                     0x1D => CPU::dec(self, "E"), //0x1D DEC E
+                    0x1E => CPU::ld_r_d8(self, "E", instruction), //0x1E LD E,d8
                     0x21 => CPU::ld_nn(self, instruction.operands, "HL"), //0x21 LD HL, d16
                     0x23 => CPU::inc_nn(self, "HL"), //0x23 INC HL
                     0x24 => CPU::inc(self, "H"), //0x24 INC H
                     0x25 => CPU::dec(self, "H"), //0x25 DEC H
+                    0x26 => CPU::ld_r_d8(self, "H", instruction), //0x26 LD H,d8
                     0x2B => CPU::dec_nn(self, "HL"), //0x2B DEC HL
                     0x2C => CPU::inc(self, "L"), //0x2C INC L
                     0x2D => CPU::dec(self, "L"), //0x2D DEC L
+                    0x2E => CPU::ld_r_d8(self, "L", instruction), //0x2E LD L,d8
                     0x31 => CPU::ld_nn(self, instruction.operands, "SP"), //0x31 LD SP, d16
                     0x33 => CPU::inc_nn(self, "SP"), //0x33 INC SP
                     0x3B => CPU::dec_nn(self, "SP"), //0x3B DEC SP
                     0x3C => CPU::inc(self, "A"), //0x3C INC A
                     0x3D => CPU::dec(self,"A"), //0x3D DEC A
-                    0x3E => CPU::ld_a_d8(self, instruction), //0x3E LD a,d8
+                    0x3E => CPU::ld_r_d8(self, "A", instruction), //0x3E LD a,d8
                     0x40 => self.ld_r_r("B", "B"), //0x40 LD B,B
                     0x41 => self.ld_r_r("C", "B"), //0x41 LD B,C
                     0x42 => self.ld_r_r("D", "B"), //0x42 LD B,D
@@ -354,9 +360,10 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item(to_dec) == 0) as u16);
         }
 
-        pub(crate) fn ld_a_d8(&mut self, instruction: Instruction){
+        pub(crate) fn ld_r_d8(&mut self, destination: &str, instruction: Instruction){
+            //TODO move operand finding somewhere else, this function should just receive a number
             let d8 = instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
-            self.Registers.set_item("A", d8.value.expect("Operand d8 has no value"))
+            self.Registers.set_item(destination, d8.value.expect("Operand d8 has no value"))
         }
 
             //half carry is carry calculated on the first half of a byte (from 3rd bit)
