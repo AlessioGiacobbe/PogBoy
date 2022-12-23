@@ -72,20 +72,24 @@ pub mod CPU{
                     0x04 => CPU::inc(self, "B"), //0x04 INC B
                     0x05 => CPU::dec(self, "B"), //0x05 DEC B
                     0x06 => CPU::ld_r_d8(self, "B", instruction), //0x06 LD B,d8
+                    0x07 => CPU::rlca(self), //0x07 RLCA
                     0x0B => CPU::dec_nn(self, "BC"), //0x0B DEC BC
                     0x0C => CPU::inc(self, "C"), //0x0C INC C
                     0x0D => CPU::dec(self, "C"), //0x0D DEC C
                     0x0E => CPU::ld_r_d8(self, "C", instruction), //0x0E LD C,d8
+                    0x0F => CPU::rrca(self), //0x0F RRCA
                     0x11 => CPU::ld_nn(self, instruction.operands, "DE"), //0x11 LD DE, d16
                     0x13 => CPU::inc_nn(self, "DE"), //0x13 INC DE
                     0x14 => CPU::inc(self, "D"), //0x14 INC D
                     0x15 => CPU::dec(self, "D"), //0x15 DEC D
                     0x16 => CPU::ld_r_d8(self, "D", instruction), //0x16 LD D,d8
+                    0x17 => CPU::rla(self), //0x17 RLA
                     0x18 => {}, //0x18 JR e8
                     0x1B => CPU::dec_nn(self, "DE"), //0x1B DEC DE
                     0x1C => CPU::inc(self, "E"), //0x1C INC E
                     0x1D => CPU::dec(self, "E"), //0x1D DEC E
                     0x1E => CPU::ld_r_d8(self, "E", instruction), //0x1E LD E,d8
+                    0x1F => CPU::rra(self), //0x1F RRA
                     0x21 => CPU::ld_nn(self, instruction.operands, "HL"), //0x21 LD HL, d16
                     0x23 => CPU::inc_nn(self, "HL"), //0x23 INC HL
                     0x24 => CPU::inc(self, "H"), //0x24 INC H
@@ -367,9 +371,9 @@ pub mod CPU{
         }
 
         pub(crate) fn rra(&mut self){
-            let current_value = self.Registers.get_item("A") as i8;
+            let current_value = self.Registers.get_item("A") as u8;
             let carry = current_value & 1;  //0th bit
-            let current_carry = self.Registers.get_item("c") as i8;
+            let current_carry = self.Registers.get_item("c") as u8;
             let result = current_value >> 1 | current_carry << 7;
 
             self.Registers.set_item("A", result as u16);
@@ -381,7 +385,7 @@ pub mod CPU{
 
         //rrca is rotate right circular, no data is loss
         pub(crate) fn rrca(&mut self){
-            let current_value = self.Registers.get_item("A") as i8;
+            let current_value = self.Registers.get_item("A") as u8;
             let carry = current_value & 1;
             let result = current_value.rotate_right(1);
 
@@ -393,11 +397,28 @@ pub mod CPU{
         }
 
         pub(crate) fn rla(&mut self){
+            let current_value = self.Registers.get_item("A") as u8;
+            let carry = (current_value & 0x80) >> 7;
+            let current_carry = self.Registers.get_item("c") as u8;
+            let result = current_value << 1 | current_carry;
 
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", carry as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", 0);
         }
 
         pub(crate) fn rlca(&mut self){
+            let current_value = self.Registers.get_item("A") as u8;
+            let carry = (current_value & 0x80) >> 7;
+            let result = current_value.rotate_left(1);
 
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", carry as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", 0);
         }
 
         //half carry is carry calculated on the first half of a byte (from 3rd bit)
