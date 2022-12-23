@@ -366,7 +366,41 @@ pub mod CPU{
             self.Registers.set_item(destination, d8.value.expect("Operand d8 has no value"))
         }
 
-            //half carry is carry calculated on the first half of a byte (from 3rd bit)
+        pub(crate) fn rra(&mut self){
+            let current_value = self.Registers.get_item("A") as i8;
+            let carry = current_value & 1;  //0th bit
+            let current_carry = self.Registers.get_item("c") as i8;
+            let result = current_value >> 1 | current_carry << 7;
+
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", carry as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", 0);
+        }
+
+        //rrca is rotate right circular, no data is loss
+        pub(crate) fn rrca(&mut self){
+            let current_value = self.Registers.get_item("A") as i8;
+            let carry = current_value & 1;
+            let result = current_value.rotate_right(1);
+
+            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item("c", carry as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("z", 0);
+        }
+
+        pub(crate) fn rla(&mut self){
+
+        }
+
+        pub(crate) fn rlca(&mut self){
+
+        }
+
+        //half carry is carry calculated on the first half of a byte (from 3rd bit)
         fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: HalfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
             let rounded_second_operator = second_operator & 0xF;

@@ -235,3 +235,45 @@ fn dec_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("h"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0xFF);
 }
+
+#[test]
+fn right_rotations_works(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0x03);
+
+    cpu.rrca();
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0x81);
+
+    cpu.Registers.set_item("A", 0x06);
+    cpu.rrca();
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("A"), 0x03);
+
+    cpu.Registers.set_item("A", 0x03);
+    cpu.Registers.set_item("c", 1);
+    cpu.rra();
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0x81);  //carry is putted on 7th position
+
+    cpu.Registers.set_item("A", 0x04);
+    cpu.Registers.set_item("c", 0);
+    cpu.rra();
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("A"), 0x02);
+}
+
+#[test]
+fn left_rotations_works(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("A", 0x81);
+    cpu.Registers.set_item("c", 0);
+
+    cpu.rlca();
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("A"), 0x3);
+
+    cpu.rla();
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("A"), 0x7);      //carry is putted in 0th position
+}
