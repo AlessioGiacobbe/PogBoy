@@ -95,16 +95,20 @@ pub mod CPU{
                     0x24 => CPU::inc(self, "H"), //0x24 INC H
                     0x25 => CPU::dec(self, "H"), //0x25 DEC H
                     0x26 => CPU::ld_r_d8(self, "H", instruction), //0x26 LD H,d8
+                    0x27 => CPU::daa(self), //0x27 DAA
                     0x2B => CPU::dec_nn(self, "HL"), //0x2B DEC HL
                     0x2C => CPU::inc(self, "L"), //0x2C INC L
                     0x2D => CPU::dec(self, "L"), //0x2D DEC L
                     0x2E => CPU::ld_r_d8(self, "L", instruction), //0x2E LD L,d8
+                    0x2F => CPU::cpl(self), //0x2F CPL
                     0x31 => CPU::ld_nn(self, instruction.operands, "SP"), //0x31 LD SP, d16
                     0x33 => CPU::inc_nn(self, "SP"), //0x33 INC SP
+                    0x37 => CPU::scf(self), //0x37 SCF
                     0x3B => CPU::dec_nn(self, "SP"), //0x3B DEC SP
                     0x3C => CPU::inc(self, "A"), //0x3C INC A
                     0x3D => CPU::dec(self,"A"), //0x3D DEC A
                     0x3E => CPU::ld_r_d8(self, "A", instruction), //0x3E LD a,d8
+                    0x3F => CPU::ccf(self), //0x3F CCF
                     0x40 => self.ld_r_r("B", "B"), //0x40 LD B,B
                     0x41 => self.ld_r_r("C", "B"), //0x41 LD B,C
                     0x42 => self.ld_r_r("D", "B"), //0x42 LD B,D
@@ -419,6 +423,56 @@ pub mod CPU{
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+        }
+
+        pub(crate) fn daa(&mut self){
+            let mut current_value = self.Registers.get_item("A") as u8;
+            let negative = self.Registers.get_item("n") as u8;
+            let carry = self.Registers.get_item("c") as u8;
+            let half_carry = self.Registers.get_item("h") as u8;
+
+            if negative != 0 {
+                if half_carry != 0 {
+                    current_value = (current_value - 0x6) & 0xFF;
+                }
+                if carry != 0 {
+                    current_value = current_value - 0x60;
+                }
+            }else{
+                if ((current_value & 0xF) > 9) || half_carry != 0 {
+                    current_value = current_value + 6;
+                }
+                if carry != 0 || (current_value > 0x9F) {
+                    current_value = current_value + 0x60;
+                }
+            }
+
+            self.Registers.set_item("A", current_value as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
+            self.Registers.set_item("c", (current_value > 0xFF) as u16);
+        }
+
+        //supplement carry (0 -> 1, 1 -> 0)
+        pub(crate) fn ccf(&mut self){
+            let carry = self.Registers.get_item("c") as u8;
+            self.Registers.set_item("c", (carry == 0) as u16);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("h", 0);
+        }
+
+        //complement accumulator
+        pub(crate) fn cpl(&mut self){
+            let accumulator = self.Registers.get_item("A") as u8;
+            self.Registers.set_item("A", !accumulator as u16);
+            self.Registers.set_item("n", 1);
+            self.Registers.set_item("h", 1);
+        }
+
+        pub(crate) fn scf(&mut self){
+            self.Registers.set_item("c", 1);
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("h", 0);
         }
 
         //half carry is carry calculated on the first half of a byte (from 3rd bit)
