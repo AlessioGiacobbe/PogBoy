@@ -139,6 +139,7 @@ pub mod Registers {
                 return;
             }
             if REGISTERS.contains(&item) {
+                let value = value & 0xFFFF;
                 self.set_register_value_from_name(item, value);
                 return
             }

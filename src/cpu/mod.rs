@@ -12,8 +12,9 @@ pub mod CPU{
     }
 
     enum HalfCarryOperationsMode {
-        Add,
-        GreatherThan,
+        Add,        //8bit
+        AddWords,   //16bit
+        GreaterThan,
         Increment,
         Decrement,
     }
@@ -67,48 +68,52 @@ pub mod CPU{
             }else{
                 match instruction.opcode {
                     0 => {}, //0x00 NOP
-                    0x01 => CPU::ld_nn(self, instruction.operands, "BC"), //0x01 LD BC, d16
-                    0x03 => CPU::inc_nn(self, "BC"), //0x03 INC BC
-                    0x04 => CPU::inc(self, "B"), //0x04 INC B
-                    0x05 => CPU::dec(self, "B"), //0x05 DEC B
-                    0x06 => CPU::ld_r_d8(self, "B", instruction), //0x06 LD B,d8
-                    0x07 => CPU::rlca(self), //0x07 RLCA
-                    0x0B => CPU::dec_nn(self, "BC"), //0x0B DEC BC
-                    0x0C => CPU::inc(self, "C"), //0x0C INC C
-                    0x0D => CPU::dec(self, "C"), //0x0D DEC C
-                    0x0E => CPU::ld_r_d8(self, "C", instruction), //0x0E LD C,d8
-                    0x0F => CPU::rrca(self), //0x0F RRCA
-                    0x11 => CPU::ld_nn(self, instruction.operands, "DE"), //0x11 LD DE, d16
-                    0x13 => CPU::inc_nn(self, "DE"), //0x13 INC DE
-                    0x14 => CPU::inc(self, "D"), //0x14 INC D
-                    0x15 => CPU::dec(self, "D"), //0x15 DEC D
-                    0x16 => CPU::ld_r_d8(self, "D", instruction), //0x16 LD D,d8
-                    0x17 => CPU::rla(self), //0x17 RLA
+                    0x01 => self.ld_nn( instruction.operands, "BC"), //0x01 LD BC, d16
+                    0x03 => self.inc_nn( "BC"), //0x03 INC BC
+                    0x04 => self.inc( "B"), //0x04 INC B
+                    0x05 => self.dec( "B"), //0x05 DEC B
+                    0x06 => self.ld_r_d8( "B", instruction), //0x06 LD B,d8
+                    0x07 => self.rlca(), //0x07 RLCA
+                    0x09 => self.add_hl_n( "BC"), //0x09 ADD HL, BC
+                    0x0B => self.dec_nn( "BC"), //0x0B DEC BC
+                    0x0C => self.inc( "C"), //0x0C INC C
+                    0x0D => self.dec( "C"), //0x0D DEC C
+                    0x0E => self.ld_r_d8( "C", instruction), //0x0E LD C,d8
+                    0x0F => self.rrca(), //0x0F RRCA
+                    0x11 => self.ld_nn( instruction.operands, "DE"), //0x11 LD DE, d16
+                    0x13 => self.inc_nn( "DE"), //0x13 INC DE
+                    0x14 => self.inc( "D"), //0x14 INC D
+                    0x15 => self.dec( "D"), //0x15 DEC D
+                    0x16 => self.ld_r_d8( "D", instruction), //0x16 LD D,d8
+                    0x17 => self.rla(), //0x17 RLA
                     0x18 => {}, //0x18 JR e8
-                    0x1B => CPU::dec_nn(self, "DE"), //0x1B DEC DE
-                    0x1C => CPU::inc(self, "E"), //0x1C INC E
-                    0x1D => CPU::dec(self, "E"), //0x1D DEC E
-                    0x1E => CPU::ld_r_d8(self, "E", instruction), //0x1E LD E,d8
-                    0x1F => CPU::rra(self), //0x1F RRA
-                    0x21 => CPU::ld_nn(self, instruction.operands, "HL"), //0x21 LD HL, d16
-                    0x23 => CPU::inc_nn(self, "HL"), //0x23 INC HL
-                    0x24 => CPU::inc(self, "H"), //0x24 INC H
-                    0x25 => CPU::dec(self, "H"), //0x25 DEC H
-                    0x26 => CPU::ld_r_d8(self, "H", instruction), //0x26 LD H,d8
-                    0x27 => CPU::daa(self), //0x27 DAA
-                    0x2B => CPU::dec_nn(self, "HL"), //0x2B DEC HL
-                    0x2C => CPU::inc(self, "L"), //0x2C INC L
-                    0x2D => CPU::dec(self, "L"), //0x2D DEC L
-                    0x2E => CPU::ld_r_d8(self, "L", instruction), //0x2E LD L,d8
-                    0x2F => CPU::cpl(self), //0x2F CPL
-                    0x31 => CPU::ld_nn(self, instruction.operands, "SP"), //0x31 LD SP, d16
-                    0x33 => CPU::inc_nn(self, "SP"), //0x33 INC SP
-                    0x37 => CPU::scf(self), //0x37 SCF
-                    0x3B => CPU::dec_nn(self, "SP"), //0x3B DEC SP
-                    0x3C => CPU::inc(self, "A"), //0x3C INC A
-                    0x3D => CPU::dec(self,"A"), //0x3D DEC A
-                    0x3E => CPU::ld_r_d8(self, "A", instruction), //0x3E LD a,d8
-                    0x3F => CPU::ccf(self), //0x3F CCF
+                    0x19 => self.add_hl_n( "DE"), //0x19 ADD HL, DE
+                    0x1B => self.dec_nn( "DE"), //0x1B DEC DE
+                    0x1C => self.inc( "E"), //0x1C INC E
+                    0x1D => self.dec( "E"), //0x1D DEC E
+                    0x1E => self.ld_r_d8( "E", instruction), //0x1E LD E,d8
+                    0x1F => self.rra(), //0x1F RRA
+                    0x21 => self.ld_nn( instruction.operands, "HL"), //0x21 LD HL, d16
+                    0x23 => self.inc_nn( "HL"), //0x23 INC HL
+                    0x24 => self.inc( "H"), //0x24 INC H
+                    0x25 => self.dec( "H"), //0x25 DEC H
+                    0x26 => self.ld_r_d8( "H", instruction), //0x26 LD H,d8
+                    0x27 => self.daa(), //0x27 DAA
+                    0x29 => self.add_hl_n( "HL"), //0x29 ADD HL, HL
+                    0x2B => self.dec_nn( "HL"), //0x2B DEC HL
+                    0x2C => self.inc( "L"), //0x2C INC L
+                    0x2D => self.dec( "L"), //0x2D DEC L
+                    0x2E => self.ld_r_d8( "L", instruction), //0x2E LD L,d8
+                    0x2F => self.cpl(), //0x2F CPL
+                    0x31 => self.ld_nn( instruction.operands, "SP"), //0x31 LD SP, d16
+                    0x33 => self.inc_nn( "SP"), //0x33 INC SP
+                    0x37 => self.scf(), //0x37 SCF
+                    0x39 => self.add_hl_n( "SP"), //0x39 ADD HL, SP
+                    0x3B => self.dec_nn( "SP"), //0x3B DEC SP
+                    0x3C => self.inc( "A"), //0x3C INC A
+                    0x3D => self.dec("A"), //0x3D DEC A
+                    0x3E => self.ld_r_d8( "A", instruction), //0x3E LD a,d8
+                    0x3F => self.ccf(), //0x3F CCF
                     0x40 => self.ld_r_r("B", "B"), //0x40 LD B,B
                     0x41 => self.ld_r_r("C", "B"), //0x41 LD B,C
                     0x42 => self.ld_r_r("D", "B"), //0x42 LD B,D
@@ -288,7 +293,7 @@ pub mod CPU{
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (to_sub > current_value) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, HalfCarryOperationsMode::GreatherThan) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 0, HalfCarryOperationsMode::GreaterThan) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -301,7 +306,7 @@ pub mod CPU{
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", ((to_sub + carry) > current_value) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, HalfCarryOperationsMode::GreatherThan) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, HalfCarryOperationsMode::GreaterThan) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -475,15 +480,30 @@ pub mod CPU{
             self.Registers.set_item("h", 0);
         }
 
+        pub(crate) fn add_hl_n(&mut self, to_add: &str){
+            let current_value = self.Registers.get_item("HL") as u32;
+            let to_add = self.Registers.get_item(to_add) as u32;
+            let result: u32 = current_value + to_add;
+            self.Registers.set_item("HL", result as u16);
+            self.Registers.set_item("c", (result & 0x10000 != 0) as u16); //if true, result is bigger than 16 bit max value
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, to_add as i16, 0, HalfCarryOperationsMode::AddWords) as u16);
+        }
+
         //half carry is carry calculated on the first half of a byte (from 3rd bit)
         fn calculate_half_carry(value: i16, second_operator: i16, carry: i16, mode: HalfCarryOperationsMode) -> bool{
             let rounded_value = value & 0xF;
             let rounded_second_operator = second_operator & 0xF;
+            let rounded_word = value & 0xFFF;
+            let rounded_second_word = value & 0xFFF;
             match mode {
                 HalfCarryOperationsMode::Add => {
                     (rounded_second_operator + rounded_value + carry) > 0xF
                 }
-                HalfCarryOperationsMode::GreatherThan => {
+                HalfCarryOperationsMode::AddWords => {
+                    (rounded_word +  rounded_second_word) > 0xFFF
+                }
+                HalfCarryOperationsMode::GreaterThan => {
                     (rounded_second_operator + carry) > rounded_value
                 }
                 HalfCarryOperationsMode::Increment => {

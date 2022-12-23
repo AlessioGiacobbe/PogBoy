@@ -277,3 +277,25 @@ fn left_rotations_works(){
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("A"), 0x7);      //carry is putted in 0th position
 }
+
+#[test]
+fn ld_hl_nn_sets_right_flags(){
+    let mut cpu = create_dummy_cpu();
+    cpu.Registers.set_item("HL", 0xFFFF);
+    cpu.Registers.set_item("BC", 0x0001);
+
+    cpu.add_hl_n("BC");
+    assert_eq!(cpu.Registers.get_item("HL"), 0x0000);
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("h"), 1);
+
+
+    cpu.Registers.set_item("HL", 0x0FFF);
+    cpu.Registers.set_item("BC", 0x0001);
+
+    cpu.add_hl_n("BC");
+    assert_eq!(cpu.Registers.get_item("HL"), 0x1000);
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("h"), 1);
+}
+
