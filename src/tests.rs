@@ -32,7 +32,7 @@ fn add_sets_right_flags() {
     cpu.Registers.set_item("A", 0xFF);
     cpu.Registers.set_item("B", 0xFF);
 
-    cpu.add_a("B");
+    cpu.add_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 254);   //should be rounded bitmasking with 0xFF
     assert_eq!(cpu.Registers.get_item("c"), 1);     //carry should be 1 since 0xFF + 0xFF > 0xFF
     assert_eq!(cpu.Registers.get_item("n"), 0);
@@ -42,7 +42,7 @@ fn add_sets_right_flags() {
 
     cpu.Registers.set_item("A", 0x8);
     cpu.Registers.set_item("B", 0x8);
-    cpu.add_a("B");
+    cpu.add_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 16);
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("n"), 0);
@@ -69,24 +69,25 @@ fn sub_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0x9);
     cpu.Registers.set_item("B", 0x2);
-    cpu.sub_a("B");
+    cpu.sub_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 7);
 
     cpu.Registers.set_item("A", 0xFF);
     cpu.Registers.set_item("B", 0xFF);
-    cpu.sub_a("B");
+    cpu.sub_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
     assert_eq!(cpu.Registers.get_item("n"), 1); //should be set, operation is sub
 
-    cpu.Registers.set_item("B", 0xFF);
     cpu.Registers.set_item("A", 0x0F);
-    cpu.sub_a("B");
+    cpu.Registers.set_item("B", 0xFF);
+    cpu.sub_a_r("B");
+    assert_eq!(cpu.Registers.get_item("A"), 0x10); //should be set, B > A
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
 
-    cpu.Registers.set_item("B", 0x0F);
     cpu.Registers.set_item("A", 0x03);
-    cpu.sub_a("B");
+    cpu.Registers.set_item("B", 0x0F);
+    cpu.sub_a_r("B");
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F) > (a & 0x0F)
 }
 

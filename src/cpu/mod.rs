@@ -105,7 +105,7 @@ pub mod CPU{
                     0x2D => self.dec( "L"), //0x2D DEC L
                     0x2E => self.ld_r_d8( "L", instruction), //0x2E LD L,d8
                     0x2F => self.cpl(), //0x2F CPL
-                    0x31 => self.ld_nn( instruction.operands, "SP"), //0x31 LD SP, d16
+                    0x31 => self.ld_nn(instruction.operands, "SP"), //0x31 LD SP, d16
                     0x33 => self.inc_nn( "SP"), //0x33 INC SP
                     0x37 => self.scf(), //0x37 SCF
                     0x39 => self.add_hl_n( "SP"), //0x39 ADD HL, SP
@@ -170,13 +170,13 @@ pub mod CPU{
                     0x7D => self.ld_r_r("L", "A"), //0x7D LD A,L
                     0x7E => {}, //TODO 0x7E LD A,(HL)
                     0x7F => self.ld_r_r("A", "A"), //0x7F LD A,A
-                    0x80 => self.add_a("B"), //0x80 ADD A,B
-                    0x81 => self.add_a("C"), //0x81 ADD A,C
-                    0x82 => self.add_a("D"), //0x82 ADD A,D
-                    0x83 => self.add_a("E"), //0x83 ADD A,E
-                    0x84 => self.add_a("H"), //0x84 ADD A,H
-                    0x85 => self.add_a("L"), //0x85 ADD A,L
-                    0x87 => self.add_a("A"), //0x87 ADD A,A
+                    0x80 => self.add_a_r("B"), //0x80 ADD A,B
+                    0x81 => self.add_a_r("C"), //0x81 ADD A,C
+                    0x82 => self.add_a_r("D"), //0x82 ADD A,D
+                    0x83 => self.add_a_r("E"), //0x83 ADD A,E
+                    0x84 => self.add_a_r("H"), //0x84 ADD A,H
+                    0x85 => self.add_a_r("L"), //0x85 ADD A,L
+                    0x87 => self.add_a_r("A"), //0x87 ADD A,A
                     0x88 => self.adc_a("B"), //0x88 ADC A,B
                     0x89 => self.adc_a("C"), //0x89 ADC A,C
                     0x8A => self.adc_a("D"), //0x8A ADC A,D
@@ -185,14 +185,14 @@ pub mod CPU{
                     0x8D => self.adc_a("L"), //0x8D ADC A,L
                     0x8E => {}, //TODO 0x8E ADC A,(HL)
                     0x8F => self.adc_a("A"), //0x8F ADC A,A
-                    0x90 => self.sub_a("B"), //0x90 SUB B
-                    0x91 => self.sub_a("C"), //0x91 SUB C
-                    0x92 => self.sub_a("D"), //0x92 SUB D
-                    0x93 => self.sub_a("E"), //0x93 SUB B
-                    0x94 => self.sub_a("H"), //0x94 SUB H
-                    0x95 => self.sub_a("L"), //0x90 SUB L
+                    0x90 => self.sub_a_r("B"), //0x90 SUB B
+                    0x91 => self.sub_a_r("C"), //0x91 SUB C
+                    0x92 => self.sub_a_r("D"), //0x92 SUB D
+                    0x93 => self.sub_a_r("E"), //0x93 SUB B
+                    0x94 => self.sub_a_r("H"), //0x94 SUB H
+                    0x95 => self.sub_a_r("L"), //0x90 SUB L
                     0x96 => {}, //TODO 0x96 SUB (HL)
-                    0x97 => self.sub_a("A"), //0x97 SUB A
+                    0x97 => self.sub_a_r("A"), //0x97 SUB A
                     0x98 => self.sbc_a("B"), //0x98 SBC A,B
                     0x99 => self.sbc_a("C"), //0x99 SBC A,C
                     0x9A => self.sbc_a("D"), //0x9A SBC A,D
@@ -233,6 +233,8 @@ pub mod CPU{
                     0xBD => self.cp_a("L"), //0xBD CP L
                     0xBE => {}, //TODO 0xBE CP (HL)
                     0xBF => self.cp_a("A"), //0xBF CP A
+                    0xC6 => self.add_a_n(instruction.operands),
+                    0xD6 => self.sub_a_n(instruction.operands),
                     _ => return Err(instruction)
                 }
             }
@@ -261,14 +263,23 @@ pub mod CPU{
             self.Registers.set_item(to, from_value);
         }
 
-        pub(crate) fn add_a(&mut self, to_add: &str){
-            let value_to_add = self.Registers.get_item(to_add) as i16;
-            let current_value = self.Registers.get_item("A") as i16;
+        pub(crate) fn add_a_n(&mut self, operands: Vec<Operand>){
+            let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+            self.add_a_value(d8.value.expect("operand has no value") as u16);
+        }
+
+        pub(crate) fn add_a_r(&mut self, to_add: &str){
+            let value_to_add = self.Registers.get_item(to_add) as u16;
+            self.add_a_value(value_to_add);
+        }
+
+        fn add_a_value(&mut self, value_to_add: u16){
+            let current_value = self.Registers.get_item("A") as u16;
             let result = current_value + value_to_add;
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value_to_add, 0, HalfCarryOperationsMode::Add) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, value_to_add as i16, 0, HalfCarryOperationsMode::Add) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -286,8 +297,17 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn sub_a(&mut self, to_sub: &str) {
+        pub(crate) fn sub_a_r(&mut self, to_sub: &str) {
             let to_sub = self.Registers.get_item(to_sub) as i16;
+            self.sub_a_value(to_sub)
+        }
+
+        pub(crate) fn sub_a_n(&mut self, operands: Vec<Operand>){
+            let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+            self.sub_a_value(d8.value.expect("operand has no value") as i16);
+        }
+
+        fn sub_a_value(&mut self, to_sub: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value - to_sub;
 
@@ -349,7 +369,7 @@ pub mod CPU{
 
         pub(crate) fn cp_a(&mut self, to_cp: &str) {
             let old_a = self.Registers.get_item("A");
-            self.sub_a(to_cp);
+            self.sub_a_r(to_cp);
             self.Registers.set_item("A", old_a);
         }
 
