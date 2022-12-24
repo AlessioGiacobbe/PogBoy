@@ -201,14 +201,14 @@ pub mod CPU{
                     0x9D => self.sbc_a("L"), //0x9D SBC A,L
                     0x9E => {}, //TODO 0x9E SBC A,(HL)
                     0x9F => self.sbc_a("A"), //0x9F SBC A,A
-                    0xA0 => self.and_a("B"), //0xA0 AND B
-                    0xA1 => self.and_a("C"), //0xA1 AND C
-                    0xA2 => self.and_a("D"), //0xA2 AND D
-                    0xA3 => self.and_a("E"), //0xA3 AND E
-                    0xA4 => self.and_a("H"), //0xA4 AND H
-                    0xA5 => self.and_a("L"), //0xA5 AND L
+                    0xA0 => self.and_a_r("B"), //0xA0 AND B
+                    0xA1 => self.and_a_r("C"), //0xA1 AND C
+                    0xA2 => self.and_a_r("D"), //0xA2 AND D
+                    0xA3 => self.and_a_r("E"), //0xA3 AND E
+                    0xA4 => self.and_a_r("H"), //0xA4 AND H
+                    0xA5 => self.and_a_r("L"), //0xA5 AND L
                     0xA6 => {}, //TODO 0xA6 AND (HL)
-                    0xA7 => self.and_a("A"), //0xA7 AND A
+                    0xA7 => self.and_a_r("A"), //0xA7 AND A
                     0xA8 => self.xor_a("B"), //0xA8 XOR B
                     0xA9 => self.xor_a("C"), //0xA9 XOR C
                     0xAA => self.xor_a("D"), //0xAA XOR D
@@ -217,14 +217,14 @@ pub mod CPU{
                     0xAD => self.xor_a("L"), //0xAD XOR L
                     0xAE => {}, //TODO 0xAE XOR (HL)
                     0xAF => self.xor_a("A"), //0xAF XOR A
-                    0xB0 => self.or_a("B"), //0xB0 OR B
-                    0xB1 => self.or_a("C"), //0xB1 OR C
-                    0xB2 => self.or_a("D"), //0xB2 OR D
-                    0xB3 => self.or_a("E"), //0xB3 OR E
-                    0xB4 => self.or_a("H"), //0xB4 OR H
-                    0xB5 => self.or_a("L"), //0xB5 OR L
+                    0xB0 => self.or_a_r("B"), //0xB0 OR B
+                    0xB1 => self.or_a_r("C"), //0xB1 OR C
+                    0xB2 => self.or_a_r("D"), //0xB2 OR D
+                    0xB3 => self.or_a_r("E"), //0xB3 OR E
+                    0xB4 => self.or_a_r("H"), //0xB4 OR H
+                    0xB5 => self.or_a_r("L"), //0xB5 OR L
                     0xB6 => {}, //TODO 0xB6 OR (HL)
-                    0xB7 => self.or_a("A"), //0xB7 OR A
+                    0xB7 => self.or_a_r("A"), //0xB7 OR A
                     0xB8 => self.cp_a("B"), //0xB8 CP B
                     0xB9 => self.cp_a("C"), //0xB9 CP C
                     0xBA => self.cp_a("D"), //0xBA CP D
@@ -235,6 +235,8 @@ pub mod CPU{
                     0xBF => self.cp_a("A"), //0xBF CP A
                     0xC6 => self.add_a_n(instruction.operands),
                     0xD6 => self.sub_a_n(instruction.operands),
+                    0xE6 => self.and_a_n(instruction.operands),
+                    0xF6 => self.or_a_n(instruction.operands),
                     _ => return Err(instruction)
                 }
             }
@@ -331,8 +333,17 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn and_a(&mut self, to_and: &str){
+        pub(crate) fn and_a_r(&mut self, to_and: &str){
             let to_and = self.Registers.get_item(to_and) as i16;
+            self.and_a_value(to_and);
+        }
+
+        pub(crate) fn and_a_n(&mut self, operands: Vec<Operand>){
+            let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+            self.and_a_value(d8.value.expect("operand has no value") as i16);
+        }
+
+        fn and_a_value(&mut self, to_and: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value & to_and;
 
@@ -343,8 +354,17 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn or_a(&mut self, to_or: &str){
+        pub(crate) fn or_a_r(&mut self, to_or: &str){
             let to_or = self.Registers.get_item(to_or) as i16;
+            self.or_a_value(to_or);
+        }
+
+        pub(crate) fn or_a_n(&mut self, operands: Vec<Operand>){
+            let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+            self.or_a_value(d8.value.expect("operand has no value") as i16);
+        }
+
+        fn or_a_value(&mut self, to_or: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value | to_or;
 

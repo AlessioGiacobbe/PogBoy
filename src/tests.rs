@@ -113,7 +113,7 @@ fn and_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x2);
-    cpu.and_a("B");
+    cpu.and_a_r("B");
 
     assert_eq!(cpu.Registers.get_item("A"), 2);
     assert_eq!(cpu.Registers.get_item("n"), 0);
@@ -123,7 +123,7 @@ fn and_sets_right_flags(){
 
     cpu.Registers.set_item("A", 0x0);
     cpu.Registers.set_item("B", 0x0);
-    cpu.and_a("B");
+    cpu.and_a_r("B");
     assert_eq!(cpu.Registers.get_item("z"), 1);
 }
 
@@ -132,7 +132,7 @@ fn or_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x2);
-    cpu.or_a("B");
+    cpu.or_a_r("B");
 
     assert_eq!(cpu.Registers.get_item("A"), 3);
     assert_eq!(cpu.Registers.get_item("n"), 0);
@@ -142,13 +142,13 @@ fn or_sets_right_flags(){
 
     cpu.Registers.set_item("A", 0x0);
     cpu.Registers.set_item("B", 0x0);
-    cpu.or_a("B");
+    cpu.or_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
 
     cpu.Registers.set_item("A", 0x2);
     cpu.Registers.set_item("B", 0x3);
-    cpu.or_a("B");
+    cpu.or_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 3);
 }
 
