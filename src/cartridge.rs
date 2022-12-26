@@ -7,7 +7,7 @@ pub mod cartridge {
 
     pub struct Cartridge {
         pub(crate) cartridge_info: CartridgeInfo,
-        pub(crate) data_buffer: Vec<u8>
+        pub(crate) rom: Vec<u8>
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -94,7 +94,7 @@ pub mod cartridge {
 
         Cartridge {
             cartridge_info,
-            data_buffer: rom_buffer
+            rom: rom_buffer
         }
     }
 }

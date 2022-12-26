@@ -4,6 +4,8 @@ mod op_codes_parser;
 mod cartridge;
 mod decoder;
 mod cpu;
+mod mmu;
+
 #[cfg(test)]
 mod tests;
 
