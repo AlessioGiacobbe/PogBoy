@@ -27,7 +27,7 @@ pub mod decoder {
 
 
             Decoder {
-                data: Cartridge.data_buffer,
+                data: Cartridge.rom,
                 address: 0,
                 unprefixed_op_codes,
                 prefixed_op_codes
