@@ -1,4 +1,5 @@
 pub mod mmu {
+    use core::panicking::panic;
     use std::collections::HashMap;
     use std::fs;
     use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
@@ -10,7 +11,13 @@ pub mod mmu {
 
     pub struct MMU {
         bios: [u8; 256],
-        cartridge: Cartridge
+        cartridge: Cartridge,
+        vram: [u8; 0x2000],
+        external_ram: [u8; 0x2000],
+        work_ram: [u8; 0x2000],
+        io_registers: [u8; 0x100],
+        high_ram: [u8; 0x80],
+        interrupt_enabled: bool
     }
 
     impl MMU {
@@ -33,11 +40,17 @@ pub mod mmu {
                     0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E, 0x3c, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x4C,
                     0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
                     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50],
-                cartridge: Cartridge.expect("Empty cartridge")
+                cartridge: Cartridge.expect("Empty cartridge"),
+                vram: [0; 0x2000],
+                external_ram: [0; 0x2000],
+                work_ram: [0; 0x2000],
+                io_registers: [0; 0x100],
+                high_ram: [0; 0x80],
+                interrupt_enabled: false
             }
         }
 
-        pub(crate) fn read_from_address(&self, address: i32) -> u8{
+        pub(crate) fn read_byte(&self, address: i32) -> u8{
             let address = address as usize;
             return match address {
                 //BIOS
@@ -53,25 +66,101 @@ pub mod mmu {
                     self.cartridge.rom[address]
                 },
                 //VRAM
-                0x8000..=0x9FFF => {0},
+                0x8000..=0x9FFF => {
+                    //TODO should be moved into vga?
+                    self.vram[address - 0x8000]
+                },
                 //External RAM
-                0xA000..=0xBFFF => {0},
+                0xA000..=0xBFFF => {
+                    self.ext_ram[address - 0xA000]
+                },
                 //WRAM (Work RAM)
-                0xC000..=0xCFFF => {0},
-                //WRAM (Switchable bank)
-                0xD000..=0xDFFF => {0},
+                0xC000..=0xDFFF => {
+                    self.work_ram[address - 0xC000]
+                },
                 //ECHO RAM (use is prohibited by Nintendo!)
-                0xE000..=0xFDFF => {0},
+                0xE000..=0xFDFF => {
+                    panic!("tried to access echo ram")
+                },
                 //Sprite attribute table
-                0xFE00..=0xFE9F => {0},
+                0xFE00..=0xFE9F => {
+                    //TODO read from vga
+                },
                 //Not usable (prohibited!)
-                0xFEA0..=0xFEFF => {0}
+                0xFEA0..=0xFEFF => {
+                    panic!("address not usable")
+                }
                 //I/O Registers
-                0xFF00..=0xFF7F => {0},
+                0xFF00..=0xFF7F => {
+                    self.io_registers[address - 0xFF00]
+                },
+                //High RAM
+                0xFF80..=0xFFFE=> {
+                    self.high_ram[address - 0xFF80]
+                },
+                //Interrupt Enable register
+                0xFFFF => {
+                    //TODO should be moved into interrupt struct/file
+                    self.interrupt_enabled
+                },
+                _ => {
+                    panic!("Address {} out of range!", address)
+                }
+            }
+        }
+
+        pub(crate) fn write_byte(&mut self, address: i32, value: u8){
+            let address = address as usize;
+            return match address {
+                //BIOS
+                0..=0x100 => {
+                    self.bios[address] = value;
+                }
+                //ROM bank 0
+                0x101..=0x3FFF => {
+                    self.cartridge.rom[address] = value;
+                },
+                //ROM bank 1-NN
+                0x4000..=0x7FFF => {
+                    self.cartridge.rom[address] = value;
+                },
+                //VRAM
+                0x8000..=0x9FFF => {
+                    self.vram[address - 0x8000] = value;
+                },
+                //External RAM
+                0xA000..=0xBFFF => {
+                    self.external_ram[address - 0xA000] = value;
+                },
+                //WRAM (Work RAM)
+                0xC000..=0xDFFF => {
+                    self.work_ram[address - 0xC000] = value;
+                },
+                //ECHO RAM (use is prohibited by Nintendo!)
+                0xE000..=0xFDFF => {
+                    panic!("tried to write echo ram")
+                },
+                //Sprite attribute table
+                0xFE00..=0xFE9F => {
+                    //TODO read from vga
+                },
+                //Not usable (prohibited!)
+                0xFEA0..=0xFEFF => {
+                    panic!("address not usable")
+                }
+                //I/O Registers
+                0xFF00..=0xFF7F => {
+                    self.io_registers[address - 0xFF00] = value
+                },
                 //High RAM
                 0xFF80..=0xFFFE=> {0},
                 //Interrupt Enable register
-                0xFFFF => {0},
+                0xFFFF => {
+                    if value != 0 && value != 1 {
+                        panic!("value {} not assignable to interrupt enabled flag", value)
+                    }
+                    self.interrupt_enabled = value != 0
+                },
                 _ => {
                     panic!("Address {} out of range!", address)
                 }

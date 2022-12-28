@@ -1,4 +1,5 @@
 extern crate core;
+extern crate core;
 
 mod op_codes_parser;
 mod cartridge;
