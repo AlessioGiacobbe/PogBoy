@@ -1,23 +1,40 @@
+use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::Instruction;
 use super::*;
 
-fn create_dummy_coder() -> Decoder {
+fn create_dummy_cartridge() -> Cartridge {
     let Cartridge: Cartridge = read_cartridge("image.gb");
-    let dummy_cartridge: Cartridge = Cartridge {
+    Cartridge {
         cartridge_info: Cartridge.cartridge_info,
-        data_buffer: vec![0x00, 0x3E, 0x0F],    //NOP - LD A,0x0F
-    };
+        rom: vec![0x00, 0x3E, 0x0F],    //NOP - LD A,0x0F
+    }
+}
+
+fn create_dummy_mmu() -> MMU {
+    let dummy_cartridge = create_dummy_cartridge();
+    let mut dummy_mmu = MMU::new(Some(dummy_cartridge));
+    dummy_mmu.video_ram = [1; 0x2000];
+    dummy_mmu.external_ram = [2; 0x2000];
+    dummy_mmu.work_ram = [3; 0x2000];
+    dummy_mmu.io_registers = [4; 0x100];
+    dummy_mmu.high_ram = [5; 0x80];
+    dummy_mmu.interrupt_enabled = true;
+    dummy_mmu
+}
+
+fn create_dummy_decoder() -> Decoder {
+    let dummy_cartridge = create_dummy_cartridge();
     Decoder::new(dummy_cartridge)
 }
 
 fn create_dummy_cpu() -> CPU {
-    let dummy_decoder = create_dummy_coder();
+    let dummy_decoder = create_dummy_decoder();
     CPU::new(Some(dummy_decoder))
 }
 
 #[test]
 fn decoder_can_parse_correctly(){
-    let dummy_decoder = create_dummy_coder();
+    let dummy_decoder = create_dummy_decoder();
     let (_, nop_instruction) = dummy_decoder.decode(0);
     let (_, ld_a_d8_instruction) = dummy_decoder.decode(1);
     assert_eq!(nop_instruction.mnemonic, "NOP");
@@ -280,7 +297,7 @@ fn left_rotations_works(){
 }
 
 #[test]
-fn ld_hl_nn_sets_right_flags(){
+fn add_hl_nn_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("HL", 0xFFFF);
     cpu.Registers.set_item("BC", 0x0001);
@@ -298,5 +315,37 @@ fn ld_hl_nn_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("HL"), 0x1000);
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("h"), 1);
+}
+
+#[test]
+fn memory_can_read_and_write(){
+    let mut dummy_mmu = create_dummy_mmu();
+    assert_eq!(dummy_mmu.read_byte(0x0), 0x31);
+    dummy_mmu.write_byte(0x0, 0xFF);
+    assert_eq!(dummy_mmu.read_byte(0x0), 0xFF);
+
+    assert_eq!(dummy_mmu.read_byte(0x8000), 0x1);
+    dummy_mmu.write_byte(0x8000, 0xFF);
+    assert_eq!(dummy_mmu.read_byte(0x8000), 0xFF);
+
+    assert_eq!(dummy_mmu.read_byte(0xA000), 0x2);
+    dummy_mmu.write_byte(0xA000, 0xFF);
+    assert_eq!(dummy_mmu.read_byte(0xA000), 0xFF);
+
+    assert_eq!(dummy_mmu.read_byte(0xC000), 0x3);
+    dummy_mmu.write_byte(0xC000, 0xFF);
+    assert_eq!(dummy_mmu.read_byte(0xC000), 0xFF);
+
+    assert_eq!(dummy_mmu.read_byte(0xFF00), 0x4);
+    dummy_mmu.write_byte(0xFF00, 0xFF);
+    assert_eq!(dummy_mmu.read_byte(0xFF00), 0xFF);
+
+    assert_eq!(dummy_mmu.read_byte(0xFF80), 0x5);
+    dummy_mmu.write_byte(0xFF80, 0xFF);
+    assert_eq!(dummy_mmu.read_byte(0xFF80), 0xFF);
+
+    assert_eq!(dummy_mmu.read_byte(0xFFFF), 1);
+    dummy_mmu.write_byte(0xFFFF, 0x0);
+    assert_eq!(dummy_mmu.read_byte(0xFFFF), 0x0);
 }
 

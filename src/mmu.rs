@@ -1,5 +1,4 @@
 pub mod mmu {
-    use core::panicking::panic;
     use std::collections::HashMap;
     use std::fs;
     use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
@@ -12,12 +11,12 @@ pub mod mmu {
     pub struct MMU {
         bios: [u8; 256],
         cartridge: Cartridge,
-        vram: [u8; 0x2000],
-        external_ram: [u8; 0x2000],
-        work_ram: [u8; 0x2000],
-        io_registers: [u8; 0x100],
-        high_ram: [u8; 0x80],
-        interrupt_enabled: bool
+        pub(crate) video_ram: [u8; 0x2000],
+        pub(crate) external_ram: [u8; 0x2000],
+        pub(crate) work_ram: [u8; 0x2000],
+        pub(crate) io_registers: [u8; 0x100],
+        pub(crate) high_ram: [u8; 0x80],
+        pub(crate) interrupt_enabled: bool
     }
 
     impl MMU {
@@ -41,7 +40,7 @@ pub mod mmu {
                     0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
                     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50],
                 cartridge: Cartridge.expect("Empty cartridge"),
-                vram: [0; 0x2000],
+                video_ram: [0; 0x2000],
                 external_ram: [0; 0x2000],
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
@@ -68,11 +67,11 @@ pub mod mmu {
                 //VRAM
                 0x8000..=0x9FFF => {
                     //TODO should be moved into vga?
-                    self.vram[address - 0x8000]
+                    self.video_ram[address - 0x8000]
                 },
                 //External RAM
                 0xA000..=0xBFFF => {
-                    self.ext_ram[address - 0xA000]
+                    self.external_ram[address - 0xA000]
                 },
                 //WRAM (Work RAM)
                 0xC000..=0xDFFF => {
@@ -85,6 +84,7 @@ pub mod mmu {
                 //Sprite attribute table
                 0xFE00..=0xFE9F => {
                     //TODO read from vga
+                    0
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
@@ -101,7 +101,7 @@ pub mod mmu {
                 //Interrupt Enable register
                 0xFFFF => {
                     //TODO should be moved into interrupt struct/file
-                    self.interrupt_enabled
+                    self.interrupt_enabled as u8
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
@@ -126,7 +126,7 @@ pub mod mmu {
                 },
                 //VRAM
                 0x8000..=0x9FFF => {
-                    self.vram[address - 0x8000] = value;
+                    self.video_ram[address - 0x8000] = value;
                 },
                 //External RAM
                 0xA000..=0xBFFF => {
@@ -153,7 +153,9 @@ pub mod mmu {
                     self.io_registers[address - 0xFF00] = value
                 },
                 //High RAM
-                0xFF80..=0xFFFE=> {0},
+                0xFF80..=0xFFFE=> {
+                    self.high_ram[address - 0xFF80] = value
+                },
                 //Interrupt Enable register
                 0xFFFF => {
                     if value != 0 && value != 1 {

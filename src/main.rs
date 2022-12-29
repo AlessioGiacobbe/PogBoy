@@ -1,5 +1,4 @@
 extern crate core;
-extern crate core;
 
 mod op_codes_parser;
 mod cartridge;
@@ -17,9 +16,6 @@ use crate::decoder::decoder::Decoder;
 fn main() {
     let cartridge: Cartridge = read_cartridge("image.gb");
     let decoder: Decoder = Decoder::new(cartridge);
-    //Decoder.disassemble(512, 16);
-    //Decoder.disassemble(512, 16);
-    //Decoder.disassemble(0, 0);
     let mut cpu: CPU = CPU::new(Some(decoder));
     cpu.run();
 }
