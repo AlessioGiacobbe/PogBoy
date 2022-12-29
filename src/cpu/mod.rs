@@ -86,7 +86,7 @@ pub mod CPU{
                     0x15 => self.dec( "D"), //0x15 DEC D
                     0x16 => self.ld_r_d8( "D", instruction), //0x16 LD D,d8
                     0x17 => self.rla(), //0x17 RLA
-                    0x18 => {}, //0x18 JR e8
+                    0x18 => {}, //TODO 0x18 JR e8
                     0x19 => self.add_hl_n( "DE"), //0x19 ADD HL, DE
                     0x1B => self.dec_nn( "DE"), //0x1B DEC DE
                     0x1C => self.inc( "E"), //0x1C INC E
@@ -183,7 +183,6 @@ pub mod CPU{
                     0x8B => self.adc_a("E"), //0x8B ADC A,E
                     0x8C => self.adc_a("H"), //0x8C ADC A,H
                     0x8D => self.adc_a("L"), //0x8D ADC A,L
-                    0x8E => {}, //TODO 0x8E ADC A,(HL)
                     0x8F => self.adc_a("A"), //0x8F ADC A,A
                     0x90 => self.sub_a_r("B"), //0x90 SUB B
                     0x91 => self.sub_a_r("C"), //0x91 SUB C
@@ -284,6 +283,10 @@ pub mod CPU{
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, value_to_add as i16, 0, HalfCarryOperationsMode::Add) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
+        }
+
+        pub(crate) fn adc_a_hl(&mut self, instruction: Instruction){
+
         }
 
         pub(crate) fn adc_a(&mut self, to_add: &str){
