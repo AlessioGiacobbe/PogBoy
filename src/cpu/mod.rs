@@ -4,11 +4,13 @@ pub mod CPU{
     use std::fmt::{Display, Formatter};
     use crate::cpu::registers::Registers::Registers;
     use crate::decoder::decoder::Decoder;
+    use crate::mmu::mmu::MMU;
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 
     pub struct CPU {
         pub(crate) Registers: Registers,
         pub(crate) Decoder: Decoder,
+        pub(crate) MMU: MMU,
     }
 
     enum HalfCarryOperationsMode {
@@ -27,7 +29,7 @@ pub mod CPU{
 
     impl CPU {
 
-        pub(crate) fn new(Decoder: Option<Decoder>) -> CPU {
+        pub(crate) fn new(Decoder: Option<Decoder>, MMU: MMU) -> CPU {
             let Registers: Registers = Registers::new();
             let decoder = Decoder.unwrap_or(Decoder{
                 data: vec![],
@@ -37,7 +39,8 @@ pub mod CPU{
             });
             CPU {
                 Registers,
-                Decoder: decoder
+                Decoder: decoder,
+                MMU
             }
         }
 
@@ -177,13 +180,13 @@ pub mod CPU{
                     0x84 => self.add_a_r("H"), //0x84 ADD A,H
                     0x85 => self.add_a_r("L"), //0x85 ADD A,L
                     0x87 => self.add_a_r("A"), //0x87 ADD A,A
-                    0x88 => self.adc_a("B"), //0x88 ADC A,B
-                    0x89 => self.adc_a("C"), //0x89 ADC A,C
-                    0x8A => self.adc_a("D"), //0x8A ADC A,D
-                    0x8B => self.adc_a("E"), //0x8B ADC A,E
-                    0x8C => self.adc_a("H"), //0x8C ADC A,H
-                    0x8D => self.adc_a("L"), //0x8D ADC A,L
-                    0x8F => self.adc_a("A"), //0x8F ADC A,A
+                    0x88 => self.adc_a_r("B"), //0x88 ADC A,B
+                    0x89 => self.adc_a_r("C"), //0x89 ADC A,C
+                    0x8A => self.adc_a_r("D"), //0x8A ADC A,D
+                    0x8B => self.adc_a_r("E"), //0x8B ADC A,E
+                    0x8C => self.adc_a_r("H"), //0x8C ADC A,H
+                    0x8D => self.adc_a_r("L"), //0x8D ADC A,L
+                    0x8F => self.adc_a_r("A"), //0x8F ADC A,A
                     0x90 => self.sub_a_r("B"), //0x90 SUB B
                     0x91 => self.sub_a_r("C"), //0x91 SUB C
                     0x92 => self.sub_a_r("D"), //0x92 SUB D
@@ -285,19 +288,25 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn adc_a_hl(&mut self, instruction: Instruction){
-
+        pub(crate) fn adc_a_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.adc_a(value_at_hl as i16);
         }
 
-        pub(crate) fn adc_a(&mut self, to_add: &str){
+        pub(crate) fn adc_a_r(&mut self, to_add: &str){
             let to_add = self.Registers.get_item(to_add) as i16;
+            self.adc_a(to_add);
+        }
+
+        pub(crate) fn adc_a(&mut self, value: i16) {
             let current_value = self.Registers.get_item("A") as i16;
             let carry = self.Registers.get_item("c") as i16;
-            let result = to_add + current_value + carry;
+            let result = value + current_value + carry;
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_add, carry, HalfCarryOperationsMode::Add) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value, carry, HalfCarryOperationsMode::Add) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }

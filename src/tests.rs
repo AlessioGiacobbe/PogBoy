@@ -29,7 +29,8 @@ fn create_dummy_decoder() -> Decoder {
 
 fn create_dummy_cpu() -> CPU {
     let dummy_decoder = create_dummy_decoder();
-    CPU::new(Some(dummy_decoder))
+    let dummy_mmu = create_dummy_mmu();
+    CPU::new(Some(dummy_decoder), dummy_mmu)
 }
 
 #[test]
@@ -72,13 +73,19 @@ fn adc_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0xFF);
     cpu.Registers.set_item("B", 0xFF);
-    cpu.adc_a("B");
+    cpu.adc_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 254);
 
     cpu.Registers.set_item("B", 0x1);
-    cpu.adc_a("B");
+    cpu.adc_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0); //should be (A (254) + B (1) + Carry (1)) && 0xFF == 256 && 0xFF == 0
     assert_eq!(cpu.Registers.get_item("z"), 1); //should be set since result is 0
+
+    cpu.Registers.set_item("A", 0x1);
+    cpu.Registers.set_item("c", 0x0);
+    cpu.Registers.set_item("HL", 0xA000);   //should point to memory filled with 0x2
+    cpu.adc_a_hl();
+    assert_eq!(cpu.Registers.get_item("A"), 0x3);
 }
 
 #[test]

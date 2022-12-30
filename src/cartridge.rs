@@ -5,12 +5,13 @@ pub mod cartridge {
     use std::io::Read;
     use serde::{Serialize, Deserialize};
 
+    #[derive(Clone)]
     pub struct Cartridge {
         pub(crate) cartridge_info: CartridgeInfo,
         pub(crate) rom: Vec<u8>
     }
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct CartridgeInfo {
         entry_point: [u8; 4],
         nintendo_logo: [u16; 24],
