@@ -123,7 +123,7 @@ pub mod CPU{
                     0x43 => self.ld_r_r("E", "B"), //0x43 LD B,E
                     0x44 => self.ld_r_r("H", "B"), //0x44 LD B,H
                     0x45 => self.ld_r_r("L", "B"), //0x45 LD B,L
-                    0x46 => {}, //TODO 0x46 LD B,(HL)
+                    0x46 => self.ld_r_hl("B"), //0x46 LD B,(HL)
                     0x47 => self.ld_r_r("A", "B"), //0x47 LD B,A
                     0x48 => self.ld_r_r("B", "C"), //0x48 LD C,B
                     0x49 => self.ld_r_r("C", "C"), //0x49 LD C,C
@@ -131,7 +131,7 @@ pub mod CPU{
                     0x4B => self.ld_r_r("E", "C"), //0x4B LD C,E
                     0x4C => self.ld_r_r("H", "C"), //0x4C LD C,H
                     0x4D => self.ld_r_r("L", "C"), //0x4D LD C,L
-                    0x4E => {}, //TODO 0x4E LD C,(HL)
+                    0x4E => self.ld_r_hl("C"), //0x4E LD C,(HL)
                     0x4F => self.ld_r_r("A", "C"), //0x4F LD C,A
                     0x50 => self.ld_r_r("B", "D"), //0x50 LD D,B
                     0x51 => self.ld_r_r("C", "D"), //0x51 LD D,C
@@ -139,7 +139,7 @@ pub mod CPU{
                     0x53 => self.ld_r_r("E", "D"), //0x53 LD D,E
                     0x54 => self.ld_r_r("H", "D"), //0x54 LD D,H
                     0x55 => self.ld_r_r("L", "D"), //0x55 LD D,L
-                    0x56 => {}, //TODO 0x56 LD D,(HL)
+                    0x56 => self.ld_r_hl("D"), //0x56 LD D,(HL)
                     0x57 =>self.ld_r_r("A", "D"), //0x57 LD D,A
                     0x58 => self.ld_r_r("B", "E"), //0x58 LD E,B
                     0x59 => self.ld_r_r("C", "E"), //0x59 LD E,C
@@ -147,7 +147,7 @@ pub mod CPU{
                     0x5B => self.ld_r_r("E", "E"), //0x5B LD E,E
                     0x5C => self.ld_r_r("H", "E"), //0x5C LD E,H
                     0x5D => self.ld_r_r("L", "E"), //0x5D LD E,L
-                    0x5E => {}, //TODO 0x5E LD E,(HL)
+                    0x5E => self.ld_r_hl("E"), //0x5E LD E,(HL)
                     0x5F => self.ld_r_r("A", "E"), //0x5F LD E,A
                     0x60 => self.ld_r_r("B", "H"), //0x60 LD H,B
                     0x61 => self.ld_r_r("C", "H"), //0x61 LD H,C
@@ -155,7 +155,7 @@ pub mod CPU{
                     0x63 => self.ld_r_r("E", "H"), //0x63 LD H,E
                     0x64 => self.ld_r_r("H", "H"), //0x64 LD H,H
                     0x65 => self.ld_r_r("L", "H"), //0x65 LD H,L
-                    0x66 => {}, //TODO 0x66 LD H,(HL)
+                    0x66 => self.ld_r_hl("H"), //0x66 LD H,(HL)
                     0x67 => self.ld_r_r("A", "H"), //0x67 LD H,A
                     0x68 => self.ld_r_r("B", "L"), //0x68 LD L,B
                     0x69 => self.ld_r_r("C", "L"), //0x69 LD L,C
@@ -163,7 +163,7 @@ pub mod CPU{
                     0x6B => self.ld_r_r("E", "L"), //0x6B LD L,E
                     0x6C => self.ld_r_r("H", "L"), //0x6C LD L,H
                     0x6D => self.ld_r_r("L", "L"), //0x6D LD L,L
-                    0x6E => {}, //TODO 0x6E LD L,(HL)
+                    0x6E => self.ld_r_hl("L"), //0x6E LD L,(HL)
                     0x6F => self.ld_r_r("A", "L"), //0x6F LD L,A
                     0x78 => self.ld_r_r("B", "A"), //0x78 LD A,B
                     0x79 => self.ld_r_r("C", "A"), //0x79 LD A,C
@@ -171,7 +171,7 @@ pub mod CPU{
                     0x7B => self.ld_r_r("E", "A"), //0x7B LD A,E
                     0x7C => self.ld_r_r("H", "A"), //0x7C LD A,H
                     0x7D => self.ld_r_r("L", "A"), //0x7D LD A,L
-                    0x7E => {}, //TODO 0x7E LD A,(HL)
+                    0x7E => self.ld_r_hl("A"), //0x7E LD A,(HL)
                     0x7F => self.ld_r_r("A", "A"), //0x7F LD A,A
                     0x80 => self.add_a_r("B"), //0x80 ADD A,B
                     0x81 => self.add_a_r("C"), //0x81 ADD A,C
@@ -179,6 +179,7 @@ pub mod CPU{
                     0x83 => self.add_a_r("E"), //0x83 ADD A,E
                     0x84 => self.add_a_r("H"), //0x84 ADD A,H
                     0x85 => self.add_a_r("L"), //0x85 ADD A,L
+                    0x86 => self.add_a_hl(), //0x86 ADD A,(HL)
                     0x87 => self.add_a_r("A"), //0x87 ADD A,A
                     0x88 => self.adc_a_r("B"), //0x88 ADC A,B
                     0x89 => self.adc_a_r("C"), //0x89 ADC A,C
@@ -267,23 +268,35 @@ pub mod CPU{
             self.Registers.set_item(to, from_value);
         }
 
+        fn ld_r_hl(&mut self, to: &str){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.Registers.set_item(to, value_at_hl as u16);
+        }
+
         pub(crate) fn add_a_n(&mut self, operands: Vec<Operand>){
             let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
-            self.add_a_value(d8.value.expect("operand has no value") as u16);
+            self.add_a(d8.value.expect("operand has no value") as u16);
         }
 
         pub(crate) fn add_a_r(&mut self, to_add: &str){
             let value_to_add = self.Registers.get_item(to_add) as u16;
-            self.add_a_value(value_to_add);
+            self.add_a(value_to_add);
         }
 
-        fn add_a_value(&mut self, value_to_add: u16){
+        pub(crate) fn add_a_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.add_a(value_at_hl as u16);
+        }
+
+        fn add_a(&mut self, value: u16){
             let current_value = self.Registers.get_item("A") as u16;
-            let result = current_value + value_to_add;
+            let result = current_value + value;
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", (result > 0xFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, value_to_add as i16, 0, HalfCarryOperationsMode::Add) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, value as i16, 0, HalfCarryOperationsMode::Add) as u16);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }

@@ -66,6 +66,11 @@ fn add_sets_right_flags() {
     assert_eq!(cpu.Registers.get_item("n"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 0);
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be setted, 8+8 > 0xF
+
+    cpu.Registers.set_item("HL", 0xA000);   //should point to memory filled with 0x2
+    cpu.Registers.set_item("A", 0x1);
+    cpu.add_a_hl();
+    assert_eq!(cpu.Registers.get_item("A"), 0x3);
 }
 
 #[test]
