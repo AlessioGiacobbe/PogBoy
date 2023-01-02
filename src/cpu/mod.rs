@@ -193,40 +193,40 @@ pub mod CPU{
                     0x92 => self.sub_a_r("D"), //0x92 SUB D
                     0x93 => self.sub_a_r("E"), //0x93 SUB B
                     0x94 => self.sub_a_r("H"), //0x94 SUB H
-                    0x95 => self.sub_a_r("L"), //0x90 SUB L
-                    0x96 => {}, //TODO 0x96 SUB (HL)
+                    0x95 => self.sub_a_r("L"), //0x95 SUB L
+                    0x96 => self.sub_a_hl(), //0x96 SUB (HL)
                     0x97 => self.sub_a_r("A"), //0x97 SUB A
-                    0x98 => self.sbc_a("B"), //0x98 SBC A,B
-                    0x99 => self.sbc_a("C"), //0x99 SBC A,C
-                    0x9A => self.sbc_a("D"), //0x9A SBC A,D
-                    0x9B => self.sbc_a("E"), //0x9B SBC A,E
-                    0x9C => self.sbc_a("H"), //0x9C SBC A,H
-                    0x9D => self.sbc_a("L"), //0x9D SBC A,L
-                    0x9E => {}, //TODO 0x9E SBC A,(HL)
-                    0x9F => self.sbc_a("A"), //0x9F SBC A,A
+                    0x98 => self.sbc_a_r("B"), //0x98 SBC A,B
+                    0x99 => self.sbc_a_r("C"), //0x99 SBC A,C
+                    0x9A => self.sbc_a_r("D"), //0x9A SBC A,D
+                    0x9B => self.sbc_a_r("E"), //0x9B SBC A,E
+                    0x9C => self.sbc_a_r("H"), //0x9C SBC A,H
+                    0x9D => self.sbc_a_r("L"), //0x9D SBC A,L
+                    0x9E => self.sbc_a_hl(), //0x9E SBC A,(HL)
+                    0x9F => self.sbc_a_r("A"), //0x9F SBC A,A
                     0xA0 => self.and_a_r("B"), //0xA0 AND B
                     0xA1 => self.and_a_r("C"), //0xA1 AND C
                     0xA2 => self.and_a_r("D"), //0xA2 AND D
                     0xA3 => self.and_a_r("E"), //0xA3 AND E
                     0xA4 => self.and_a_r("H"), //0xA4 AND H
                     0xA5 => self.and_a_r("L"), //0xA5 AND L
-                    0xA6 => {}, //TODO 0xA6 AND (HL)
+                    0xA6 => self.and_a_hl(), //0xA6 AND (HL)
                     0xA7 => self.and_a_r("A"), //0xA7 AND A
-                    0xA8 => self.xor_a("B"), //0xA8 XOR B
-                    0xA9 => self.xor_a("C"), //0xA9 XOR C
-                    0xAA => self.xor_a("D"), //0xAA XOR D
-                    0xAB => self.xor_a("E"), //0xAB XOR E
-                    0xAC => self.xor_a("H"), //0xAC XOR H
-                    0xAD => self.xor_a("L"), //0xAD XOR L
-                    0xAE => {}, //TODO 0xAE XOR (HL)
-                    0xAF => self.xor_a("A"), //0xAF XOR A
+                    0xA8 => self.xor_a_r("B"), //0xA8 XOR B
+                    0xA9 => self.xor_a_r("C"), //0xA9 XOR C
+                    0xAA => self.xor_a_r("D"), //0xAA XOR D
+                    0xAB => self.xor_a_r("E"), //0xAB XOR E
+                    0xAC => self.xor_a_r("H"), //0xAC XOR H
+                    0xAD => self.xor_a_r("L"), //0xAD XOR L
+                    0xAE => self.xor_a_hl(), //0xAE XOR (HL)
+                    0xAF => self.xor_a_r("A"), //0xAF XOR A
                     0xB0 => self.or_a_r("B"), //0xB0 OR B
                     0xB1 => self.or_a_r("C"), //0xB1 OR C
                     0xB2 => self.or_a_r("D"), //0xB2 OR D
                     0xB3 => self.or_a_r("E"), //0xB3 OR E
                     0xB4 => self.or_a_r("H"), //0xB4 OR H
                     0xB5 => self.or_a_r("L"), //0xB5 OR L
-                    0xB6 => {}, //TODO 0xB6 OR (HL)
+                    0xB6 => self.or_a_hl(), //0xB6 OR (HL)
                     0xB7 => self.or_a_r("A"), //0xB7 OR A
                     0xB8 => self.cp_a("B"), //0xB8 CP B
                     0xB9 => self.cp_a("C"), //0xB9 CP C
@@ -234,7 +234,7 @@ pub mod CPU{
                     0xBB => self.cp_a("E"), //0xBB CP E
                     0xBC => self.cp_a("H"), //0xBC CP H
                     0xBD => self.cp_a("L"), //0xBD CP L
-                    0xBE => {}, //TODO 0xBE CP (HL)
+                    0xBE => self.cp_a_hl(), //0xBE CP (HL)
                     0xBF => self.cp_a("A"), //0xBF CP A
                     0xC6 => self.add_a_n(instruction.operands),
                     0xD6 => self.sub_a_n(instruction.operands),
@@ -334,6 +334,12 @@ pub mod CPU{
             self.sub_a_value(d8.value.expect("operand has no value") as i16);
         }
 
+        pub(crate) fn sub_a_hl(&mut self) {
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.sub_a_value(value_at_hl as i16);
+        }
+
         fn sub_a_value(&mut self, to_sub: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value - to_sub;
@@ -345,15 +351,25 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn sbc_a(&mut self, to_sub: &str) {
+        pub(crate) fn sbc_a_r(&mut self, to_sub: &str){
             let to_sub = self.Registers.get_item(to_sub) as i16;
+            self.sbc_a(to_sub)
+        }
+
+        pub(crate) fn sbc_a_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.sbc_a(value_at_hl as i16);
+        }
+
+        pub(crate) fn sbc_a(&mut self, value: i16) {
             let current_value = self.Registers.get_item("A") as i16;
             let carry = self.Registers.get_item("c") as i16;
-            let result = current_value - to_sub - carry;
+            let result = current_value - value - carry;
 
             self.Registers.set_item("A", result as u16);
-            self.Registers.set_item("c", ((to_sub + carry) > current_value) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, to_sub, 1, HalfCarryOperationsMode::GreaterThan) as u16);
+            self.Registers.set_item("c", ((value + carry) > current_value) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value, 1, HalfCarryOperationsMode::GreaterThan) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -366,6 +382,12 @@ pub mod CPU{
         pub(crate) fn and_a_n(&mut self, operands: Vec<Operand>){
             let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
             self.and_a_value(d8.value.expect("operand has no value") as i16);
+        }
+
+        pub(crate) fn and_a_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.and_a_value(value_at_hl as i16);
         }
 
         fn and_a_value(&mut self, to_and: i16){
@@ -389,6 +411,12 @@ pub mod CPU{
             self.or_a_value(d8.value.expect("operand has no value") as i16);
         }
 
+        pub(crate) fn or_a_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.or_a_value(value_at_hl as i16);
+        }
+
         fn or_a_value(&mut self, to_or: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value | to_or;
@@ -400,10 +428,20 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn xor_a(&mut self, to_xor: &str) {
+        pub(crate) fn xor_a_r(&mut self, to_xor: &str) {
             let to_xor = self.Registers.get_item(to_xor) as i16;
+            self.xor_a_value(to_xor);
+        }
+
+        pub(crate) fn xor_a_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+            self.xor_a_value(value_at_hl as i16);
+        }
+
+        pub(crate) fn xor_a_value(&mut self, value: i16){
             let current_value = self.Registers.get_item("A") as i16;
-            let result = current_value ^ to_xor;
+            let result = current_value ^ value;
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", 0);
@@ -415,6 +453,12 @@ pub mod CPU{
         pub(crate) fn cp_a(&mut self, to_cp: &str) {
             let old_a = self.Registers.get_item("A");
             self.sub_a_r(to_cp);
+            self.Registers.set_item("A", old_a);
+        }
+
+        pub(crate) fn cp_a_hl(&mut self){
+            let old_a = self.Registers.get_item("A");
+            self.sub_a_hl();
             self.Registers.set_item("A", old_a);
         }
 
