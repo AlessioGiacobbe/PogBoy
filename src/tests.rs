@@ -126,14 +126,14 @@ fn subc_sets_right_flags(){
     cpu.Registers.set_item("c", 1);
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x2);
-    cpu.sbc_a("B");
+    cpu.sbc_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
 
     cpu.Registers.set_item("c", 1);
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x3);
-    cpu.sbc_a("B");
+    cpu.sbc_a_r("B");
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F + carry) > (a & 0x0F)
 }
 
@@ -186,7 +186,7 @@ fn xor_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x2);
-    cpu.xor_a("B");
+    cpu.xor_a_r("B");
 
     assert_eq!(cpu.Registers.get_item("A"), 1);
     assert_eq!(cpu.Registers.get_item("n"), 0);
@@ -196,7 +196,7 @@ fn xor_sets_right_flags(){
 
     cpu.Registers.set_item("A", 0x3);
     cpu.Registers.set_item("B", 0x3);
-    cpu.xor_a("B");
+    cpu.xor_a_r("B");
 
     assert_eq!(cpu.Registers.get_item("A"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
