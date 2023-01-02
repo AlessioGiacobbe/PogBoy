@@ -361,3 +361,13 @@ fn memory_can_read_and_write(){
     assert_eq!(dummy_mmu.read_byte(0xFFFF), 0x0);
 }
 
+#[test]
+fn ld_hl_works(){
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.Registers.set_item("B", 0x4);
+    cpu.ld_hl_r("B");
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x4);
+}
+

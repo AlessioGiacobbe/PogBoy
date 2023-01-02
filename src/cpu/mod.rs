@@ -165,6 +165,14 @@ pub mod CPU{
                     0x6D => self.ld_r_r("L", "L"), //0x6D LD L,L
                     0x6E => self.ld_r_hl("L"), //0x6E LD L,(HL)
                     0x6F => self.ld_r_r("A", "L"), //0x6F LD L,A
+                    0x70 => self.ld_hl_r("B"), //0x70 LD (HL),B
+                    0x71 => self.ld_hl_r("C"), //0x71 LD (HL),C
+                    0x72 => self.ld_hl_r("D"), //0x72 LD (HL),D
+                    0x73 => self.ld_hl_r("E"), //0x73 LD (HL),E
+                    0x74 => self.ld_hl_r("H"), //0x74 LD (HL),H
+                    0x75 => self.ld_hl_r("L"), //0x75 LD (HL),L
+                    0x76 => {}, //TODO 0x76 HALT
+                    0x77 => self.ld_hl_r("A"), //0x77 LD (HL),A
                     0x78 => self.ld_r_r("B", "A"), //0x78 LD A,B
                     0x79 => self.ld_r_r("C", "A"), //0x79 LD A,C
                     0x7A => self.ld_r_r("D", "A"), //0x7A LD A,D
@@ -486,6 +494,16 @@ pub mod CPU{
             //TODO move operand finding somewhere else, this function should just receive a number
             let d8 = instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
             self.Registers.set_item(destination, d8.value.expect("Operand d8 has no value"))
+        }
+
+        pub(crate) fn ld_hl_r(&mut self, origin: &str){
+            let value = self.Registers.get_item(origin);
+            self.ld_hl(value as u8);
+        }
+
+        pub(crate) fn ld_hl(&mut self, value: u8){
+            let hl = self.Registers.get_item("HL");
+            self.MMU.write_byte(hl as i32, value)
         }
 
         pub(crate) fn rra(&mut self){
