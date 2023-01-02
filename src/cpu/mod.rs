@@ -110,6 +110,8 @@ pub mod CPU{
                     0x2F => self.cpl(), //0x2F CPL
                     0x31 => self.ld_nn(instruction.operands, "SP"), //0x31 LD SP, d16
                     0x33 => self.inc_nn( "SP"), //0x33 INC SP
+                    0x34 => self.inc_hl_pointer(), //0x34 INC (HL)
+                    0x35 => self.dec_hl_pointer(), //0x35 DEC (HL)
                     0x37 => self.scf(), //0x37 SCF
                     0x39 => self.add_hl_n( "SP"), //0x39 ADD HL, SP
                     0x3B => self.dec_nn( "SP"), //0x3B DEC SP
