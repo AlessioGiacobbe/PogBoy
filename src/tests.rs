@@ -371,3 +371,16 @@ fn ld_hl_works(){
     assert_eq!(cpu.MMU.read_byte(0xC000), 0x4);
 }
 
+#[test]
+fn inc_and_dec_hl_pointer_works(){
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x5);
+    cpu.inc_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x6);
+
+    cpu.dec_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x5);
+}
+

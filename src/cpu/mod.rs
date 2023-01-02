@@ -470,6 +470,18 @@ pub mod CPU{
             self.Registers.set_item("A", old_a);
         }
 
+        pub(crate) fn inc_hl_pointer(&mut self) {
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+
+            let result = value_at_hl + 1;
+
+            self.Registers.set_item("n", 0);
+            self.Registers.set_item("h", CPU::calculate_half_carry(value_at_hl as i16, 0, 0, HalfCarryOperationsMode::Increment) as u16);
+            self.MMU.write_byte(hl as i32, result);
+            self.Registers.set_item("z", (self.MMU.read_byte(hl as i32) == 0) as u16);
+        }
+
         pub(crate) fn inc(&mut self, to_inc: &str) {
             let current_value = self.Registers.get_item(to_inc) as i16;
             let result = current_value + 1;
@@ -478,6 +490,18 @@ pub mod CPU{
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value, 0, 0, HalfCarryOperationsMode::Increment) as u16);
             self.Registers.set_item(to_inc, result as u16);
             self.Registers.set_item("z", (self.Registers.get_item(to_inc) == 0) as u16);
+        }
+
+        pub(crate) fn dec_hl_pointer(&mut self) {
+            let hl = self.Registers.get_item("HL");
+            let value_at_hl = self.MMU.read_byte(hl as i32);
+
+            let result = value_at_hl - 1;
+
+            self.Registers.set_item("n", 1);
+            self.Registers.set_item("h", CPU::calculate_half_carry(value_at_hl as i16, 0, 0, HalfCarryOperationsMode::Decrement) as u16);
+            self.MMU.write_byte(hl as i32, result);
+            self.Registers.set_item("z", (self.MMU.read_byte(hl as i32) == 0) as u16);
         }
 
         pub(crate) fn dec(&mut self, to_dec: &str) {
