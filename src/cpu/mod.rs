@@ -11,6 +11,7 @@ pub mod CPU{
         pub(crate) Registers: Registers,
         pub(crate) Decoder: Decoder,
         pub(crate) MMU: MMU,
+        pub(crate) is_stopped: bool
     }
 
     enum HalfCarryOperationsMode {
@@ -40,12 +41,17 @@ pub mod CPU{
             CPU {
                 Registers,
                 Decoder: decoder,
-                MMU
+                MMU,
+                is_stopped: false
             }
         }
 
         pub(crate) fn run(&mut self) {
             loop {
+                if self.is_stopped {
+                    continue
+                }
+
                 let address = self.Registers.get_item("PC");
                 let (next_address, instruction) = self.Decoder.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
@@ -84,6 +90,7 @@ pub mod CPU{
                     0x0D => self.dec( "C"), //0x0D DEC C
                     0x0E => self.ld_r_d8( "C", instruction), //0x0E LD C,d8
                     0x0F => self.rrca(), //0x0F RRCA
+                    0x10 => self.is_stopped = true, //0x10 STOP
                     0x11 => self.ld_nn( instruction.operands, "DE"), //0x11 LD DE, d16
                     0x12 => self.ld_address_value("DE", "A"), //0x12 LD (DE),A
                     0x13 => self.inc_nn( "DE"), //0x13 INC DE
