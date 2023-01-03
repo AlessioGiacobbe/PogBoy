@@ -367,8 +367,13 @@ fn ld_hl_works(){
 
     cpu.Registers.set_item("HL", 0xC000);
     cpu.Registers.set_item("B", 0x4);
-    cpu.ld_hl_r("B");
+    cpu.ld_address_value("HL","B");
     assert_eq!(cpu.MMU.read_byte(0xC000), 0x4);
+
+    cpu.Registers.set_item("BC", 0xC001);
+    cpu.Registers.set_item("A", 0x3);
+    cpu.ld_address_value("BC", "A");
+    assert_eq!(cpu.MMU.read_byte(0xC001), 0x3);
 }
 
 #[test]

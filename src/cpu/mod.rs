@@ -72,6 +72,7 @@ pub mod CPU{
                 match instruction.opcode {
                     0 => {}, //0x00 NOP
                     0x01 => self.ld_nn( instruction.operands, "BC"), //0x01 LD BC, d16
+                    0x02 => self.ld_address_value("BC", "A"), //0x02 LD (BC), A
                     0x03 => self.inc_nn( "BC"), //0x03 INC BC
                     0x04 => self.inc( "B"), //0x04 INC B
                     0x05 => self.dec( "B"), //0x05 DEC B
@@ -84,6 +85,7 @@ pub mod CPU{
                     0x0E => self.ld_r_d8( "C", instruction), //0x0E LD C,d8
                     0x0F => self.rrca(), //0x0F RRCA
                     0x11 => self.ld_nn( instruction.operands, "DE"), //0x11 LD DE, d16
+                    0x12 => self.ld_address_value("DE", "A"), //0x12 LD (DE),A
                     0x13 => self.inc_nn( "DE"), //0x13 INC DE
                     0x14 => self.inc( "D"), //0x14 INC D
                     0x15 => self.dec( "D"), //0x15 DEC D
@@ -167,14 +169,14 @@ pub mod CPU{
                     0x6D => self.ld_r_r("L", "L"), //0x6D LD L,L
                     0x6E => self.ld_r_hl("L"), //0x6E LD L,(HL)
                     0x6F => self.ld_r_r("A", "L"), //0x6F LD L,A
-                    0x70 => self.ld_hl_r("B"), //0x70 LD (HL),B
-                    0x71 => self.ld_hl_r("C"), //0x71 LD (HL),C
-                    0x72 => self.ld_hl_r("D"), //0x72 LD (HL),D
-                    0x73 => self.ld_hl_r("E"), //0x73 LD (HL),E
-                    0x74 => self.ld_hl_r("H"), //0x74 LD (HL),H
-                    0x75 => self.ld_hl_r("L"), //0x75 LD (HL),L
+                    0x70 => self.ld_address_value("HL", "B"), //0x70 LD (HL),B
+                    0x71 => self.ld_address_value("HL", "C"), //0x71 LD (HL),C
+                    0x72 => self.ld_address_value("HL", "D"), //0x72 LD (HL),D
+                    0x73 => self.ld_address_value("HL", "E"), //0x73 LD (HL),E
+                    0x74 => self.ld_address_value("HL", "H"), //0x74 LD (HL),H
+                    0x75 => self.ld_address_value("HL", "L"), //0x75 LD (HL),L
                     0x76 => {}, //TODO 0x76 HALT
-                    0x77 => self.ld_hl_r("A"), //0x77 LD (HL),A
+                    0x77 => self.ld_address_value("HL", "A"), //0x77 LD (HL),A
                     0x78 => self.ld_r_r("B", "A"), //0x78 LD A,B
                     0x79 => self.ld_r_r("C", "A"), //0x79 LD A,C
                     0x7A => self.ld_r_r("D", "A"), //0x7A LD A,D
@@ -522,14 +524,10 @@ pub mod CPU{
             self.Registers.set_item(destination, d8.value.expect("Operand d8 has no value"))
         }
 
-        pub(crate) fn ld_hl_r(&mut self, origin: &str){
-            let value = self.Registers.get_item(origin);
-            self.ld_hl(value as u8);
-        }
-
-        pub(crate) fn ld_hl(&mut self, value: u8){
-            let hl = self.Registers.get_item("HL");
-            self.MMU.write_byte(hl as i32, value)
+        pub(crate) fn ld_address_value(&mut self, address_pointer: &str, value: &str){
+            let address = self.Registers.get_item(address_pointer);
+            let value = self.Registers.get_item(value);
+            self.MMU.write_byte(address as i32, value as u8)
         }
 
         pub(crate) fn rra(&mut self){
