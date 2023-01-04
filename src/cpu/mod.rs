@@ -121,6 +121,7 @@ pub mod CPU{
                     0x33 => self.inc_nn( "SP"), //0x33 INC SP
                     0x34 => self.inc_hl_pointer(), //0x34 INC (HL)
                     0x35 => self.dec_hl_pointer(), //0x35 DEC (HL)
+                    0x36 => self.ld_hl_pointer_d8(instruction), //0x36 LD (HL),d8
                     0x37 => self.scf(), //0x37 SCF
                     0x39 => self.add_hl_n( "SP"), //0x39 ADD HL, SP
                     0x3B => self.dec_nn( "SP"), //0x3B DEC SP
@@ -479,6 +480,12 @@ pub mod CPU{
             let old_a = self.Registers.get_item("A");
             self.sub_a_hl();
             self.Registers.set_item("A", old_a);
+        }
+
+        pub(crate) fn ld_hl_pointer_d8(&mut self, instruction: Instruction){
+            let d8 = instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
+            let hl = self.Registers.get_item("HL") as i32;
+            self.MMU.write_byte(hl, d8.value.expect("d8 has no value") as u8);
         }
 
         pub(crate) fn inc_hl_pointer(&mut self) {

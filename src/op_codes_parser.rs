@@ -13,22 +13,22 @@ pub mod op_codes_parser {
 
     #[derive(Debug, Clone)]
     pub struct Operand {
-        immediate: bool,
+        pub(crate) immediate: bool,
         pub(crate) name: String,
         pub(crate) bytes: Option<u8>,
         pub(crate) value: Option<u16>,
-        adjust: Option<AdjustTypes>
+        pub(crate) adjust: Option<AdjustTypes>
     }
 
     #[derive(Debug, Clone)]
     pub struct Instruction {
         pub(crate) opcode: u8,
-        immediate: bool,
+        pub(crate) immediate: bool,
         pub(crate) operands: Vec<Operand>,
-        cycles: Vec<u8>,
-        bytes: u8,
+        pub(crate) cycles: Vec<u8>,
+        pub(crate) bytes: u8,
         pub(crate) mnemonic: String,
-        comment: Option<&'static str>,
+        pub(crate) comment: Option<&'static str>,
         pub(crate) prefixed: bool
     }
 

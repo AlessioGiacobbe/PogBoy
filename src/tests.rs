@@ -1,5 +1,5 @@
 use crate::mmu::mmu::MMU;
-use crate::op_codes_parser::op_codes_parser::Instruction;
+use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
@@ -387,5 +387,33 @@ fn inc_and_dec_hl_pointer_works(){
 
     cpu.dec_hl_pointer();
     assert_eq!(cpu.MMU.read_byte(0xC000), 0x5);
+}
+
+#[test]
+fn memory_pointer_ops_works(){
+    let mut cpu = create_dummy_cpu();
+    let ld_hl_pointer_0xF_instruction = Instruction {
+        opcode: 0,
+        immediate: false,
+        operands: vec![
+            Operand {
+                immediate: false,
+                name: "d8".to_string(),
+                bytes: None,
+                value: Some(0xF),
+                adjust: None
+            }
+        ],
+        cycles: vec![],
+        bytes: 0,
+        mnemonic: "".to_string(),
+        comment: None,
+        prefixed: false
+    };
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.ld_hl_pointer_d8(ld_hl_pointer_0xF_instruction);
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0xF);
+
 }
 
