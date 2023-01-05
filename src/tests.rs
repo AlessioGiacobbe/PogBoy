@@ -415,5 +415,10 @@ fn memory_pointer_ops_works(){
     cpu.ld_hl_pointer_d8(ld_hl_pointer_0xF_instruction);
     assert_eq!(cpu.MMU.read_byte(0xC000), 0xF);
 
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.Registers.set_item("A", 3);
+    cpu.ld_hl_pointer_dec_inc_a(true);
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x3);
+    assert_eq!(cpu.Registers.get_item("HL"), 0xC001);
 }
 
