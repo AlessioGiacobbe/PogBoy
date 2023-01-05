@@ -106,6 +106,7 @@ pub mod CPU{
                     0x1E => self.ld_r_d8( "E", instruction), //0x1E LD E,d8
                     0x1F => self.rra(), //0x1F RRA
                     0x21 => self.ld_nn( instruction.operands, "HL"), //0x21 LD HL, d16
+                    0x22 => self.ld_hl_pointer_dec_inc_a(true), //0x22 LD (HL+), A
                     0x23 => self.inc_nn( "HL"), //0x23 INC HL
                     0x24 => self.inc( "H"), //0x24 INC H
                     0x25 => self.dec( "H"), //0x25 DEC H
@@ -118,6 +119,7 @@ pub mod CPU{
                     0x2E => self.ld_r_d8( "L", instruction), //0x2E LD L,d8
                     0x2F => self.cpl(), //0x2F CPL
                     0x31 => self.ld_nn(instruction.operands, "SP"), //0x31 LD SP, d16
+                    0x32 => self.ld_hl_pointer_dec_inc_a(false), //0x32 LD (HL-), A
                     0x33 => self.inc_nn( "SP"), //0x33 INC SP
                     0x34 => self.inc_hl_pointer(), //0x34 INC (HL)
                     0x35 => self.dec_hl_pointer(), //0x35 DEC (HL)
@@ -486,6 +488,18 @@ pub mod CPU{
             let d8 = instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
             let hl = self.Registers.get_item("HL") as i32;
             self.MMU.write_byte(hl, d8.value.expect("d8 has no value") as u8);
+        }
+
+        pub(crate) fn ld_hl_pointer_dec_inc_a(&mut self, increase: bool){
+            let mut hl = self.Registers.get_item("HL");
+            let a = self.Registers.get_item("A");
+            self.MMU.write_byte(hl as i32, a as u8);
+            if increase {
+                hl += 1;
+            }else {
+                hl -= 1;
+            }
+            self.Registers.set_item("HL", hl);
         }
 
         pub(crate) fn inc_hl_pointer(&mut self) {
