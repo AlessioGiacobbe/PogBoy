@@ -85,6 +85,7 @@ pub mod CPU{
                     0x06 => self.ld_r_d8( "B", instruction), //0x06 LD B,d8
                     0x07 => self.rlca(), //0x07 RLCA
                     0x09 => self.add_hl_n( "BC"), //0x09 ADD HL, BC
+                    0x0A => self.ld_a_address("BC"), //0x0A LD A,(BC)
                     0x0B => self.dec_nn( "BC"), //0x0B DEC BC
                     0x0C => self.inc( "C"), //0x0C INC C
                     0x0D => self.dec( "C"), //0x0D DEC C
@@ -100,6 +101,7 @@ pub mod CPU{
                     0x17 => self.rla(), //0x17 RLA
                     0x18 => {}, //TODO 0x18 JR e8
                     0x19 => self.add_hl_n( "DE"), //0x19 ADD HL, DE
+                    0x1A => self.ld_a_address("DE"), //0x1A LD A,(DE)
                     0x1B => self.dec_nn( "DE"), //0x1B DEC DE
                     0x1C => self.inc( "E"), //0x1C INC E
                     0x1D => self.dec( "E"), //0x1D DEC E
@@ -113,6 +115,7 @@ pub mod CPU{
                     0x26 => self.ld_r_d8( "H", instruction), //0x26 LD H,d8
                     0x27 => self.daa(), //0x27 DAA
                     0x29 => self.add_hl_n( "HL"), //0x29 ADD HL, HL
+                    0x2A => { self.ld_a_address("HL"); self.inc_nn("HL") }, //0x2A LD A,(HL+)
                     0x2B => self.dec_nn( "HL"), //0x2B DEC HL
                     0x2C => self.inc( "L"), //0x2C INC L
                     0x2D => self.dec( "L"), //0x2D DEC L
@@ -126,6 +129,7 @@ pub mod CPU{
                     0x36 => self.ld_hl_pointer_d8(instruction), //0x36 LD (HL),d8
                     0x37 => self.scf(), //0x37 SCF
                     0x39 => self.add_hl_n( "SP"), //0x39 ADD HL, SP
+                    0x3A => { self.ld_a_address("HL"); self.dec_nn("HL") }, //0x3A LD A,(HL-)
                     0x3B => self.dec_nn( "SP"), //0x3B DEC SP
                     0x3C => self.inc( "A"), //0x3C INC A
                     0x3D => self.dec("A"), //0x3D DEC A
@@ -260,16 +264,27 @@ pub mod CPU{
                     0xBF => self.cp_a("A"), //0xBF CP A
                     0xC1 => self.pop_rr("BC"), //0xC1 POP BC
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
-                    0xC6 => self.add_a_n(instruction.operands),
+                    0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
+                    0xD3 => (), //0xD3 UNDEFINED
                     0xD5 => self.push_rr("DE"), //0xD5 PUSH DE
-                    0xD6 => self.sub_a_n(instruction.operands),
+                    0xD6 => self.sub_a_n(instruction.operands), //0xD6 SUB d8
+                    0xDB => (), //0xDB UNDEFINED
+                    0xDD => (), //0xDD UNDEFINED
                     0xE1 => self.pop_rr("HL"), //0xE1 POP HL
+                    0xE3 => (), //0xE3 UNDEFINED
+                    0xE4 => (), //0xE4 UNDEFINED
                     0xE5 => self.push_rr("HL"), //0xE5 PUSH HL
-                    0xE6 => self.and_a_n(instruction.operands),
+                    0xE6 => self.and_a_n(instruction.operands), //0xE6 AND d8
+                    0xEB => (), //0xEB UNDEFINED
+                    0xEC => (), //0xEC UNDEFINED
+                    0xED => (), //0xED UNDEFINED
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
+                    0xF4 => (), //0xF4 UNDEFINED
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
-                    0xF6 => self.or_a_n(instruction.operands),
+                    0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
+                    0xFC => (), //0xFC UNDEFINED
+                    0xFD => (), //0xFD UNDEFINED
                     _ => return Err(instruction)
                 }
             }
@@ -564,6 +579,12 @@ pub mod CPU{
             let address = self.Registers.get_item(address_pointer);
             let value = self.Registers.get_item(value);
             self.MMU.write_byte(address as i32, value as u8)
+        }
+
+        pub(crate) fn ld_a_address(&mut self, address_pointer: &str){
+            let address = self.Registers.get_item(address_pointer);
+            let value = self.MMU.read_byte(address as i32);
+            self.Registers.set_item("A", value as u16);
         }
 
         pub(crate) fn rra(&mut self){
