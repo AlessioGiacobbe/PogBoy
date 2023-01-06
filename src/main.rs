@@ -5,6 +5,7 @@ mod cartridge;
 mod decoder;
 mod cpu;
 mod mmu;
+mod interrupt;
 
 #[cfg(test)]
 mod tests;
