@@ -440,3 +440,13 @@ fn push_and_pop_works(){
     assert_eq!(cpu.Registers.get_item("DE"), 0xFFEE)
 }
 
+#[test]
+fn rst_works() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("PC", 0xC0FE);
+    cpu.rst(0x30);
+    assert_eq!(cpu.Registers.get_item("PC"), 0x0030);
+    assert_eq!(cpu.read_from_stack(), 0xC0FE);
+}
+
