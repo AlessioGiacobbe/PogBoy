@@ -265,26 +265,34 @@ pub mod CPU{
                     0xC1 => self.pop_rr("BC"), //0xC1 POP BC
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
+                    0xC7 => self.rst(0x0), //0xC7 RST 00H
+                    0xCF => self.rst(0x8), //0xCF RST 08H
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
                     0xD3 => (), //0xD3 UNDEFINED
                     0xD5 => self.push_rr("DE"), //0xD5 PUSH DE
                     0xD6 => self.sub_a_n(instruction.operands), //0xD6 SUB d8
+                    0xD7 => self.rst(0x10), //0xD7 RST 10H
                     0xDB => (), //0xDB UNDEFINED
                     0xDD => (), //0xDD UNDEFINED
+                    0xDF => self.rst(0x18), //0xDF RST 18H
                     0xE1 => self.pop_rr("HL"), //0xE1 POP HL
                     0xE3 => (), //0xE3 UNDEFINED
                     0xE4 => (), //0xE4 UNDEFINED
                     0xE5 => self.push_rr("HL"), //0xE5 PUSH HL
                     0xE6 => self.and_a_n(instruction.operands), //0xE6 AND d8
+                    0xE7 => self.rst(0x20), //0xE7 RST 20H
                     0xEB => (), //0xEB UNDEFINED
                     0xEC => (), //0xEC UNDEFINED
                     0xED => (), //0xED UNDEFINED
+                    0xEF => self.rst(0x28), //0xEF RST 28H
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
                     0xF4 => (), //0xF4 UNDEFINED
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
+                    0xF7 => self.rst(0x30), //0xF7 RST 30H
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
+                    0xFF => self.rst(0x38), //0xFF RST 38H
                     _ => return Err(instruction)
                 }
             }
@@ -624,6 +632,11 @@ pub mod CPU{
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+        }
+
+        pub(crate) fn rst(&mut self, new_pc: u16){
+            self.write_to_stack(self.Registers.get_item("PC"));
+            self.Registers.set_item("PC", new_pc);
         }
 
         pub(crate) fn rlca(&mut self){
