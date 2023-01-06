@@ -4,6 +4,7 @@ pub mod CPU{
     use std::fmt::{Display, Formatter};
     use crate::cpu::registers::Registers::Registers;
     use crate::decoder::decoder::Decoder;
+    use crate::interrupt::interrupt::Interrupt;
     use crate::mmu::mmu::MMU;
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 
@@ -11,6 +12,7 @@ pub mod CPU{
         pub(crate) Registers: Registers,
         pub(crate) Decoder: Decoder,
         pub(crate) MMU: MMU,
+        pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool
     }
 
@@ -189,7 +191,7 @@ pub mod CPU{
                     0x73 => self.ld_address_value("HL", "E"), //0x73 LD (HL),E
                     0x74 => self.ld_address_value("HL", "H"), //0x74 LD (HL),H
                     0x75 => self.ld_address_value("HL", "L"), //0x75 LD (HL),L
-                    0x76 => {}, //TODO 0x76 HALT
+                    0x76 => self.is_stopped = true, //0x76 HALT
                     0x77 => self.ld_address_value("HL", "A"), //0x77 LD (HL),A
                     0x78 => self.ld_r_r("B", "A"), //0x78 LD A,B
                     0x79 => self.ld_r_r("C", "A"), //0x79 LD A,C
@@ -266,6 +268,7 @@ pub mod CPU{
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
                     0xC7 => self.rst(0x0), //0xC7 RST 00H
+                    0xCB => {}, //0xCB CB PREFIX
                     0xCF => self.rst(0x8), //0xCF RST 08H
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
                     0xD3 => (), //0xD3 UNDEFINED
@@ -286,10 +289,12 @@ pub mod CPU{
                     0xED => (), //0xED UNDEFINED
                     0xEF => self.rst(0x28), //0xEF RST 28H
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
+                    0xF3 => self.Interrupt.enabled = false, //0xF3 DI
                     0xF4 => (), //0xF4 UNDEFINED
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
                     0xF7 => self.rst(0x30), //0xF7 RST 30H
+                    0xFB => self.Interrupt.enabled = true, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
                     0xFF => self.rst(0x38), //0xFF RST 38H
