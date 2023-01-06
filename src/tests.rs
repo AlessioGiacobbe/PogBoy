@@ -422,3 +422,21 @@ fn memory_pointer_ops_works(){
     assert_eq!(cpu.Registers.get_item("HL"), 0xC001);
 }
 
+#[test]
+fn push_and_pop_works(){
+    let mut cpu = create_dummy_cpu();
+
+    assert_eq!(cpu.Registers.get_item("SP"), 0xFFFE);
+    cpu.write_to_stack(0xC0FE);
+    assert_eq!(cpu.Registers.get_item("SP"), 0xFFFE - 2);
+    assert_eq!(cpu.read_from_stack(), 0xC0FE);
+
+    cpu.write_to_stack(0xFEAB);
+    assert_eq!(cpu.read_from_stack(), 0xFEAB);
+
+    cpu.Registers.set_item("BC", 0xFFEE);
+    cpu.push_rr("BC");
+    cpu.pop_rr("DE");
+    assert_eq!(cpu.Registers.get_item("DE"), 0xFFEE)
+}
+
