@@ -258,9 +258,17 @@ pub mod CPU{
                     0xBD => self.cp_a("L"), //0xBD CP L
                     0xBE => self.cp_a_hl(), //0xBE CP (HL)
                     0xBF => self.cp_a("A"), //0xBF CP A
+                    0xC1 => self.pop_rr("BC"), //0xC1 POP BC
+                    0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands),
+                    0xD1 => self.pop_rr("DE"), //0xD1 POP DE
+                    0xD5 => self.push_rr("DE"), //0xD5 PUSH DE
                     0xD6 => self.sub_a_n(instruction.operands),
+                    0xE1 => self.pop_rr("HL"), //0xE1 POP HL
+                    0xE5 => self.push_rr("HL"), //0xE5 PUSH HL
                     0xE6 => self.and_a_n(instruction.operands),
+                    0xF1 => self.pop_rr("AF"), //0xF1 POP AF
+                    0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),
                     _ => return Err(instruction)
                 }
@@ -667,6 +675,33 @@ pub mod CPU{
             self.Registers.set_item("c", (result & 0x10000 != 0) as u16); //if true, result is bigger than 16 bit max value
             self.Registers.set_item("n", 0);
             self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, to_add as i16, 0, HalfCarryOperationsMode::AddWords) as u16);
+        }
+        
+        pub(crate) fn push_rr(&mut self, to_push: &str){
+            let to_push = self.Registers.get_item(to_push);
+            self.write_to_stack(to_push);
+        }
+        
+        pub(crate) fn pop_rr(&mut self, pop_into: &str){
+            let value = self.read_from_stack();
+            self.Registers.set_item(pop_into, value)
+        }
+
+        pub(crate) fn write_to_stack(&mut self, value: u16){
+            let mut sp = self.Registers.get_item("SP");
+            sp -= 2;
+            self.MMU.write_byte(sp as i32, (value & 0x00FF) as u8);
+            //since value is 16 bits we have to mask and shift to get the first 8 bits
+            self.MMU.write_byte((sp + 1) as i32, ((value & 0xFF00) >> 8)  as u8);
+            self.Registers.set_item("SP", sp);
+        }
+
+        pub(crate) fn read_from_stack(&mut self) -> u16 {
+            let mut sp = self.Registers.get_item("SP");
+            let first_8_bits = self.MMU.read_byte(sp as i32) as u16;
+            let last_8_bits = self.MMU.read_byte((sp + 1) as i32) as u16;
+            self.Registers.set_item("SP", sp + 2);
+            (first_8_bits | last_8_bits << 8) as u16
         }
 
         //half carry is carry calculated on the first half of a byte (from 3rd bit)

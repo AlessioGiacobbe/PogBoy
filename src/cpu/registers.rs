@@ -54,7 +54,7 @@ pub mod Registers {
                 DE: 0,
                 HL: 0,
                 PC: 0x200,    // 0x100 : rom entry point
-                SP: 0,
+                SP: 0xFFFE,   // 0xFFFE : end of high ram (stack pointer goes backwards)
                 LOW_REGISTERS,
                 HIGH_REGISTERS,
                 REGISTERS,
