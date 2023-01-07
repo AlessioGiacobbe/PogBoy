@@ -16,6 +16,14 @@ pub mod CPU{
         pub(crate) is_stopped: bool
     }
 
+    pub enum JumpCondition {
+        Zero,
+        NotZero,
+        Carry,
+        NotCarry,
+        None
+    }
+
     enum HalfCarryOperationsMode {
         Add,        //8bit
         AddWords,   //16bit
@@ -102,7 +110,7 @@ pub mod CPU{
                     0x15 => self.dec( "D"), //0x15 DEC D
                     0x16 => self.ld_r_d8( "D", instruction), //0x16 LD D,d8
                     0x17 => self.rla(), //0x17 RLA
-                    0x18 => {}, //TODO 0x18 JR e8
+                    0x18 => self.jr_r8(instruction, JumpCondition::None), //0x18 JR r8
                     0x19 => self.add_hl_n( "DE"), //0x19 ADD HL, DE
                     0x1A => self.ld_a_address("DE"), //0x1A LD A,(DE)
                     0x1B => self.dec_nn( "DE"), //0x1B DEC DE
@@ -110,6 +118,7 @@ pub mod CPU{
                     0x1D => self.dec( "E"), //0x1D DEC E
                     0x1E => self.ld_r_d8( "E", instruction), //0x1E LD E,d8
                     0x1F => self.rra(), //0x1F RRA
+                    0x20 => self.jr_r8(instruction, JumpCondition::NotZero), //0x20 JR NZ,r8
                     0x21 => self.ld_nn( instruction.operands, "HL"), //0x21 LD HL, d16
                     0x22 => self.ld_hl_pointer_dec_inc_a(true), //0x22 LD (HL+), A
                     0x23 => self.inc_nn( "HL"), //0x23 INC HL
@@ -117,6 +126,7 @@ pub mod CPU{
                     0x25 => self.dec( "H"), //0x25 DEC H
                     0x26 => self.ld_r_d8( "H", instruction), //0x26 LD H,d8
                     0x27 => self.daa(), //0x27 DAA
+                    0x28 => self.jr_r8(instruction, JumpCondition::Zero), //0x28 JR Z,r8
                     0x29 => self.add_hl_n( "HL"), //0x29 ADD HL, HL
                     0x2A => { self.ld_a_address("HL"); self.inc_nn("HL") }, //0x2A LD A,(HL+)
                     0x2B => self.dec_nn( "HL"), //0x2B DEC HL
@@ -124,6 +134,7 @@ pub mod CPU{
                     0x2D => self.dec( "L"), //0x2D DEC L
                     0x2E => self.ld_r_d8( "L", instruction), //0x2E LD L,d8
                     0x2F => self.cpl(), //0x2F CPL
+                    0x30 => self.jr_r8(instruction, JumpCondition::NotCarry), //0x30 JR NC,r8
                     0x31 => self.ld_nn(instruction.operands, "SP"), //0x31 LD SP, d16
                     0x32 => self.ld_hl_pointer_dec_inc_a(false), //0x32 LD (HL-), A
                     0x33 => self.inc_nn( "SP"), //0x33 INC SP
@@ -131,6 +142,7 @@ pub mod CPU{
                     0x35 => self.dec_hl_pointer(), //0x35 DEC (HL)
                     0x36 => self.ld_hl_pointer_d8(instruction), //0x36 LD (HL),d8
                     0x37 => self.scf(), //0x37 SCF
+                    0x38 => self.jr_r8(instruction, JumpCondition::Carry), //0x38 JR C,r8
                     0x39 => self.add_hl_n( "SP"), //0x39 ADD HL, SP
                     0x3A => { self.ld_a_address("HL"); self.dec_nn("HL") }, //0x3A LD A,(HL-)
                     0x3B => self.dec_nn( "SP"), //0x3B DEC SP
@@ -643,6 +655,21 @@ pub mod CPU{
         pub(crate) fn rst(&mut self, new_pc: u16){
             self.write_to_stack(self.Registers.get_item("PC"));
             self.Registers.set_item("PC", new_pc);
+        }
+
+        pub(crate) fn jr_r8(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap();
+            let current_pc = self.Registers.get_item("PC");
+            let should_jump = match JumpCondition {
+                JumpCondition::Zero => self.Registers.get_item("z") == 1,
+                JumpCondition::NotZero => self.Registers.get_item("z") == 0,
+                JumpCondition::Carry => self.Registers.get_item("c") == 1,
+                JumpCondition::NotCarry => self.Registers.get_item("c") == 0,
+                JumpCondition::None => true
+            };
+            if should_jump {
+                self.Registers.set_item("PC", current_pc + r8);
+            }
         }
 
         pub(crate) fn rlca(&mut self){
