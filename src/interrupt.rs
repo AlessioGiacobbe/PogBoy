@@ -4,7 +4,7 @@ pub mod interrupt {
         pub(crate) enabled: bool
     }
 
-    impl MMU {
+    impl Interrupt {
 
     }
     

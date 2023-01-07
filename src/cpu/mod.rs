@@ -44,6 +44,7 @@ pub mod CPU{
                 Registers,
                 Decoder: decoder,
                 MMU,
+                Interrupt: Default::default(),
                 is_stopped: false
             }
         }
