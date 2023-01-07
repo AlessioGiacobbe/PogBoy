@@ -168,6 +168,17 @@ pub mod mmu {
                 }
             }
         }
+
+        pub(crate) fn write_word(&mut self, address: i32, value: u16){
+            self.write_byte(address, (value & 0x00FF) as u8);
+            self.write_byte(address + 1, ((value & 0xFF00) >> 8) as u8);
+        }
+
+        pub(crate) fn read_word(&mut self, address: i32) -> u16{
+            let first_8_bits = self.read_byte(address as i32) as u16;
+            let last_8_bits = self.read_byte((address + 1) as i32) as u16;
+            (first_8_bits | last_8_bits << 8) as u16
+        }
     }
 
 }
