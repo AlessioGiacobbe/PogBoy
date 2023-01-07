@@ -355,6 +355,12 @@ pub mod CPU{
             self.add_a(value_to_add);
         }
 
+        pub(crate) fn ld_a16_pointer_sp(&mut self, Instruction: Instruction){
+            let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
+            let sp = self.Registers.get_item("SP");
+            self.MMU.write_word(a16 as i32, sp);
+        }
+
         pub(crate) fn add_a_hl(&mut self){
             let hl = self.Registers.get_item("HL");
             let value_at_hl = self.MMU.read_byte(hl as i32);

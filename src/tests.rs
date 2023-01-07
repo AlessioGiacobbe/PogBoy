@@ -381,6 +381,9 @@ fn memory_can_read_and_write(){
     assert_eq!(dummy_mmu.read_byte(0xFFFF), 1);
     dummy_mmu.write_byte(0xFFFF, 0x0);
     assert_eq!(dummy_mmu.read_byte(0xFFFF), 0x0);
+
+    dummy_mmu.write_word(0xA000, 0xC0FE);
+    assert_eq!(dummy_mmu.read_word(0xA000), 0xC0FE);
 }
 
 #[test]
@@ -425,6 +428,11 @@ fn memory_pointer_ops_works(){
     cpu.ld_hl_pointer_dec_inc_a(true);
     assert_eq!(cpu.MMU.read_byte(0xC000), 0x3);
     assert_eq!(cpu.Registers.get_item("HL"), 0xC001);
+
+    let ld_a16_pointer_sp_instruction = create_dummy_instruction("a16", 0xC000);
+    cpu.Registers.set_item("SP", 0xC0FE);
+    cpu.ld_a16_pointer_sp(ld_a16_pointer_sp_instruction);
+    assert_eq!(cpu.MMU.read_word(0xC000), 0xC0FE);
 }
 
 #[test]
