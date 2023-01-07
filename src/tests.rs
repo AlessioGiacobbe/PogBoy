@@ -1,3 +1,4 @@
+use crate::cpu::CPU::JumpCondition;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 use super::*;
@@ -31,6 +32,27 @@ fn create_dummy_cpu() -> CPU {
     let dummy_decoder = create_dummy_decoder();
     let dummy_mmu = create_dummy_mmu();
     CPU::new(Some(dummy_decoder), dummy_mmu)
+}
+
+fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instruction {
+    Instruction {
+        opcode: 0,
+        immediate: false,
+        operands: vec![
+            Operand {
+                immediate: false,
+                name: operand_name.parse().unwrap(),
+                bytes: None,
+                value: Some(operand_value),
+                adjust: None
+            }
+        ],
+        cycles: vec![],
+        bytes: 0,
+        mnemonic: "".to_string(),
+        comment: None,
+        prefixed: false
+    }
 }
 
 #[test]
@@ -392,24 +414,7 @@ fn inc_and_dec_hl_pointer_works(){
 #[test]
 fn memory_pointer_ops_works(){
     let mut cpu = create_dummy_cpu();
-    let ld_hl_pointer_0xF_instruction = Instruction {
-        opcode: 0,
-        immediate: false,
-        operands: vec![
-            Operand {
-                immediate: false,
-                name: "d8".to_string(),
-                bytes: None,
-                value: Some(0xF),
-                adjust: None
-            }
-        ],
-        cycles: vec![],
-        bytes: 0,
-        mnemonic: "".to_string(),
-        comment: None,
-        prefixed: false
-    };
+    let ld_hl_pointer_0xF_instruction = create_dummy_instruction("d8", 0xF);
 
     cpu.Registers.set_item("HL", 0xC000);
     cpu.ld_hl_pointer_d8(ld_hl_pointer_0xF_instruction);
@@ -448,5 +453,24 @@ fn rst_works() {
     cpu.rst(0x30);
     assert_eq!(cpu.Registers.get_item("PC"), 0x0030);
     assert_eq!(cpu.read_from_stack(), 0xC0FE);
+}
+
+#[test]
+fn jump_works() {
+    let mut cpu = create_dummy_cpu();
+
+    let jp_r8_instruction = create_dummy_instruction("r8", 0x5);
+    cpu.Registers.set_item("PC", 0);
+    cpu.jr_r8(jp_r8_instruction, JumpCondition::None);
+    assert_eq!(cpu.Registers.get_item("PC"), 5);
+
+    let jp_r8_instruction = create_dummy_instruction("r8", 0x1);
+    cpu.Registers.set_item("z", 0);
+    cpu.Registers.set_item("PC", 0);
+    cpu.jr_r8(jp_r8_instruction.clone(),  JumpCondition::NotZero);
+    assert_eq!(cpu.Registers.get_item("PC"), 1);
+    cpu.Registers.set_item("z", 1);
+    cpu.jr_r8(jp_r8_instruction,  JumpCondition::NotZero);
+    assert_eq!(cpu.Registers.get_item("PC"), 1);    //jump should not happen so PC shouldn't be changed
 }
 
