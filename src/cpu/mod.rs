@@ -292,6 +292,7 @@ pub mod CPU{
                     0xDD => (), //0xDD UNDEFINED
                     0xDF => self.rst(0x18), //0xDF RST 18H
                     0xE1 => self.pop_rr("HL"), //0xE1 POP HL
+                    0xE2 => self.ld_c_pointer_a(), //0xE2 LD (C),A
                     0xE3 => (), //0xE3 UNDEFINED
                     0xE4 => (), //0xE4 UNDEFINED
                     0xE5 => self.push_rr("HL"), //0xE5 PUSH HL
@@ -302,6 +303,7 @@ pub mod CPU{
                     0xED => (), //0xED UNDEFINED
                     0xEF => self.rst(0x28), //0xEF RST 28H
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
+                    0xF2 => self.ld_a_c_pointer(), //0xF2 LD A,(C)
                     0xF3 => self.Interrupt.enabled = false, //0xF3 DI
                     0xF4 => (), //0xF4 UNDEFINED
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
@@ -361,6 +363,19 @@ pub mod CPU{
             self.MMU.write_word(a16 as i32, sp);
         }
 
+        pub(crate) fn ld_a_c_pointer(&mut self){
+            let c = self.Registers.get_item("C");
+            let a = self.Registers.get_item("A");
+            let value_at_c = self.MMU.read_byte((0xFF00 + c) as i32);
+            self.Registers.set_item("A", value_at_c as u16);
+        }
+
+        pub(crate) fn ld_c_pointer_a(&mut self){
+            let c = self.Registers.get_item("C");
+            let a = self.Registers.get_item("A");
+            self.MMU.write_byte((0xFF00 + c) as i32, a as u8);
+        }
+
         pub(crate) fn add_a_hl(&mut self){
             let hl = self.Registers.get_item("HL");
             let value_at_hl = self.MMU.read_byte(hl as i32);
@@ -387,6 +402,10 @@ pub mod CPU{
         pub(crate) fn adc_a_r(&mut self, to_add: &str){
             let to_add = self.Registers.get_item(to_add) as i16;
             self.adc_a(to_add);
+        }
+
+        pub(crate) fn adc_d8(&mut self, Instruction: Instruction){
+
         }
 
         pub(crate) fn adc_a(&mut self, value: i16) {

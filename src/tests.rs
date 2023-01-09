@@ -482,3 +482,17 @@ fn jump_works() {
     assert_eq!(cpu.Registers.get_item("PC"), 1);    //jump should not happen so PC shouldn't be changed
 }
 
+#[test]
+fn c_pointer_instructions_works() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.MMU.write_byte(0xFF03, 5);
+    cpu.Registers.set_item("C", 3);
+    cpu.ld_a_c_pointer();
+    assert_eq!(cpu.Registers.get_item("A"), 5);
+
+    cpu.Registers.set_item("A", 8);
+    cpu.ld_c_pointer_a();
+    assert_eq!(cpu.MMU.read_byte(0xFF03), 8);
+}
+
