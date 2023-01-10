@@ -301,6 +301,7 @@ pub mod CPU{
                     0xE5 => self.push_rr("HL"), //0xE5 PUSH HL
                     0xE6 => self.and_a_n(instruction.operands), //0xE6 AND d8
                     0xE7 => self.rst(0x20), //0xE7 RST 20H
+                    0xEA => self.ld_a16_pointer_a(instruction), //0xEA LD (a16),A
                     0xEB => (), //0xEB UNDEFINED
                     0xEC => (), //0xEC UNDEFINED
                     0xED => (), //0xED UNDEFINED
@@ -313,6 +314,7 @@ pub mod CPU{
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
                     0xF7 => self.rst(0x30), //0xF7 RST 30H
+                    0xFA => self.ld_a_a16_pointer(instruction), //0xFA LD A,(a16)
                     0xFB => self.Interrupt.enabled = true, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
