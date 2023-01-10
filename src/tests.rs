@@ -233,7 +233,7 @@ fn cp_sets_right_flags(){
     cpu.cp_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0xFF);
     assert_eq!(cpu.Registers.get_item("z"), 1);
-    assert_eq!(cpu.Registers.get_item("n"), 1); //should be set, operation is sub
+    assert_eq!(cpu.Registers.get_item("n"), 1);
 
     cpu.Registers.set_item("B", 0xFF);
     cpu.Registers.set_item("A", 0x0F);
@@ -496,5 +496,37 @@ fn c_pointer_instructions_works() {
     assert_eq!(cpu.MMU.read_byte(0xFF03), 8);
 }
 
-//TODO write ADC/SBC/XOR/CP d8 tests
+#[test]
+fn a_register_with_d8_operand_instructions_works(){
+    let mut cpu = create_dummy_cpu();
+    let d8_instruction = create_dummy_instruction("d8", 0xFF);
+
+    cpu.Registers.set_item("A", 0xFF);
+    cpu.adc_a_d8(d8_instruction);
+    assert_eq!(cpu.Registers.get_item("A"), 254);
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+
+    let d8_instruction = create_dummy_instruction("d8", 0x2);
+    cpu.Registers.set_item("c", 1);
+    cpu.Registers.set_item("A", 0x3);
+    cpu.sbc_a_d8(d8_instruction);
+    assert_eq!(cpu.Registers.get_item("A"), 0);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
+    let d8_instruction = create_dummy_instruction("d8", 0x2);
+    cpu.Registers.set_item("A", 0x3);
+    cpu.xor_a_d8(d8_instruction);
+
+    assert_eq!(cpu.Registers.get_item("A"), 1);
+    assert_eq!(cpu.Registers.get_item("n"), 0);
+    assert_eq!(cpu.Registers.get_item("h"), 0);
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("z"), 0);
+
+    let d8_instruction = create_dummy_instruction("d8", 0xFF);
+    cpu.Registers.set_item("A", 0xF);
+    cpu.cp_a_d8(d8_instruction);
+    assert_eq!(cpu.Registers.get_item("A"), 0x0F);
+    assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
+}
 
