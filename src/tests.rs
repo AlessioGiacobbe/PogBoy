@@ -230,20 +230,20 @@ fn cp_sets_right_flags(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0xFF);
     cpu.Registers.set_item("B", 0xFF);
-    cpu.cp_a("B");
+    cpu.cp_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0xFF);
     assert_eq!(cpu.Registers.get_item("z"), 1);
     assert_eq!(cpu.Registers.get_item("n"), 1); //should be set, operation is sub
 
     cpu.Registers.set_item("B", 0xFF);
     cpu.Registers.set_item("A", 0x0F);
-    cpu.cp_a("B");
+    cpu.cp_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0x0F);
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
 
     cpu.Registers.set_item("B", 0x0F);
     cpu.Registers.set_item("A", 0x03);
-    cpu.cp_a("B");
+    cpu.cp_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 0x03);
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be set, (b & 0x0F) > (a & 0x0F)
 }
@@ -495,4 +495,6 @@ fn c_pointer_instructions_works() {
     cpu.ld_c_pointer_a();
     assert_eq!(cpu.MMU.read_byte(0xFF03), 8);
 }
+
+//TODO write ADC/SBC/XOR/CP d8 tests
 
