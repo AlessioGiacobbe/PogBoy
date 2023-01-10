@@ -95,6 +95,7 @@ pub mod CPU{
                     0x05 => self.dec( "B"), //0x05 DEC B
                     0x06 => self.ld_r_d8( "B", instruction), //0x06 LD B,d8
                     0x07 => self.rlca(), //0x07 RLCA
+                    0x08 => self.ld_a16_pointer_sp(instruction), //0x08 LD (a16),SP
                     0x09 => self.add_hl_n( "BC"), //0x09 ADD HL, BC
                     0x0A => self.ld_a_address("BC"), //0x0A LD A,(BC)
                     0x0B => self.dec_nn( "BC"), //0x0B DEC BC
@@ -269,19 +270,20 @@ pub mod CPU{
                     0xB5 => self.or_a_r("L"), //0xB5 OR L
                     0xB6 => self.or_a_hl(), //0xB6 OR (HL)
                     0xB7 => self.or_a_r("A"), //0xB7 OR A
-                    0xB8 => self.cp_a("B"), //0xB8 CP B
-                    0xB9 => self.cp_a("C"), //0xB9 CP C
-                    0xBA => self.cp_a("D"), //0xBA CP D
-                    0xBB => self.cp_a("E"), //0xBB CP E
-                    0xBC => self.cp_a("H"), //0xBC CP H
-                    0xBD => self.cp_a("L"), //0xBD CP L
+                    0xB8 => self.cp_a_r("B"), //0xB8 CP B
+                    0xB9 => self.cp_a_r("C"), //0xB9 CP C
+                    0xBA => self.cp_a_r("D"), //0xBA CP D
+                    0xBB => self.cp_a_r("E"), //0xBB CP E
+                    0xBC => self.cp_a_r("H"), //0xBC CP H
+                    0xBD => self.cp_a_r("L"), //0xBD CP L
                     0xBE => self.cp_a_hl(), //0xBE CP (HL)
-                    0xBF => self.cp_a("A"), //0xBF CP A
+                    0xBF => self.cp_a_r("A"), //0xBF CP A
                     0xC1 => self.pop_rr("BC"), //0xC1 POP BC
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
                     0xC7 => self.rst(0x0), //0xC7 RST 00H
                     0xCB => {}, //0xCB CB PREFIX
+                    0xCE => self.adc_a_d8(instruction), //0xCE ADC A,d8
                     0xCF => self.rst(0x8), //0xCF RST 08H
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
                     0xD3 => (), //0xD3 UNDEFINED
@@ -290,6 +292,7 @@ pub mod CPU{
                     0xD7 => self.rst(0x10), //0xD7 RST 10H
                     0xDB => (), //0xDB UNDEFINED
                     0xDD => (), //0xDD UNDEFINED
+                    0xDE => self.sbc_a_d8(instruction), //0xDE SBC A,d8
                     0xDF => self.rst(0x18), //0xDF RST 18H
                     0xE1 => self.pop_rr("HL"), //0xE1 POP HL
                     0xE2 => self.ld_c_pointer_a(), //0xE2 LD (C),A
@@ -301,6 +304,7 @@ pub mod CPU{
                     0xEB => (), //0xEB UNDEFINED
                     0xEC => (), //0xEC UNDEFINED
                     0xED => (), //0xED UNDEFINED
+                    0xEE => self.xor_a_d8(instruction), //0xEE XOR d8
                     0xEF => self.rst(0x28), //0xEF RST 28H
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
                     0xF2 => self.ld_a_c_pointer(), //0xF2 LD A,(C)
@@ -312,6 +316,7 @@ pub mod CPU{
                     0xFB => self.Interrupt.enabled = true, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
+                    0xFE => self.xor_a_d8(instruction), //0xFE XOR d8
                     0xFF => self.rst(0x38), //0xFF RST 38H
                     _ => return Err(instruction)
                 }
@@ -365,7 +370,6 @@ pub mod CPU{
 
         pub(crate) fn ld_a_c_pointer(&mut self){
             let c = self.Registers.get_item("C");
-            let a = self.Registers.get_item("A");
             let value_at_c = self.MMU.read_byte((0xFF00 + c) as i32);
             self.Registers.set_item("A", value_at_c as u16);
         }
@@ -404,8 +408,9 @@ pub mod CPU{
             self.adc_a(to_add);
         }
 
-        pub(crate) fn adc_d8(&mut self, Instruction: Instruction){
-
+        pub(crate) fn adc_a_d8(&mut self, Instruction: Instruction){
+            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand should have a value");
+            self.adc_a(d8 as i16);
         }
 
         pub(crate) fn adc_a(&mut self, value: i16) {
@@ -422,21 +427,21 @@ pub mod CPU{
 
         pub(crate) fn sub_a_r(&mut self, to_sub: &str) {
             let to_sub = self.Registers.get_item(to_sub) as i16;
-            self.sub_a_value(to_sub)
+            self.sub_a(to_sub)
         }
 
         pub(crate) fn sub_a_n(&mut self, operands: Vec<Operand>){
             let d8 = operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
-            self.sub_a_value(d8.value.expect("operand has no value") as i16);
+            self.sub_a(d8.value.expect("operand has no value") as i16);
         }
 
         pub(crate) fn sub_a_hl(&mut self) {
             let hl = self.Registers.get_item("HL");
             let value_at_hl = self.MMU.read_byte(hl as i32);
-            self.sub_a_value(value_at_hl as i16);
+            self.sub_a(value_at_hl as i16);
         }
 
-        fn sub_a_value(&mut self, to_sub: i16){
+        fn sub_a(&mut self, to_sub: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value - to_sub;
 
@@ -456,6 +461,11 @@ pub mod CPU{
             let hl = self.Registers.get_item("HL");
             let value_at_hl = self.MMU.read_byte(hl as i32);
             self.sbc_a(value_at_hl as i16);
+        }
+
+        pub(crate) fn sbc_a_d8(&mut self, Instruction: Instruction){
+            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand shuold have a value");
+            self.sbc_a(d8 as i16);
         }
 
         pub(crate) fn sbc_a(&mut self, value: i16) {
@@ -526,16 +536,21 @@ pub mod CPU{
 
         pub(crate) fn xor_a_r(&mut self, to_xor: &str) {
             let to_xor = self.Registers.get_item(to_xor) as i16;
-            self.xor_a_value(to_xor);
+            self.xor_a(to_xor);
         }
 
         pub(crate) fn xor_a_hl(&mut self){
             let hl = self.Registers.get_item("HL");
             let value_at_hl = self.MMU.read_byte(hl as i32);
-            self.xor_a_value(value_at_hl as i16);
+            self.xor_a(value_at_hl as i16);
         }
 
-        pub(crate) fn xor_a_value(&mut self, value: i16){
+        pub(crate) fn xor_a_d8(&mut self, Instruction: Instruction){
+            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand should have a value");
+            self.xor_a(d8 as i16);
+        }
+
+        pub(crate) fn xor_a(&mut self, value: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value ^ value;
 
@@ -546,9 +561,19 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
-        pub(crate) fn cp_a(&mut self, to_cp: &str) {
+        pub(crate) fn cp_a_r(&mut self, to_cp: &str) {
+            let to_cp = self.Registers.get_item(to_cp);
+            self.cp_a(to_cp as i16);
+        }
+
+        pub(crate) fn cp_a_d8(&mut self, Instruction: Instruction) {
+            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand shuold have a value");
+            self.cp_a(d8 as i16);
+        }
+
+        pub(crate) fn cp_a(&mut self, to_cp: i16) {
             let old_a = self.Registers.get_item("A");
-            self.sub_a_r(to_cp);
+            self.sub_a(to_cp);
             self.Registers.set_item("A", old_a);
         }
 
