@@ -362,6 +362,18 @@ pub mod CPU{
             self.add_a(value_to_add);
         }
 
+        pub(crate) fn ld_a16_pointer_a(&mut self, Instruction: Instruction){
+            let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
+            let a = self.Registers.get_item("A");
+            self.MMU.write_byte(a16 as i32, a as u8);
+        }
+
+        pub(crate) fn ld_a_a16_pointer(&mut self, Instruction: Instruction){
+            let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
+            let value_at_a16 = self.MMU.read_byte(a16 as i32);
+            self.Registers.set_item("A", value_at_a16 as u16);
+        }
+
         pub(crate) fn ld_a16_pointer_sp(&mut self, Instruction: Instruction){
             let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
             let sp = self.Registers.get_item("SP");
