@@ -320,6 +320,7 @@ pub mod CPU{
                     0xDD => (), //0xDD UNDEFINED
                     0xDE => self.sbc_a_d8(instruction), //0xDE SBC A,d8
                     0xDF => self.rst(0x18), //0xDF RST 18H
+                    0xE0 => self.ldh_a8_a(instruction), //0xE0 LDH (a8),A
                     0xE1 => self.pop_rr("HL"), //0xE1 POP HL
                     0xE2 => self.ld_c_pointer_a(), //0xE2 LD (C),A
                     0xE3 => (), //0xE3 UNDEFINED
@@ -335,6 +336,7 @@ pub mod CPU{
                     0xED => (), //0xED UNDEFINED
                     0xEE => self.xor_a_d8(instruction), //0xEE XOR d8
                     0xEF => self.rst(0x28), //0xEF RST 28H
+                    0xF0 => self.ldh_a_a8(instruction), //0xF0 LDH A,(a8)
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
                     0xF2 => self.ld_a_c_pointer(), //0xF2 LD A,(C)
                     0xF3 => self.Interrupt.enabled = false, //0xF3 DI
@@ -342,6 +344,7 @@ pub mod CPU{
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
                     0xF7 => self.rst(0x30), //0xF7 RST 30H
+                    0xF8 => self.ld_hl_sp_r8(instruction), //0xF8 LD HL,SP+r8
                     0xF9 => self.ld_sp_hl(), //0xF9 LD SP,HL
                     0xFA => self.ld_a_a16_pointer(instruction), //0xFA LD A,(a16)
                     0xFB => self.Interrupt.enabled = true, //0xFB EI
@@ -391,6 +394,17 @@ pub mod CPU{
         pub(crate) fn add_a_r(&mut self, to_add: &str){
             let value_to_add = self.Registers.get_item(to_add) as u16;
             self.add_a(value_to_add);
+        }
+
+        pub(crate) fn ldh_a8_a(&mut self, Instruction: Instruction){
+            let a8 = Instruction.operands.into_iter().find(|operand| operand.name == "a8").expect("Operand a8 not found").value.unwrap();
+            let a = self.Registers.get_item("A");
+            self.MMU.write_byte((0xFF00 + a8) as i32, a as u8);
+        }
+
+        pub(crate) fn ldh_a_a8(&mut self, Instruction: Instruction){
+            let a8 = Instruction.operands.into_iter().find(|operand| operand.name == "a8").expect("Operand a8 not found").value.unwrap();
+            self.Registers.set_item("A", self.MMU.read_byte((0xFF00 + a8) as i32) as u16)
         }
 
         pub(crate) fn ld_a16_pointer_a(&mut self, Instruction: Instruction){
@@ -524,8 +538,8 @@ pub mod CPU{
         }
 
         pub(crate) fn add_sp_r8(&mut self, Instruction: Instruction){
-            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap();
-            let sp = self.Registers.get_item("SP");
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as u32;
+            let sp = self.Registers.get_item("SP") as u32;
             self.Registers.set_item("z", 0);
             self.Registers.set_item("n", 0);
 
@@ -534,7 +548,7 @@ pub mod CPU{
             self.Registers.set_item("c", (result & 0xFFFF0000) as u16);
             self.Registers.set_item("h", CPU::calculate_half_carry(sp as i16, r8 as i16, 0, HalfCarryOperationsMode::GreaterThan) as u16);
 
-            self.Registers.set_item("SP", result & 0xffff)
+            self.Registers.set_item("SP", result as u16)
         }
 
         pub(crate) fn and_a_r(&mut self, to_and: &str){
@@ -643,6 +657,20 @@ pub mod CPU{
         pub(crate) fn ld_sp_hl(&mut self){
             let hl = self.Registers.get_item("HL");
             self.Registers.set_item("SP", hl)
+        }
+
+        pub(crate) fn ld_hl_sp_r8(&mut self, Instruction: Instruction){
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as u32;
+            let sp = self.Registers.get_item("SP") as u32;
+            self.Registers.set_item("z", 0);
+            self.Registers.set_item("n", 0);
+
+            let result: u32 = sp + r8;
+
+            self.Registers.set_item("c", (sp + r8 > 0xFFFF) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(sp as i16, r8 as i16, 0, HalfCarryOperationsMode::GreaterThan) as u16);
+
+            self.Registers.set_item("HL", result as u16)
         }
 
         pub(crate) fn ld_hl_pointer_d8(&mut self, instruction: Instruction){
@@ -792,7 +820,7 @@ pub mod CPU{
         }
 
         pub(crate) fn call_a16(&mut self, Instruction: Instruction, CallCondition: JumpCondition){
-            let should_call = self.checkJumpCondition(CallCondition);
+            let should_call = checkJumpCondition(self, CallCondition);
             if should_call {
                 let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
                 let pc = self.Registers.get_item("PC"); //is already pointing to next instruction
