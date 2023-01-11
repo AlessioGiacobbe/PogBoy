@@ -24,6 +24,16 @@ pub mod CPU{
         None
     }
 
+    fn checkJumpCondition(cpu: &mut CPU, JumpCondition: JumpCondition) -> bool {
+        match JumpCondition {
+            JumpCondition::Zero => cpu.Registers.get_item("z") == 1,
+            JumpCondition::NotZero => cpu.Registers.get_item("z") == 0,
+            JumpCondition::Carry => cpu.Registers.get_item("c") == 1,
+            JumpCondition::NotCarry => cpu.Registers.get_item("c") == 0,
+            JumpCondition::None => true
+        }
+    }
+
     enum HalfCarryOperationsMode {
         Add,        //8bit
         AddWords,   //16bit
@@ -278,18 +288,24 @@ pub mod CPU{
                     0xBD => self.cp_a_r("L"), //0xBD CP L
                     0xBE => self.cp_a_hl(), //0xBE CP (HL)
                     0xBF => self.cp_a_r("A"), //0xBF CP A
+                    0xC0 => self.ret(JumpCondition::NotZero, false), //0xC0 RET NZ
                     0xC1 => self.pop_rr("BC"), //0xC1 POP BC
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
                     0xC7 => self.rst(0x0), //0xC7 RST 00H
+                    0xC8 => self.ret(JumpCondition::Zero, false), //0xC8 RET Z
+                    0xC9 => self.ret(JumpCondition::None, false), //0xC9 RET
                     0xCB => {}, //0xCB CB PREFIX
                     0xCE => self.adc_a_d8(instruction), //0xCE ADC A,d8
                     0xCF => self.rst(0x8), //0xCF RST 08H
+                    0xD0 => self.ret(JumpCondition::NotCarry, false), //0xD0 RET NC
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
                     0xD3 => (), //0xD3 UNDEFINED
                     0xD5 => self.push_rr("DE"), //0xD5 PUSH DE
                     0xD6 => self.sub_a_n(instruction.operands), //0xD6 SUB d8
                     0xD7 => self.rst(0x10), //0xD7 RST 10H
+                    0xD8 => self.ret(JumpCondition::Carry, false), //0xD8 RET C
+                    0xD9 => self.ret(JumpCondition::None, false), //0xD9 RETI
                     0xDB => (), //0xDB UNDEFINED
                     0xDD => (), //0xDD UNDEFINED
                     0xDE => self.sbc_a_d8(instruction), //0xDE SBC A,d8
@@ -724,15 +740,24 @@ pub mod CPU{
         pub(crate) fn jr_r8(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
             let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap();
             let current_pc = self.Registers.get_item("PC");
-            let should_jump = match JumpCondition {
-                JumpCondition::Zero => self.Registers.get_item("z") == 1,
-                JumpCondition::NotZero => self.Registers.get_item("z") == 0,
-                JumpCondition::Carry => self.Registers.get_item("c") == 1,
-                JumpCondition::NotCarry => self.Registers.get_item("c") == 0,
-                JumpCondition::None => true
-            };
+            let should_jump = checkJumpCondition(self, JumpCondition);
             if should_jump {
                 self.Registers.set_item("PC", current_pc + r8);
+            }
+        }
+
+        pub(crate) fn jp(&mut self, JumpCondition: JumpCondition){
+            //TODO
+        }
+
+        pub(crate) fn ret(&mut self, ReturnCondition: JumpCondition, EnableInterrupts: bool){
+            let should_return = checkJumpCondition(self, ReturnCondition);
+            if should_return {
+                let jump_location = self.read_from_stack();
+                self.Registers.set_item("PC", jump_location);
+                if EnableInterrupts {
+                    self.Interrupt.enabled = true;
+                }
             }
         }
 
