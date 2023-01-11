@@ -239,6 +239,7 @@ pub mod CPU{
                     0x8B => self.adc_a_r("E"), //0x8B ADC A,E
                     0x8C => self.adc_a_r("H"), //0x8C ADC A,H
                     0x8D => self.adc_a_r("L"), //0x8D ADC A,L
+                    0x8E => self.adc_a_hl(), //0x8E ADC A,(HL)
                     0x8F => self.adc_a_r("A"), //0x8F ADC A,A
                     0x90 => self.sub_a_r("B"), //0x90 SUB B
                     0x91 => self.sub_a_r("C"), //0x91 SUB C
