@@ -290,22 +290,27 @@ pub mod CPU{
                     0xBF => self.cp_a_r("A"), //0xBF CP A
                     0xC0 => self.ret(JumpCondition::NotZero, false), //0xC0 RET NZ
                     0xC1 => self.pop_rr("BC"), //0xC1 POP BC
+                    0xC2 => self.jp_a16(instruction, JumpCondition::NotZero), //0xC2 JP NZ,a16
+                    0xC3 => self.jp_a16(instruction, JumpCondition::None), //0xC3 JP a16
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
                     0xC7 => self.rst(0x0), //0xC7 RST 00H
                     0xC8 => self.ret(JumpCondition::Zero, false), //0xC8 RET Z
                     0xC9 => self.ret(JumpCondition::None, false), //0xC9 RET
+                    0xCA => self.jp_a16(instruction, JumpCondition::Zero), //0xCA JP Z,a16
                     0xCB => {}, //0xCB CB PREFIX
                     0xCE => self.adc_a_d8(instruction), //0xCE ADC A,d8
                     0xCF => self.rst(0x8), //0xCF RST 08H
                     0xD0 => self.ret(JumpCondition::NotCarry, false), //0xD0 RET NC
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
+                    0xD2 => self.jp_a16(instruction, JumpCondition::NotCarry), //0xD2 JP NC,a16
                     0xD3 => (), //0xD3 UNDEFINED
                     0xD5 => self.push_rr("DE"), //0xD5 PUSH DE
                     0xD6 => self.sub_a_n(instruction.operands), //0xD6 SUB d8
                     0xD7 => self.rst(0x10), //0xD7 RST 10H
                     0xD8 => self.ret(JumpCondition::Carry, false), //0xD8 RET C
                     0xD9 => self.ret(JumpCondition::None, false), //0xD9 RETI
+                    0xDA => self.jp_a16(instruction, JumpCondition::Carry), //0xDA JP C,a16
                     0xDB => (), //0xDB UNDEFINED
                     0xDD => (), //0xDD UNDEFINED
                     0xDE => self.sbc_a_d8(instruction), //0xDE SBC A,d8
@@ -746,8 +751,12 @@ pub mod CPU{
             }
         }
 
-        pub(crate) fn jp(&mut self, JumpCondition: JumpCondition){
-            //TODO
+        pub(crate) fn jp_a16(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
+            let should_jump = checkJumpCondition(self, JumpCondition);
+            if should_jump {
+                let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
+                self.Registers.set_item("PC", a16)
+            }
         }
 
         pub(crate) fn ret(&mut self, ReturnCondition: JumpCondition, EnableInterrupts: bool){
