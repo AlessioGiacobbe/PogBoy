@@ -483,6 +483,21 @@ fn jump_works() {
 }
 
 #[test]
+fn return_works(){
+    let mut cpu = create_dummy_cpu();
+
+    cpu.write_to_stack(0xC0FE);
+    cpu.ret(JumpCondition::None, false);
+    assert_eq!(cpu.Registers.get_item("PC"), 0xC0FE);
+
+    cpu.Registers.set_item("z", 1);
+    cpu.write_to_stack(0xC0FE);
+    cpu.ret(JumpCondition::Zero, true);
+    assert_eq!(cpu.Registers.get_item("PC"), 0xC0FE);
+    assert_eq!(cpu.Interrupt.enabled, true);
+}
+
+#[test]
 fn c_pointer_instructions_works() {
     let mut cpu = create_dummy_cpu();
 
@@ -529,4 +544,3 @@ fn a_register_with_d8_operand_instructions_works(){
     assert_eq!(cpu.Registers.get_item("A"), 0x0F);
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
 }
-
