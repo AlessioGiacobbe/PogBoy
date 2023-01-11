@@ -292,6 +292,7 @@ pub mod CPU{
                     0xC1 => self.pop_rr("BC"), //0xC1 POP BC
                     0xC2 => self.jp_a16(instruction, JumpCondition::NotZero), //0xC2 JP NZ,a16
                     0xC3 => self.jp_a16(instruction, JumpCondition::None), //0xC3 JP a16
+                    0xC4 => self.call_a16(instruction, JumpCondition::NotZero), //0xC4 CALL NZ,a16
                     0xC5 => self.push_rr("BC"), //0xC5 PUSH BC
                     0xC6 => self.add_a_n(instruction.operands), //0xC6 ADD A,d8
                     0xC7 => self.rst(0x0), //0xC7 RST 00H
@@ -299,12 +300,15 @@ pub mod CPU{
                     0xC9 => self.ret(JumpCondition::None, false), //0xC9 RET
                     0xCA => self.jp_a16(instruction, JumpCondition::Zero), //0xCA JP Z,a16
                     0xCB => {}, //0xCB CB PREFIX
+                    0xCC => self.call_a16(instruction, JumpCondition::Zero), //0xCC CALL Z,a16
+                    0xCD => self.call_a16(instruction, JumpCondition::None), //0xCD CALL a16
                     0xCE => self.adc_a_d8(instruction), //0xCE ADC A,d8
                     0xCF => self.rst(0x8), //0xCF RST 08H
                     0xD0 => self.ret(JumpCondition::NotCarry, false), //0xD0 RET NC
                     0xD1 => self.pop_rr("DE"), //0xD1 POP DE
                     0xD2 => self.jp_a16(instruction, JumpCondition::NotCarry), //0xD2 JP NC,a16
                     0xD3 => (), //0xD3 UNDEFINED
+                    0xD4 => self.call_a16(instruction, JumpCondition::NotCarry), //0xD4 CALL NC,a16
                     0xD5 => self.push_rr("DE"), //0xD5 PUSH DE
                     0xD6 => self.sub_a_n(instruction.operands), //0xD6 SUB d8
                     0xD7 => self.rst(0x10), //0xD7 RST 10H
@@ -312,6 +316,7 @@ pub mod CPU{
                     0xD9 => self.ret(JumpCondition::None, false), //0xD9 RETI
                     0xDA => self.jp_a16(instruction, JumpCondition::Carry), //0xDA JP C,a16
                     0xDB => (), //0xDB UNDEFINED
+                    0xDC => self.call_a16(instruction, JumpCondition::Carry), //0xDC CALL C,a16
                     0xDD => (), //0xDD UNDEFINED
                     0xDE => self.sbc_a_d8(instruction), //0xDE SBC A,d8
                     0xDF => self.rst(0x18), //0xDF RST 18H
@@ -322,6 +327,8 @@ pub mod CPU{
                     0xE5 => self.push_rr("HL"), //0xE5 PUSH HL
                     0xE6 => self.and_a_n(instruction.operands), //0xE6 AND d8
                     0xE7 => self.rst(0x20), //0xE7 RST 20H
+                    0xE8 => self.add_sp_r8(instruction), //0xE8 ADD SP,r8
+                    0xE9 => self.jp_hl(), //0xE9 JP (HL)
                     0xEA => self.ld_a16_pointer_a(instruction), //0xEA LD (a16),A
                     0xEB => (), //0xEB UNDEFINED
                     0xEC => (), //0xEC UNDEFINED
@@ -335,6 +342,7 @@ pub mod CPU{
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
                     0xF7 => self.rst(0x30), //0xF7 RST 30H
+                    0xF9 => self.ld_sp_hl(), //0xF9 LD SP,HL
                     0xFA => self.ld_a_a16_pointer(instruction), //0xFA LD A,(a16)
                     0xFB => self.Interrupt.enabled = true, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
@@ -515,6 +523,20 @@ pub mod CPU{
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
 
+        pub(crate) fn add_sp_r8(&mut self, Instruction: Instruction){
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap();
+            let sp = self.Registers.get_item("SP");
+            self.Registers.set_item("z", 0);
+            self.Registers.set_item("n", 0);
+
+            let result = sp + r8;
+
+            self.Registers.set_item("c", (result & 0xFFFF0000) as u16);
+            self.Registers.set_item("h", CPU::calculate_half_carry(sp as i16, r8 as i16, 0, HalfCarryOperationsMode::GreaterThan) as u16);
+
+            self.Registers.set_item("SP", result & 0xffff)
+        }
+
         pub(crate) fn and_a_r(&mut self, to_and: &str){
             let to_and = self.Registers.get_item(to_and) as i16;
             self.and_a_value(to_and);
@@ -616,6 +638,11 @@ pub mod CPU{
             let old_a = self.Registers.get_item("A");
             self.sub_a_hl();
             self.Registers.set_item("A", old_a);
+        }
+
+        pub(crate) fn ld_sp_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            self.Registers.set_item("SP", hl)
         }
 
         pub(crate) fn ld_hl_pointer_d8(&mut self, instruction: Instruction){
@@ -751,11 +778,26 @@ pub mod CPU{
             }
         }
 
+        pub(crate) fn jp_hl(&mut self){
+            let hl = self.Registers.get_item("HL");
+            self.Registers.set_item("PC", hl);
+        }
+
         pub(crate) fn jp_a16(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
             let should_jump = checkJumpCondition(self, JumpCondition);
             if should_jump {
                 let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
                 self.Registers.set_item("PC", a16)
+            }
+        }
+
+        pub(crate) fn call_a16(&mut self, Instruction: Instruction, CallCondition: JumpCondition){
+            let should_call = self.checkJumpCondition(CallCondition);
+            if should_call {
+                let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
+                let pc = self.Registers.get_item("PC"); //is already pointing to next instruction
+                self.write_to_stack(pc);
+                self.Registers.set_item("PC", a16);
             }
         }
 
