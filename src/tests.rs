@@ -5,10 +5,15 @@ use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
     let Cartridge: Cartridge = read_cartridge("image.gb");
-    let mut rom = vec![0; 0x103];
+    let mut rom = vec![0; 0x108];
     rom[0x100] = 0x00;
     rom[0x101] = 0x3E;
     rom[0x102] = 0x0F;
+    rom[0x103] = 0xCB;
+    rom[0x104] = 0x7C;
+    rom[0x105] = 0x21;
+    rom[0x106] = 0xFE;
+    rom[0x107] = 0xC0;
     Cartridge {
         cartridge_info: Cartridge.cartridge_info,
         rom,    //NOP - LD A,0x0F
@@ -56,13 +61,17 @@ fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instructi
 #[test]
 fn decoder_can_parse_correctly(){
     let dummy_mmu = create_dummy_mmu();
-    let (_, nop_instruction) = dummy_mmu.decode(0x100);
-    let (_, ld_a_d8_instruction) = dummy_mmu.decode(0x101);
+    let (next_address, nop_instruction) = dummy_mmu.decode(0x100);
+    let (next_address, ld_a_d8_instruction) = dummy_mmu.decode(next_address);
+    let (next_address, bit_7_h) = dummy_mmu.decode(next_address);  //CB PREFIXED
+    let (_, ld_hl_d16_instruction) = dummy_mmu.decode(next_address);
     println!("{} NOP INSTRUCT2iO", nop_instruction);
     assert_eq!(nop_instruction.mnemonic, "NOP");
     let d8 = ld_a_d8_instruction.operands.into_iter().find(|operand| operand.name == "d8").unwrap();
     assert_eq!(d8.value.unwrap(), 0x0F);
-    //TODO test 16 bit operand
+    assert_eq!(bit_7_h.prefixed, true);
+    let d16 = ld_hl_d16_instruction.operands.into_iter().find(|operand| operand.name == "d16").unwrap();
+    assert_eq!(d16.value.unwrap(), 0xC0FE);
 }
 
 #[test]

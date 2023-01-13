@@ -91,7 +91,7 @@ pub mod mmu {
                             2 => {
                                 let first_byte = self.read_byte(address) as u16;
                                 let second_byte = self.read_byte(address + 1) as u16;
-                                (second_byte >> 8) + first_byte
+                                (second_byte << 8) + first_byte
                             },
                             _ => panic!("no operand value")
                         };
@@ -186,6 +186,7 @@ pub mod mmu {
         }
 
         pub(crate) fn write_byte(&mut self, address: i32, value: u8){
+            println!("Writing byte {} to {:04x}", value, address);
             let address = address as usize;
             return match address {
                 //BIOS

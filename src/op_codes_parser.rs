@@ -56,10 +56,23 @@ pub mod op_codes_parser {
                 }
             }
 
+
+            let adjust_value = match self.adjust.clone() {
+                None => {
+                    ""
+                }
+                Some(AdjustType) => {
+                    match AdjustType {
+                        AdjustTypes::POSITIVE => { "+" }
+                        AdjustTypes::NEGATIVE => { "-" }
+                    }
+                }
+            };
+
             if self.immediate {
-                write!(f, "{}", value_as_string)
+                write!(f, "{}{}", value_as_string, adjust_value)
             }else{
-                write!(f, "({})", value_as_string)
+                write!(f, "({}{})", value_as_string, adjust_value)
             }
         }
     }
@@ -96,6 +109,8 @@ pub mod op_codes_parser {
 
             let collection_of_op: Vec<Operand> = op_info["operands"].as_array().unwrap().into_iter().map(|operand| {
                 let operand_object = operand.as_object().unwrap();
+                let is_increment = operand_object.contains_key("increment");
+                let is_decrement = operand_object.contains_key("decrement");
                 Operand {
                     immediate: operand_object["immediate"].as_bool().expect("operand should be boolean"),
                     name: operand_object["name"].as_str().expect("operand should be string").parse().unwrap(),
@@ -105,7 +120,7 @@ pub mod op_codes_parser {
                         None
                     },
                     value: None,
-                    adjust: None
+                    adjust: if is_increment { Some(AdjustTypes::POSITIVE) } else if is_decrement { Some(AdjustTypes::NEGATIVE) } else { None }
                 }
             }).collect::<Vec<Operand>>();
 

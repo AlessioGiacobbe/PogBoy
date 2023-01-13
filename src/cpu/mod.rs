@@ -67,10 +67,13 @@ pub mod CPU{
                 let address = self.Registers.get_item("PC");
                 let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
+                println!("STATUS BEFORE EXECUTING 0x{:04X} {}", address, self);
                 println!("Executing {}", instruction);
                 match self.execute(instruction) {
                     Err(instruction) => {
-                        self.MMU.disassemble(address as i32 - 12, 25, address as i32);
+                        let starting_address = if address >= 12 { address - 12} else { 0 };
+                        let quantity_to_disassemble = if starting_address + 25 <= 0xFFFF  { 25 } else { 0xFFFF - starting_address };
+                        self.MMU.disassemble(starting_address as i32, quantity_to_disassemble as i32, address as i32);
                         println!("{}", self);
                         panic!("⚠️{:#04x} NOT IMPLEMENTED⚠️ {:?}", instruction.opcode, instruction)
                     },
