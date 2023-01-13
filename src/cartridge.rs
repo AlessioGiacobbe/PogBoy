@@ -5,7 +5,7 @@ pub mod cartridge {
     use std::io::Read;
     use serde::{Serialize, Deserialize};
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub struct Cartridge {
         pub(crate) cartridge_info: CartridgeInfo,
         pub(crate) rom: Vec<u8>

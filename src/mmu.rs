@@ -1,28 +1,41 @@
 pub mod mmu {
     use std::collections::HashMap;
+    use std::fmt::{Debug, Formatter};
     use std::fs;
     use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
     use serde_json::Value;
     use crate::cartridge::cartridge::{Cartridge};
     use crate::cpu::CPU::CPU;
-    use crate::decoder::decoder::Decoder;
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
+    const INSTRUCTIONS_PREFIX: u8 = 0xCB;
+
+    #[derive(Debug)]
     pub struct MMU {
-        bios: [u8; 256],
-        cartridge: Cartridge,
+        pub(crate) bios: [u8; 256],
+        pub(crate) cartridge: Cartridge,
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) external_ram: [u8; 0x2000],
         pub(crate) work_ram: [u8; 0x2000],
         pub(crate) io_registers: [u8; 0x100],
         pub(crate) high_ram: [u8; 0x80],
-        pub(crate) interrupt_enabled: bool
+        pub(crate) interrupt_enabled: bool,
+
+        pub(crate) unprefixed_op_codes: HashMap<u8, Instruction>,
+        pub(crate) prefixed_op_codes: HashMap<u8, Instruction>,
     }
+
 
     impl MMU {
 
         pub(crate) fn new(Cartridge: Option<Cartridge>) -> MMU {
-            return MMU {
+            let op_codes_content = fs::read_to_string("./src/opcodes.json").expect("error reading file");
+            let json_op_codes: Value = serde_json::from_str(&op_codes_content).unwrap();
+
+            let unprefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
+            let prefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"cbprefixed");
+
+            MMU {
                 bios: [0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
                     0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3, 0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E, 0xFC, 0xE0,
                     0x47, 0x11, 0x04, 0x01, 0x21, 0x10, 0x80, 0x1A, 0xCD, 0x95, 0x00, 0xCD, 0x96, 0x00, 0x13, 0x7B,
@@ -45,19 +58,82 @@ pub mod mmu {
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
                 high_ram: [0; 0x80],
-                interrupt_enabled: false
+                interrupt_enabled: false,
+
+                unprefixed_op_codes,
+                prefixed_op_codes
             }
         }
+
+        pub(crate) fn decode(&self, mut address: i32) -> (i32, Instruction) {
+            let mut op_code = self.read_byte(address);
+            address = address + 1;
+            let instruction = {
+                if op_code == INSTRUCTIONS_PREFIX {
+                    op_code = self.read_byte(address);
+                    address = address + 1;
+                    self.prefixed_op_codes.get(&op_code).unwrap()
+                }else{
+                    self.unprefixed_op_codes.get(&op_code).unwrap()
+                }
+            };
+
+            let new_operands: Vec<Operand> = {
+                let mut new_operands: Vec<Operand> = vec![];
+                for operand in instruction.operands.iter() {
+                    if operand.bytes != None {
+                        let bytes = operand.bytes.unwrap();
+                        let mut operand_to_be_pushed = operand.clone();
+                        let operand_value: u16 = match bytes {
+                            1 => {
+                                self.read_byte(address) as u16
+                            },
+                            2 => {
+                                let first_byte = self.read_byte(address) as u16;
+                                let second_byte = self.read_byte(address + 1) as u16;
+                                (second_byte >> 8) + first_byte
+                            },
+                            _ => panic!("no operand value")
+                        };
+                        operand_to_be_pushed.value = Some(operand_value);
+                        new_operands.push(operand_to_be_pushed);
+                        address = address + i32::from(bytes);
+                    }else{
+                        new_operands.push(operand.clone());
+                    }
+                };
+                new_operands
+            };
+
+            let mut decoded_instruction = (*instruction).clone();
+            decoded_instruction.operands = new_operands;
+            (address, decoded_instruction)
+        }
+
+        pub(crate) fn disassemble(&self, mut address: i32, quantity: i32, current_address: i32){
+            println!();
+            println!("-------------");
+            for _ in 0..quantity{
+                let (new_address, instruction) = self.decode(address);
+                if current_address == address {
+                    print!("-> ");
+                }
+                println!("{:#04X}       {}", address, instruction);
+                address = new_address;
+            }
+            println!("-------------");
+        }
+
 
         pub(crate) fn read_byte(&self, address: i32) -> u8{
             let address = address as usize;
             return match address {
                 //BIOS
-                0..=0x100 => {
+                0..=0xFF => {
                     self.bios[address]
                 }
                 //ROM bank 0
-                0x101..=0x3FFF => {
+                0x100..=0x3FFF => {
                     self.cartridge.rom[address]
                 },
                 //ROM bank 1-NN
@@ -113,11 +189,11 @@ pub mod mmu {
             let address = address as usize;
             return match address {
                 //BIOS
-                0..=0x100 => {
+                0..=0x0FF => {
                     self.bios[address] = value;
                 }
                 //ROM bank 0
-                0x101..=0x3FFF => {
+                0x100..=0x3FFF => {
                     self.cartridge.rom[address] = value;
                 },
                 //ROM bank 1-NN

@@ -3,14 +3,12 @@ mod registers;
 pub mod CPU{
     use std::fmt::{Display, Formatter};
     use crate::cpu::registers::Registers::Registers;
-    use crate::decoder::decoder::Decoder;
     use crate::interrupt::interrupt::Interrupt;
     use crate::mmu::mmu::MMU;
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 
     pub struct CPU {
         pub(crate) Registers: Registers,
-        pub(crate) Decoder: Decoder,
         pub(crate) MMU: MMU,
         pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool
@@ -50,17 +48,10 @@ pub mod CPU{
 
     impl CPU {
 
-        pub(crate) fn new(Decoder: Option<Decoder>, MMU: MMU) -> CPU {
+        pub(crate) fn new(MMU: MMU) -> CPU {
             let Registers: Registers = Registers::new();
-            let decoder = Decoder.unwrap_or(Decoder{
-                data: vec![],
-                address: 0,
-                unprefixed_op_codes: Default::default(),
-                prefixed_op_codes: Default::default()
-            });
             CPU {
                 Registers,
-                Decoder: decoder,
                 MMU,
                 Interrupt: Default::default(),
                 is_stopped: false
@@ -74,11 +65,12 @@ pub mod CPU{
                 }
 
                 let address = self.Registers.get_item("PC");
-                let (next_address, instruction) = self.Decoder.decode(address as i32);
+                let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
+                println!("Executing {}", instruction);
                 match self.execute(instruction) {
                     Err(instruction) => {
-                        self.Decoder.disassemble(address as i32 - 12, 25, address as i32);
+                        self.MMU.disassemble(address as i32 - 12, 25, address as i32);
                         println!("{}", self);
                         panic!("⚠️{:#04x} NOT IMPLEMENTED⚠️ {:?}", instruction.opcode, instruction)
                     },

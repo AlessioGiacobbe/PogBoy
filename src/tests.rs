@@ -5,9 +5,13 @@ use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
     let Cartridge: Cartridge = read_cartridge("image.gb");
+    let mut rom = vec![0; 0x103];
+    rom[0x100] = 0x00;
+    rom[0x101] = 0x3E;
+    rom[0x102] = 0x0F;
     Cartridge {
         cartridge_info: Cartridge.cartridge_info,
-        rom: vec![0x00, 0x3E, 0x0F],    //NOP - LD A,0x0F
+        rom,    //NOP - LD A,0x0F
     }
 }
 
@@ -23,15 +27,9 @@ fn create_dummy_mmu() -> MMU {
     dummy_mmu
 }
 
-fn create_dummy_decoder() -> Decoder {
-    let dummy_cartridge = create_dummy_cartridge();
-    Decoder::new(dummy_cartridge)
-}
-
 fn create_dummy_cpu() -> CPU {
-    let dummy_decoder = create_dummy_decoder();
     let dummy_mmu = create_dummy_mmu();
-    CPU::new(Some(dummy_decoder), dummy_mmu)
+    CPU::new(dummy_mmu)
 }
 
 fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instruction {
@@ -57,9 +55,10 @@ fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instructi
 
 #[test]
 fn decoder_can_parse_correctly(){
-    let dummy_decoder = create_dummy_decoder();
-    let (_, nop_instruction) = dummy_decoder.decode(0);
-    let (_, ld_a_d8_instruction) = dummy_decoder.decode(1);
+    let dummy_mmu = create_dummy_mmu();
+    let (_, nop_instruction) = dummy_mmu.decode(0x100);
+    let (_, ld_a_d8_instruction) = dummy_mmu.decode(0x101);
+    println!("{} NOP INSTRUCT2iO", nop_instruction);
     assert_eq!(nop_instruction.mnemonic, "NOP");
     let d8 = ld_a_d8_instruction.operands.into_iter().find(|operand| operand.name == "d8").unwrap();
     assert_eq!(d8.value.unwrap(), 0x0F);
