@@ -339,7 +339,7 @@ fn left_rotations_works(){
 }
 
 #[test]
-fn sla_and_sra_sets_right_flags() {
+fn sla_sra_and_srl_sets_right_flags() {
     let mut cpu = create_dummy_cpu();
 
     cpu.Registers.set_item("A", 0x80);
@@ -359,6 +359,10 @@ fn sla_and_sra_sets_right_flags() {
     cpu.Registers.set_item("A", 0xa0);
     cpu.sra_r("A");
     assert_eq!(cpu.Registers.get_item("A"), 0xd0);
+
+    cpu.Registers.set_item("A", 0xa0);
+    cpu.srl_r("A");
+    assert_eq!(cpu.Registers.get_item("A"), 0x50);
 }
 
 
@@ -377,6 +381,59 @@ fn swap_works() {
     cpu.Registers.set_item("A", 0x38);  // 0011 1000
     cpu.swap_r("A");
     assert_eq!(cpu.Registers.get_item("A"), 0x83);  // 1000 0011
+}
+
+#[test]
+fn bit_works() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("A", 0xFF);
+    cpu.bit_n_r(0, "A");
+    assert_eq!(cpu.Registers.get_item("z"), 0);
+
+    cpu.Registers.set_item("A", 0x2);
+    cpu.bit_n_r(0, "A");
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+}
+
+#[test]
+fn reset_works() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("A", 0xa);
+    cpu.res_n_r(1, "A");
+    assert_eq!(cpu.Registers.get_item("A"), 0x8);
+
+    cpu.Registers.set_item("A", 0xFF);
+    cpu.res_n_r(0, "A");
+    cpu.res_n_r(1, "A");
+    cpu.res_n_r(2, "A");
+    cpu.res_n_r(3, "A");
+    cpu.res_n_r(4, "A");
+    cpu.res_n_r(5, "A");
+    cpu.res_n_r(6, "A");
+    cpu.res_n_r(7, "A");
+    assert_eq!(cpu.Registers.get_item("A"), 0);
+}
+
+#[test]
+fn set_works() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("A", 0x1);
+    cpu.set_n_r(1, "A");
+    assert_eq!(cpu.Registers.get_item("A"), 0x3);
+
+    cpu.Registers.set_item("A", 0x0);
+    cpu.set_n_r(0, "A");
+    cpu.set_n_r(1, "A");
+    cpu.set_n_r(2, "A");
+    cpu.set_n_r(3, "A");
+    cpu.set_n_r(4, "A");
+    cpu.set_n_r(5, "A");
+    cpu.set_n_r(6, "A");
+    cpu.set_n_r(7, "A");
+    assert_eq!(cpu.Registers.get_item("A"), 0xFF);
 }
 
 #[test]

@@ -72,7 +72,7 @@ pub mod CPU{
                 match self.execute(instruction) {
                     Err(instruction) => {
                         let starting_address = if address >= 12 { address - 12} else { 0 };
-                        let quantity_to_disassemble = if starting_address + 25 <= 0xFFFF  { 25 } else { 0xFFFF - starting_address };
+                        let quantity_to_disassemble = if starting_address <= (0xFFFF - 25) { 25 } else { 0xFFFF - starting_address };
                         self.MMU.disassemble(starting_address as i32, quantity_to_disassemble as i32, address as i32);
                         println!("{}", self);
                         panic!("⚠️{:#04x} NOT IMPLEMENTED⚠️ {:?}", instruction.opcode, instruction)
@@ -89,7 +89,7 @@ pub mod CPU{
                 match instruction.opcode {
                     0 => {} //TODO 0x0 RLC B
                     _ => return Err(instruction)
-                    //rlc_r, rrc_r, rl_r, rr_r, sla_r, sra_r
+                    //rlc_r, rrc_r, rl_r, rr_r, sla_r, sra_r, swap_r, srl_r, res_n_r, bit_n_r,
                 }
             }else{
                 match instruction.opcode {
@@ -789,6 +789,43 @@ pub mod CPU{
             self.Registers.set_item("n", 0);
         }
 
+        //same as sra but MSB is not preserved
+        pub(crate) fn srl_r(&mut self, to_srl: &str){
+            let current_value = self.Registers.get_item(to_srl) as u8;
+            let carry = current_value & 0x1;
+            let result = current_value >> 1;
+
+            self.Registers.set_item(to_srl, result as u16);
+            self.Registers.set_item("c", (carry > 0) as u16);
+            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+        }
+
+        //test bit at position n in r register
+        pub(crate) fn bit_n_r(&mut self, position: u8, target_register: &str){
+            let current_value = self.Registers.get_item(target_register) as u8;
+            let value_at_bit = (current_value >> position) & 0x1;
+
+            self.Registers.set_item("z", (value_at_bit == 0) as u16);
+            self.Registers.set_item("h", 1);
+            self.Registers.set_item("n", 0);
+        }
+
+        //reset bit at position n in register r
+        pub(crate) fn res_n_r(&mut self, position: u8, target_register: &str){
+            let mut current_value = self.Registers.get_item(target_register) as u8;
+            current_value &= !(1 << position);  //create an inverse mask shifting 1 by x position and inverting it
+            self.Registers.set_item(target_register, current_value as u16);
+        }
+
+        //set bit at position n in register r
+        pub(crate) fn set_n_r(&mut self, position: u8, target_register: &str){
+            let mut current_value = self.Registers.get_item(target_register) as u8;
+            current_value |= 1 << position;  //or mask value with bit positioned at right place
+            self.Registers.set_item(target_register, current_value as u16);
+        }
+
         //swap most and least significant nibbles
         pub(crate) fn swap_r(&mut self, to_swap: &str) {
             let current_value = self.Registers.get_item(to_swap) as u8;
@@ -891,7 +928,7 @@ pub mod CPU{
         }
 
         pub(crate) fn daa(&mut self){
-            let mut current_value = self.Registers.get_item("A") as u8;
+            let mut current_value = self.Registers.get_item("A") as u16;
             let negative = self.Registers.get_item("n") as u8;
             let carry = self.Registers.get_item("c") as u8;
             let half_carry = self.Registers.get_item("h") as u8;

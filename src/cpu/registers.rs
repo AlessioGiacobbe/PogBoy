@@ -126,7 +126,7 @@ pub mod Registers {
             }
             if FLAGS.contains_key(item) {
                 if value != 0 && value != 1 {
-                    panic!("invalid value {} to set registry flag", value);
+                    panic!("invalid value {} to set register flag", value);
                 }
                 let mut register_value = self.get_register_value_from_name("AF");
                 let bit_position = FLAGS[item];
