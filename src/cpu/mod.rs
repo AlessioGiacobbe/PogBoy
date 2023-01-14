@@ -89,6 +89,7 @@ pub mod CPU{
                 match instruction.opcode {
                     0 => {} //TODO 0x0 RLC B
                     _ => return Err(instruction)
+                    //rlc_r, rrc_r, rl_r, rr_r, sla_r, sra_r
                 }
             }else{
                 match instruction.opcode {
@@ -99,7 +100,7 @@ pub mod CPU{
                     0x04 => self.inc( "B"), //0x04 INC B
                     0x05 => self.dec( "B"), //0x05 DEC B
                     0x06 => self.ld_r_d8( "B", instruction), //0x06 LD B,d8
-                    0x07 => self.rlca(), //0x07 RLCA
+                    0x07 => self.rlc_r("A"), //0x07 RLCA
                     0x08 => self.ld_a16_pointer_sp(instruction), //0x08 LD (a16),SP
                     0x09 => self.add_hl_n( "BC"), //0x09 ADD HL, BC
                     0x0A => self.ld_a_address("BC"), //0x0A LD A,(BC)
@@ -107,7 +108,7 @@ pub mod CPU{
                     0x0C => self.inc( "C"), //0x0C INC C
                     0x0D => self.dec( "C"), //0x0D DEC C
                     0x0E => self.ld_r_d8( "C", instruction), //0x0E LD C,d8
-                    0x0F => self.rrca(), //0x0F RRCA
+                    0x0F => self.rrc_r("A"), //0x0F RRCA
                     0x10 => self.is_stopped = true, //0x10 STOP
                     0x11 => self.ld_nn( instruction.operands, "DE"), //0x11 LD DE, d16
                     0x12 => self.ld_address_value("DE", "A"), //0x12 LD (DE),A
@@ -115,7 +116,7 @@ pub mod CPU{
                     0x14 => self.inc( "D"), //0x14 INC D
                     0x15 => self.dec( "D"), //0x15 DEC D
                     0x16 => self.ld_r_d8( "D", instruction), //0x16 LD D,d8
-                    0x17 => self.rla(), //0x17 RLA
+                    0x17 => self.rl_r("A"), //0x17 RLA
                     0x18 => self.jr_r8(instruction, JumpCondition::None), //0x18 JR r8
                     0x19 => self.add_hl_n( "DE"), //0x19 ADD HL, DE
                     0x1A => self.ld_a_address("DE"), //0x1A LD A,(DE)
@@ -123,7 +124,7 @@ pub mod CPU{
                     0x1C => self.inc( "E"), //0x1C INC E
                     0x1D => self.dec( "E"), //0x1D DEC E
                     0x1E => self.ld_r_d8( "E", instruction), //0x1E LD E,d8
-                    0x1F => self.rra(), //0x1F RRA
+                    0x1F => self.rr_r("A"), //0x1F RRA
                     0x20 => self.jr_r8(instruction, JumpCondition::NotZero), //0x20 JR NZ,r8
                     0x21 => self.ld_nn( instruction.operands, "HL"), //0x21 LD HL, d16
                     0x22 => self.ld_hl_pointer_dec_inc_a(true), //0x22 LD (HL+), A
@@ -749,39 +750,79 @@ pub mod CPU{
             self.Registers.set_item("A", value as u16);
         }
 
-        pub(crate) fn rra(&mut self){
-            let current_value = self.Registers.get_item("A") as u8;
+        pub(crate) fn rr_r(&mut self, to_rr: &str){
+            let current_value = self.Registers.get_item(to_rr) as u8;
             let carry = current_value & 1;  //0th bit
             let current_carry = self.Registers.get_item("c") as u8;
             let result = current_value >> 1 | current_carry << 7;
 
-            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item(to_rr, result as u16);
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+        }
+
+        //move left saving least significant bit to carry
+        pub (crate) fn sla_r(&mut self, to_sla: &str){
+            let current_value = self.Registers.get_item(to_sla) as u8;
+            let carry = current_value & 0x80;
+            let result = current_value << 1;
+
+            self.Registers.set_item(to_sla, result as u16);
+            self.Registers.set_item("c", (carry > 0) as u16);
+            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+        }
+
+        //move right preserving most significant bit
+        pub(crate) fn sra_r(&mut self, to_sra: &str){
+            let current_value = self.Registers.get_item(to_sra) as u8;
+            let carry = current_value & 0x1;
+            let result = (current_value & 0x80) | current_value >> 1;
+
+            self.Registers.set_item(to_sra, result as u16);
+            self.Registers.set_item("c", (carry > 0) as u16);
+            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
+        }
+
+        //swap most and least significant nibbles
+        pub(crate) fn swap_r(&mut self, to_swap: &str) {
+            let current_value = self.Registers.get_item(to_swap) as u8;
+            let most_significant_nibble = current_value & 0xF0;
+            let least_significant_nibble = current_value & 0x0F;
+            let result = (most_significant_nibble >> 4) | (least_significant_nibble << 4);
+
+            self.Registers.set_item(to_swap, result as u16);
+            self.Registers.set_item("z", (result == 0) as u16);
+            self.Registers.set_item("c", 0);
+            self.Registers.set_item("h", 0);
+            self.Registers.set_item("n", 0);
         }
 
         //rrca is rotate right circular, no data is loss
-        pub(crate) fn rrca(&mut self){
-            let current_value = self.Registers.get_item("A") as u8;
+        pub(crate) fn rrc_r(&mut self, to_rrc: &str){
+            let current_value = self.Registers.get_item(to_rrc) as u8;
             let carry = current_value & 1;
             let result = current_value.rotate_right(1);
 
-            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item(to_rrc, result as u16);
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
         }
 
-        pub(crate) fn rla(&mut self){
-            let current_value = self.Registers.get_item("A") as u8;
+        pub(crate) fn rl_r(&mut self, to_rl: &str){
+            let current_value = self.Registers.get_item(to_rl) as u8;
             let carry = (current_value & 0x80) >> 7;
             let current_carry = self.Registers.get_item("c") as u8;
             let result = current_value << 1 | current_carry;
 
-            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item(to_rl, result as u16);
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
@@ -836,12 +877,13 @@ pub mod CPU{
             }
         }
 
-        pub(crate) fn rlca(&mut self){
-            let current_value = self.Registers.get_item("A") as u8;
+
+        pub(crate) fn rlc_r(&mut self, to_rlc: &str){
+            let current_value = self.Registers.get_item(to_rlc) as u8;
             let carry = (current_value & 0x80) >> 7;
             let result = current_value.rotate_left(1);
 
-            self.Registers.set_item("A", result as u16);
+            self.Registers.set_item(to_rlc, result as u16);
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);

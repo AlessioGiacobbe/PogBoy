@@ -301,24 +301,24 @@ fn right_rotations_works(){
     let mut cpu = create_dummy_cpu();
     cpu.Registers.set_item("A", 0x03);
 
-    cpu.rrca();
+    cpu.rrc_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0x81);
 
     cpu.Registers.set_item("A", 0x06);
-    cpu.rrca();
+    cpu.rrc_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("A"), 0x03);
 
     cpu.Registers.set_item("A", 0x03);
     cpu.Registers.set_item("c", 1);
-    cpu.rra();
+    cpu.rr_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0x81);  //carry is putted on 7th position
 
     cpu.Registers.set_item("A", 0x04);
     cpu.Registers.set_item("c", 0);
-    cpu.rra();
+    cpu.rr_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("A"), 0x02);
 }
@@ -329,13 +329,54 @@ fn left_rotations_works(){
     cpu.Registers.set_item("A", 0x81);
     cpu.Registers.set_item("c", 0);
 
-    cpu.rlca();
+    cpu.rlc_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0x3);
 
-    cpu.rla();
+    cpu.rl_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("A"), 0x7);      //carry is putted in 0th position
+}
+
+#[test]
+fn sla_and_sra_sets_right_flags() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("A", 0x80);
+    cpu.sla_r("A");
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
+    cpu.Registers.set_item("A", 0x20);
+    cpu.sla_r("A");
+    assert_eq!(cpu.Registers.get_item("A"), 0x40);
+
+    cpu.Registers.set_item("A", 0x1);
+    cpu.sra_r("A");
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
+    cpu.Registers.set_item("A", 0xa0);
+    cpu.sra_r("A");
+    assert_eq!(cpu.Registers.get_item("A"), 0xd0);
+}
+
+
+#[test]
+fn swap_works() {
+    let mut cpu = create_dummy_cpu();
+
+    cpu.Registers.set_item("A", 0x0);
+    cpu.swap_r("A");
+    assert_eq!(cpu.Registers.get_item("A"), 0x0);
+    assert_eq!(cpu.Registers.get_item("h"), 0);
+    assert_eq!(cpu.Registers.get_item("n"), 0);
+    assert_eq!(cpu.Registers.get_item("c"), 0);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
+    cpu.Registers.set_item("A", 0x38);  // 0011 1000
+    cpu.swap_r("A");
+    assert_eq!(cpu.Registers.get_item("A"), 0x83);  // 1000 0011
 }
 
 #[test]
