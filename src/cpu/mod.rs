@@ -89,7 +89,7 @@ pub mod CPU{
                 match instruction.opcode {
                     0 => {} //TODO 0x0 RLC B
                     _ => return Err(instruction)
-                    //rlc_r, rrc_r, rl_r, rr_r, sla_r, sra_r, swap_r, srl_r, res_n_r, bit_n_r,
+                    //rlc_r, rrc_r, rl_r, rr_r, sla_r, sra_r, swap_r, srl_r, res_n_r, bit_n_r, set_n_r
                 }
             }else{
                 match instruction.opcode {
@@ -752,60 +752,88 @@ pub mod CPU{
 
         pub(crate) fn rr_r(&mut self, to_rr: &str){
             let current_value = self.Registers.get_item(to_rr) as u8;
-            let carry = current_value & 1;  //0th bit
-            let current_carry = self.Registers.get_item("c") as u8;
-            let result = current_value >> 1 | current_carry << 7;
-
+            let result = self.rr_value(current_value);
             self.Registers.set_item(to_rr, result as u16);
+        }
+
+        pub(crate) fn rr_value(&mut self, value: u8) -> u8 {
+            let carry = value & 1;  //0th bit
+            let current_carry = self.Registers.get_item("c") as u8;
+            let result = value >> 1 | current_carry << 7;
+
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+
+            return result
         }
 
         //move left saving least significant bit to carry
         pub (crate) fn sla_r(&mut self, to_sla: &str){
             let current_value = self.Registers.get_item(to_sla) as u8;
-            let carry = current_value & 0x80;
-            let result = current_value << 1;
-
+            let result = self.sla_value(current_value);
             self.Registers.set_item(to_sla, result as u16);
+        }
+
+        pub(crate) fn sla_value(&mut self, value: u8) -> u8{
+            let carry = value & 0x80;
+            let result = value << 1;
+
             self.Registers.set_item("c", (carry > 0) as u16);
             self.Registers.set_item("z", (result == 0) as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
+
+            return result;
         }
 
         //move right preserving most significant bit
         pub(crate) fn sra_r(&mut self, to_sra: &str){
             let current_value = self.Registers.get_item(to_sra) as u8;
-            let carry = current_value & 0x1;
-            let result = (current_value & 0x80) | current_value >> 1;
-
+            let result = self.sra_value(current_value);
             self.Registers.set_item(to_sra, result as u16);
+        }
+
+        pub(crate) fn sra_value(&mut self, value: u8) -> u8{
+            let carry = value & 0x1;
+            let result = (value & 0x80) | value >> 1;
+
             self.Registers.set_item("c", (carry > 0) as u16);
             self.Registers.set_item("z", (result == 0) as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
+
+            result
         }
 
         //same as sra but MSB is not preserved
         pub(crate) fn srl_r(&mut self, to_srl: &str){
             let current_value = self.Registers.get_item(to_srl) as u8;
-            let carry = current_value & 0x1;
-            let result = current_value >> 1;
-
+            let result = self.srl_value(current_value);
             self.Registers.set_item(to_srl, result as u16);
+        }
+
+        pub(crate) fn srl_value(&mut self, value: u8) -> u8{
+            let carry = value & 0x1;
+            let result = value >> 1;
+
             self.Registers.set_item("c", (carry > 0) as u16);
             self.Registers.set_item("z", (result == 0) as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
+
+            result
         }
 
         //test bit at position n in r register
         pub(crate) fn bit_n_r(&mut self, position: u8, target_register: &str){
             let current_value = self.Registers.get_item(target_register) as u8;
-            let value_at_bit = (current_value >> position) & 0x1;
+            self.bit_n_value(position, current_value);
+        }
+
+        pub(crate) fn bit_n_value(&mut self, position: u8, value: u8) {
+            let value_at_bit = (value >> position) & 0x1;
 
             self.Registers.set_item("z", (value_at_bit == 0) as u16);
             self.Registers.set_item("h", 1);
@@ -815,55 +843,83 @@ pub mod CPU{
         //reset bit at position n in register r
         pub(crate) fn res_n_r(&mut self, position: u8, target_register: &str){
             let mut current_value = self.Registers.get_item(target_register) as u8;
-            current_value &= !(1 << position);  //create an inverse mask shifting 1 by x position and inverting it
-            self.Registers.set_item(target_register, current_value as u16);
+            let result = self.res_n_value(position, current_value);
+            self.Registers.set_item(target_register, result as u16);
+        }
+
+        pub(crate) fn res_n_value(&mut self, position: u8, mut value: u8) -> u8 {
+            value &= !(1 << position);  //create an inverse mask shifting 1 by x position and inverting it
+            value
         }
 
         //set bit at position n in register r
         pub(crate) fn set_n_r(&mut self, position: u8, target_register: &str){
             let mut current_value = self.Registers.get_item(target_register) as u8;
-            current_value |= 1 << position;  //or mask value with bit positioned at right place
-            self.Registers.set_item(target_register, current_value as u16);
+            let result = self.set_n_value(position, current_value);
+            self.Registers.set_item(target_register, result as u16);
+        }
+
+        pub(crate) fn set_n_value(&mut self, position: u8, mut value: u8) -> u8 {
+            value |= 1 << position;  //or mask value with bit positioned at right place
+            value
         }
 
         //swap most and least significant nibbles
         pub(crate) fn swap_r(&mut self, to_swap: &str) {
             let current_value = self.Registers.get_item(to_swap) as u8;
-            let most_significant_nibble = current_value & 0xF0;
-            let least_significant_nibble = current_value & 0x0F;
+            let result = self.swap_value(current_value);
+            self.Registers.set_item(to_swap, result as u16);
+        }
+
+        pub(crate) fn swap_value(&mut self, value: u8) -> u8{
+            let most_significant_nibble = value & 0xF0;
+            let least_significant_nibble = value & 0x0F;
             let result = (most_significant_nibble >> 4) | (least_significant_nibble << 4);
 
-            self.Registers.set_item(to_swap, result as u16);
             self.Registers.set_item("z", (result == 0) as u16);
             self.Registers.set_item("c", 0);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
+
+            result
         }
 
         //rrca is rotate right circular, no data is loss
         pub(crate) fn rrc_r(&mut self, to_rrc: &str){
             let current_value = self.Registers.get_item(to_rrc) as u8;
-            let carry = current_value & 1;
-            let result = current_value.rotate_right(1);
-
+            let result = self.rrc_value(current_value);
             self.Registers.set_item(to_rrc, result as u16);
+        }
+
+        pub(crate) fn rrc_value(&mut self, value: u8) -> u8 {
+            let carry = value & 1;
+            let result = value.rotate_right(1);
+
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+
+            return result
         }
 
         pub(crate) fn rl_r(&mut self, to_rl: &str){
             let current_value = self.Registers.get_item(to_rl) as u8;
-            let carry = (current_value & 0x80) >> 7;
-            let current_carry = self.Registers.get_item("c") as u8;
-            let result = current_value << 1 | current_carry;
-
+            let result = self.rl_value(current_value);
             self.Registers.set_item(to_rl, result as u16);
+        }
+
+        pub(crate) fn rl_value(&mut self, value: u8) -> u8 {
+            let carry = (value & 0x80) >> 7;
+            let current_carry = self.Registers.get_item("c") as u8;
+            let result = value << 1 | current_carry;
+
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+
+            return result
         }
 
         pub(crate) fn rst(&mut self, new_pc: u16){
@@ -917,14 +973,20 @@ pub mod CPU{
 
         pub(crate) fn rlc_r(&mut self, to_rlc: &str){
             let current_value = self.Registers.get_item(to_rlc) as u8;
-            let carry = (current_value & 0x80) >> 7;
-            let result = current_value.rotate_left(1);
+            let result = self.rlc_value(current_value);
+            self.Registers.set_item(to_rlc,result as u16);
+        }
 
-            self.Registers.set_item(to_rlc, result as u16);
+        pub(crate) fn rlc_value(&mut self, value: u8) -> u8 {
+            let carry = (value & 0x80) >> 7;
+            let result = value.rotate_left(1);
+
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
             self.Registers.set_item("z", 0);
+
+            return result
         }
 
         pub(crate) fn daa(&mut self){
