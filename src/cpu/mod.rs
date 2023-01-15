@@ -89,7 +89,7 @@ pub mod CPU{
                 match instruction.opcode {
                     0 => {} //TODO 0x0 RLC B
                     _ => return Err(instruction)
-                    //rlc_r, rrc_r, rl_r, rr_r, sla_r, sra_r, swap_r, srl_r, res_n_r, bit_n_r, set_n_r
+                    //rlc_r v, rrc_r v, rl_r v, rr_r v, sla_r v, sra_r v, swap_r v, srl_r v, res_n_r v, bit_n_r v, set_n_r
                 }
             }else{
                 match instruction.opcode {

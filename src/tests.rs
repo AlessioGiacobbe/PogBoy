@@ -321,6 +321,15 @@ fn right_rotations_works(){
     cpu.rr_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("A"), 0x02);
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x3);
+    cpu.rrc_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x81);
+
+    cpu.MMU.write_byte(0xC000, 0x3);
+    cpu.rr_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x81);
 }
 
 #[test]
@@ -336,6 +345,14 @@ fn left_rotations_works(){
     cpu.rl_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("A"), 0x7);      //carry is putted in 0th position
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x81);
+    cpu.rlc_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x3);
+
+    cpu.rl_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x7);
 }
 
 #[test]
@@ -351,6 +368,13 @@ fn sla_sra_and_srl_sets_right_flags() {
     cpu.sla_r("A");
     assert_eq!(cpu.Registers.get_item("A"), 0x40);
 
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x80);
+    cpu.sla_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0);
+    assert_eq!(cpu.Registers.get_item("c"), 1);
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
     cpu.Registers.set_item("A", 0x1);
     cpu.sra_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 1);
@@ -360,9 +384,19 @@ fn sla_sra_and_srl_sets_right_flags() {
     cpu.sra_r("A");
     assert_eq!(cpu.Registers.get_item("A"), 0xd0);
 
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0xa0);
+    cpu.sra_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0xd0);
+
     cpu.Registers.set_item("A", 0xa0);
     cpu.srl_r("A");
     assert_eq!(cpu.Registers.get_item("A"), 0x50);
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0xa0);
+    cpu.srl_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x50);
 }
 
 
@@ -381,6 +415,11 @@ fn swap_works() {
     cpu.Registers.set_item("A", 0x38);  // 0011 1000
     cpu.swap_r("A");
     assert_eq!(cpu.Registers.get_item("A"), 0x83);  // 1000 0011
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x38);
+    cpu.swap_hl_pointer();
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x83);
 }
 
 #[test]
@@ -393,6 +432,11 @@ fn bit_works() {
 
     cpu.Registers.set_item("A", 0x2);
     cpu.bit_n_r(0, "A");
+    assert_eq!(cpu.Registers.get_item("z"), 1);
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x2);
+    cpu.bit_hl_pointer(0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
 }
 
@@ -414,6 +458,11 @@ fn reset_works() {
     cpu.res_n_r(6, "A");
     cpu.res_n_r(7, "A");
     assert_eq!(cpu.Registers.get_item("A"), 0);
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0xa);
+    cpu.res_hl_pointer(1);
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x8);
 }
 
 #[test]
@@ -434,6 +483,11 @@ fn set_works() {
     cpu.set_n_r(6, "A");
     cpu.set_n_r(7, "A");
     assert_eq!(cpu.Registers.get_item("A"), 0xFF);
+
+    cpu.Registers.set_item("HL", 0xC000);
+    cpu.MMU.write_byte(0xC000, 0x1);
+    cpu.set_hl_pointer(1);
+    assert_eq!(cpu.MMU.read_byte(0xC000), 0x3);
 }
 
 #[test]
