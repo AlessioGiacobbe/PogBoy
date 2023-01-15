@@ -756,6 +756,13 @@ pub mod CPU{
             self.Registers.set_item(to_rr, result as u16);
         }
 
+        pub(crate) fn rr_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.rr_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
+        }
+
         pub(crate) fn rr_value(&mut self, value: u8) -> u8 {
             let carry = value & 1;  //0th bit
             let current_carry = self.Registers.get_item("c") as u8;
@@ -774,6 +781,13 @@ pub mod CPU{
             let current_value = self.Registers.get_item(to_sla) as u8;
             let result = self.sla_value(current_value);
             self.Registers.set_item(to_sla, result as u16);
+        }
+
+        pub(crate) fn sla_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.sla_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
         }
 
         pub(crate) fn sla_value(&mut self, value: u8) -> u8{
@@ -795,6 +809,13 @@ pub mod CPU{
             self.Registers.set_item(to_sra, result as u16);
         }
 
+        pub(crate) fn sra_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.sra_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
+        }
+
         pub(crate) fn sra_value(&mut self, value: u8) -> u8{
             let carry = value & 0x1;
             let result = (value & 0x80) | value >> 1;
@@ -812,6 +833,13 @@ pub mod CPU{
             let current_value = self.Registers.get_item(to_srl) as u8;
             let result = self.srl_value(current_value);
             self.Registers.set_item(to_srl, result as u16);
+        }
+
+        pub(crate) fn srl_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.srl_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
         }
 
         pub(crate) fn srl_value(&mut self, value: u8) -> u8{
@@ -832,6 +860,12 @@ pub mod CPU{
             self.bit_n_value(position, current_value);
         }
 
+        pub(crate) fn bit_hl_pointer(&mut self, position: u8) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            self.bit_n_value(position, current_value);
+        }
+
         pub(crate) fn bit_n_value(&mut self, position: u8, value: u8) {
             let value_at_bit = (value >> position) & 0x1;
 
@@ -847,6 +881,13 @@ pub mod CPU{
             self.Registers.set_item(target_register, result as u16);
         }
 
+        pub(crate) fn res_hl_pointer(&mut self, position: u8) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.res_n_value(position, current_value);
+            self.MMU.write_byte(value_at_hl, result);
+        }
+
         pub(crate) fn res_n_value(&mut self, position: u8, mut value: u8) -> u8 {
             value &= !(1 << position);  //create an inverse mask shifting 1 by x position and inverting it
             value
@@ -859,6 +900,13 @@ pub mod CPU{
             self.Registers.set_item(target_register, result as u16);
         }
 
+        pub(crate) fn set_hl_pointer(&mut self, position: u8) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.set_n_value(position, current_value);
+            self.MMU.write_byte(value_at_hl, result);
+        }
+
         pub(crate) fn set_n_value(&mut self, position: u8, mut value: u8) -> u8 {
             value |= 1 << position;  //or mask value with bit positioned at right place
             value
@@ -869,6 +917,13 @@ pub mod CPU{
             let current_value = self.Registers.get_item(to_swap) as u8;
             let result = self.swap_value(current_value);
             self.Registers.set_item(to_swap, result as u16);
+        }
+
+        pub(crate) fn swap_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.swap_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
         }
 
         pub(crate) fn swap_value(&mut self, value: u8) -> u8{
@@ -891,6 +946,13 @@ pub mod CPU{
             self.Registers.set_item(to_rrc, result as u16);
         }
 
+        pub(crate) fn rrc_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.rrc_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
+        }
+
         pub(crate) fn rrc_value(&mut self, value: u8) -> u8 {
             let carry = value & 1;
             let result = value.rotate_right(1);
@@ -907,6 +969,13 @@ pub mod CPU{
             let current_value = self.Registers.get_item(to_rl) as u8;
             let result = self.rl_value(current_value);
             self.Registers.set_item(to_rl, result as u16);
+        }
+
+        pub(crate) fn rl_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.rl_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
         }
 
         pub(crate) fn rl_value(&mut self, value: u8) -> u8 {
@@ -975,6 +1044,13 @@ pub mod CPU{
             let current_value = self.Registers.get_item(to_rlc) as u8;
             let result = self.rlc_value(current_value);
             self.Registers.set_item(to_rlc,result as u16);
+        }
+
+        pub(crate) fn rlc_hl_pointer(&mut self) {
+            let value_at_hl = self.Registers.get_item("HL") as i32;
+            let current_value = self.MMU.read_byte(value_at_hl);
+            let result = self.rlc_value(current_value);
+            self.MMU.write_byte(value_at_hl, result);
         }
 
         pub(crate) fn rlc_value(&mut self, value: u8) -> u8 {
