@@ -272,6 +272,10 @@ fn inc_sets_right_flags(){
     cpu.inc("A");
     assert_eq!(cpu.Registers.get_item("h"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0x10);
+
+    cpu.Registers.set_item("BC", 0xFFFF);
+    cpu.inc_nn("BC");
+    assert_eq!(cpu.Registers.get_item("BC"), 0x0);
 }
 
 
@@ -294,6 +298,10 @@ fn dec_sets_right_flags(){
     cpu.dec("A");
     assert_eq!(cpu.Registers.get_item("h"), 1);
     assert_eq!(cpu.Registers.get_item("A"), 0xFF);
+
+    cpu.Registers.set_item("BC", 0x00);
+    cpu.dec_nn("BC");
+    assert_eq!(cpu.Registers.get_item("BC"), 0xFFFF);
 }
 
 #[test]

@@ -64,11 +64,12 @@ pub mod CPU{
                     continue
                 }
 
+                //TODO FIX ALL SIGNED INSTRUCTIONS
                 let address = self.Registers.get_item("PC");
                 let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
                 println!("STATUS BEFORE EXECUTING 0x{:04X} {}", address, self);
-                println!("Executing {}", instruction);
+                println!("Executing {} (op code 0x{:02X})", instruction, instruction.opcode);
                 match self.execute(instruction) {
                     Err(instruction) => {
                         let starting_address = if address >= 12 { address - 12} else { 0 };
@@ -615,16 +616,16 @@ pub mod CPU{
             self.Registers.set_item(name, d16.value.expect("Operand d16 has no value"))
         }
 
-        fn inc_nn(&mut self, name: &str){
-            let mut current_value = self.Registers.get_item(name);
+        pub(crate) fn inc_nn(&mut self, name: &str){
+            let mut current_value = self.Registers.get_item(name) as i16;
             current_value += 1;
-            self.Registers.set_item(name, current_value);
+            self.Registers.set_item(name, current_value as u16);
         }
 
-        fn dec_nn(&mut self, name: &str){
-            let mut current_value = self.Registers.get_item(name);
+        pub(crate) fn dec_nn(&mut self, name: &str){
+            let mut current_value = self.Registers.get_item(name) as i16;
             current_value -= 1;
-            self.Registers.set_item(name, current_value);
+            self.Registers.set_item(name, current_value as u16);
         }
 
         fn ld_r_r(&mut self, from: &str, to: &str){
@@ -773,7 +774,7 @@ pub mod CPU{
         }
 
         pub(crate) fn sbc_a_d8(&mut self, Instruction: Instruction){
-            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand shuold have a value");
+            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand should have a value");
             self.sbc_a(d8 as i16);
         }
 
@@ -790,15 +791,15 @@ pub mod CPU{
         }
 
         pub(crate) fn add_sp_r8(&mut self, Instruction: Instruction){
-            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as u32;
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as i8;
             let sp = self.Registers.get_item("SP") as u32;
             self.Registers.set_item("z", 0);
             self.Registers.set_item("n", 0);
 
-            let result = sp + r8;
+            let result = sp.wrapping_add(r8 as u32);
 
             self.Registers.set_item("c", (result & 0xFFFF0000) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(sp as i16, r8 as i16, 0, HalfCarryOperationsMode::GreaterThan) as u16);
+            self.Registers.set_item("h", ((sp & 0xF).wrapping_add((r8 & 0xF) as u32) > 0xF) as u16);
 
             self.Registers.set_item("SP", result as u16)
         }
@@ -890,7 +891,7 @@ pub mod CPU{
         }
 
         pub(crate) fn cp_a_d8(&mut self, Instruction: Instruction) {
-            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand shuold have a value");
+            let d8 = Instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found").value.expect("Operand should have a value");
             self.cp_a(d8 as i16);
         }
 
@@ -912,15 +913,15 @@ pub mod CPU{
         }
 
         pub(crate) fn ld_hl_sp_r8(&mut self, Instruction: Instruction){
-            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as u32;
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as i8;
             let sp = self.Registers.get_item("SP") as u32;
             self.Registers.set_item("z", 0);
             self.Registers.set_item("n", 0);
 
-            let result: u32 = sp + r8;
+            let result: u32 = sp.wrapping_add(r8 as u32);
 
-            self.Registers.set_item("c", (sp + r8 > 0xFFFF) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(sp as i16, r8 as i16, 0, HalfCarryOperationsMode::GreaterThan) as u16);
+            self.Registers.set_item("c", (sp.wrapping_add(r8 as u32) > 0xFFFF) as u16);
+            self.Registers.set_item("h", ((sp & 0xF).wrapping_add((r8 & 0xF) as u32) > 0xF) as u16);
 
             self.Registers.set_item("HL", result as u16)
         }
@@ -1252,11 +1253,11 @@ pub mod CPU{
         }
 
         pub(crate) fn jr_r8(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
-            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap();
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as i8;
             let current_pc = self.Registers.get_item("PC");
             let should_jump = checkJumpCondition(self, JumpCondition);
             if should_jump {
-                self.Registers.set_item("PC", current_pc + r8);
+                self.Registers.set_item("PC", current_pc.wrapping_add(r8 as u16));
             }
         }
 
