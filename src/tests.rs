@@ -20,6 +20,10 @@ fn create_dummy_cartridge() -> Cartridge {
     }
 }
 
+fn create_dummy_ppu() -> PPU {
+    PPU::new()
+}
+
 fn create_dummy_mmu() -> MMU {
     let dummy_cartridge = create_dummy_cartridge();
     let mut dummy_mmu = MMU::new(Some(dummy_cartridge));
@@ -34,7 +38,8 @@ fn create_dummy_mmu() -> MMU {
 
 fn create_dummy_cpu() -> CPU {
     let dummy_mmu = create_dummy_mmu();
-    CPU::new(dummy_mmu)
+    let dummy_ppu = create_dummy_ppu();
+    CPU::new(dummy_mmu, dummy_ppu)
 }
 
 fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instruction {
