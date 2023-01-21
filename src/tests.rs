@@ -644,6 +644,7 @@ fn jump_works() {
     cpu.Registers.set_item("z", 0);
     cpu.Registers.set_item("PC", 0);
     cpu.jr_r8(jp_r8_instruction.clone(),  JumpCondition::NotZero);
+    assert_eq!(cpu.clock, 0x4);
     assert_eq!(cpu.Registers.get_item("PC"), 1);
     cpu.Registers.set_item("z", 1);
     cpu.jr_r8(jp_r8_instruction,  JumpCondition::NotZero);
@@ -661,6 +662,7 @@ fn return_works(){
     cpu.Registers.set_item("z", 1);
     cpu.write_to_stack(0xC0FE);
     cpu.ret(JumpCondition::Zero, true);
+    assert_eq!(cpu.clock, 0xC);
     assert_eq!(cpu.Registers.get_item("PC"), 0xC0FE);
     assert_eq!(cpu.Interrupt.enabled, true);
 }

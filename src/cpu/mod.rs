@@ -11,9 +11,11 @@ pub mod CPU{
         pub(crate) Registers: Registers,
         pub(crate) MMU: MMU,
         pub(crate) Interrupt: Interrupt,
-        pub(crate) is_stopped: bool
+        pub(crate) is_stopped: bool,
+        pub(crate) clock: u32,
     }
 
+    #[derive(PartialEq)]
     pub enum JumpCondition {
         Zero,
         NotZero,
@@ -22,7 +24,7 @@ pub mod CPU{
         None
     }
 
-    fn checkJumpCondition(cpu: &mut CPU, JumpCondition: JumpCondition) -> bool {
+    fn checkJumpCondition(cpu: &mut CPU, JumpCondition: &JumpCondition) -> bool {
         match JumpCondition {
             JumpCondition::Zero => cpu.Registers.get_item("z") == 1,
             JumpCondition::NotZero => cpu.Registers.get_item("z") == 0,
@@ -42,7 +44,7 @@ pub mod CPU{
 
     impl Display for CPU {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            write!(f, "Registers : {}", self.Registers)
+            write!(f, "clock : {} - Registers : {}", self.clock, self.Registers)
         }
     }
 
@@ -54,7 +56,8 @@ pub mod CPU{
                 Registers,
                 MMU,
                 Interrupt: Default::default(),
-                is_stopped: false
+                is_stopped: false,
+                clock: 0
             }
         }
 
@@ -64,10 +67,11 @@ pub mod CPU{
                     continue
                 }
 
-                //TODO FIX ALL SIGNED INSTRUCTIONS
                 let address = self.Registers.get_item("PC");
                 let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
+                self.clock += if instruction.cycles.len() > 2 { instruction.cycles[1] } else { instruction.cycles[0] };
+
                 println!("STATUS BEFORE EXECUTING 0x{:04X} {}", address, self);
                 println!("Executing {} (op code 0x{:02X})", instruction, instruction.opcode);
                 match self.execute(instruction) {
@@ -566,7 +570,7 @@ pub mod CPU{
                     0xD6 => self.sub_a_n(instruction.operands), //0xD6 SUB d8
                     0xD7 => self.rst(0x10), //0xD7 RST 10H
                     0xD8 => self.ret(JumpCondition::Carry, false), //0xD8 RET C
-                    0xD9 => self.ret(JumpCondition::None, false), //0xD9 RETI
+                    0xD9 => self.ret(JumpCondition::None, true), //0xD9 RETI
                     0xDA => self.jp_a16(instruction, JumpCondition::Carry), //0xDA JP C,a16
                     0xDB => (), //0xDB UNDEFINED
                     0xDC => self.call_a16(instruction, JumpCondition::Carry), //0xDC CALL C,a16
@@ -1255,8 +1259,11 @@ pub mod CPU{
         pub(crate) fn jr_r8(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
             let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as i8;
             let current_pc = self.Registers.get_item("PC");
-            let should_jump = checkJumpCondition(self, JumpCondition);
+            let should_jump = checkJumpCondition(self, &JumpCondition);
             if should_jump {
+                if JumpCondition != JumpCondition::None {
+                    self.clock += 4;    //12 - 8
+                }
                 self.Registers.set_item("PC", current_pc.wrapping_add(r8 as u16));
             }
         }
@@ -1267,16 +1274,22 @@ pub mod CPU{
         }
 
         pub(crate) fn jp_a16(&mut self, Instruction: Instruction, JumpCondition: JumpCondition){
-            let should_jump = checkJumpCondition(self, JumpCondition);
+            let should_jump = checkJumpCondition(self, &JumpCondition);
             if should_jump {
+                if JumpCondition != JumpCondition::None {
+                    self.clock += 12;
+                }
                 let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
                 self.Registers.set_item("PC", a16)
             }
         }
 
         pub(crate) fn call_a16(&mut self, Instruction: Instruction, CallCondition: JumpCondition){
-            let should_call = checkJumpCondition(self, CallCondition);
+            let should_call = checkJumpCondition(self, &CallCondition);
             if should_call {
+                if CallCondition != JumpCondition::None {
+                    self.clock += 12;
+                }
                 let a16 = Instruction.operands.into_iter().find(|operand| operand.name == "a16").expect("Operand a16 not found").value.unwrap();
                 let pc = self.Registers.get_item("PC"); //is already pointing to next instruction
                 self.write_to_stack(pc);
@@ -1285,10 +1298,13 @@ pub mod CPU{
         }
 
         pub(crate) fn ret(&mut self, ReturnCondition: JumpCondition, EnableInterrupts: bool){
-            let should_return = checkJumpCondition(self, ReturnCondition);
+            let should_return = checkJumpCondition(self, &ReturnCondition);
             if should_return {
                 let jump_location = self.read_from_stack();
                 self.Registers.set_item("PC", jump_location);
+                if ReturnCondition != JumpCondition::None {
+                    self.clock += 12;
+                }
                 if EnableInterrupts {
                     self.Interrupt.enabled = true;
                 }

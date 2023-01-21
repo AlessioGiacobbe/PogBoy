@@ -25,7 +25,7 @@ pub mod op_codes_parser {
         pub(crate) opcode: u8,
         pub(crate) immediate: bool,
         pub(crate) operands: Vec<Operand>,
-        pub(crate) cycles: Vec<u8>,
+        pub(crate) cycles: Vec<u32>,
         pub(crate) bytes: u8,
         pub(crate) mnemonic: String,
         pub(crate) comment: Option<&'static str>,
@@ -129,7 +129,7 @@ pub mod op_codes_parser {
             let cycles = {
                 let mut cycles = vec![];
                 for cycle in op_info["cycles"].as_array().unwrap() {
-                    cycles.push(cycle.as_i64().unwrap().to_le_bytes()[0])
+                    cycles.push(cycle.as_i64().unwrap().to_le_bytes()[0] as u32)
                 };
                 cycles
             };
