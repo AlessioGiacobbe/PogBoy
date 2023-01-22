@@ -11,7 +11,6 @@ pub mod CPU{
     pub struct CPU {
         pub(crate) Registers: Registers,
         pub(crate) MMU: MMU,
-        pub(crate) PPU: PPU,
         pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool,
         pub(crate) clock: u32,
@@ -52,21 +51,20 @@ pub mod CPU{
 
     impl CPU {
 
-        pub(crate) fn new(MMU: MMU, PPU: PPU) -> CPU {
+        pub(crate) fn new(MMU: MMU) -> CPU {
             let Registers: Registers = Registers::new();
             CPU {
                 Registers,
                 MMU,
-                PPU,
                 Interrupt: Default::default(),
                 is_stopped: false,
                 clock: 0
             }
         }
 
-        pub(crate) fn step(&mut self) {
+        pub(crate) fn step(&mut self) -> u32 {
                 if self.is_stopped {
-                    return
+                    return 0
                 }
 
                 let address = self.Registers.get_item("PC");
@@ -86,6 +84,7 @@ pub mod CPU{
                     },
                     _ => {
                         println!("STATUS AFTER EXECUTING 0x{:04X} {}", address, self);
+                        return self.clock
                     }
                 };
         }

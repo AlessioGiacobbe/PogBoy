@@ -38,8 +38,7 @@ fn create_dummy_mmu() -> MMU {
 
 fn create_dummy_cpu() -> CPU {
     let dummy_mmu = create_dummy_mmu();
-    let dummy_ppu = create_dummy_ppu();
-    CPU::new(dummy_mmu, dummy_ppu)
+    CPU::new(dummy_mmu);
 }
 
 fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instruction {
