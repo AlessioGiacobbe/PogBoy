@@ -8,9 +8,9 @@ pub mod CPU{
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
     use crate::ppu::ppu::PPU;
 
-    pub struct CPU {
+    pub struct CPU<'a> {
         pub(crate) Registers: Registers,
-        pub(crate) MMU: MMU,
+        pub(crate) MMU: MMU<'a>,
         pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool,
         pub(crate) clock: u32,
@@ -43,13 +43,13 @@ pub mod CPU{
         Decrement,
     }
 
-    impl Display for CPU {
+    impl Display for CPU<'_> {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             write!(f, "clock : {} - Registers : {}", self.clock, self.Registers)
         }
     }
 
-    impl CPU {
+    impl CPU<'_> {
 
         pub(crate) fn new(MMU: MMU) -> CPU {
             let Registers: Registers = Registers::new();

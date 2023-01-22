@@ -19,8 +19,8 @@ use crate::ppu::ppu::PPU;
 
 fn main() {
     let cartridge: Cartridge = read_cartridge("image.gb");
-    let mut mmu: MMU = MMU::new(Some(cartridge));
     let mut ppu: PPU = PPU::new();
+    let mut mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
 
     let mut window: PistonWindow = WindowSettings::new("Pog!", [160, 144]).exit_on_esc(true).build().unwrap();
@@ -30,7 +30,7 @@ fn main() {
             Event::Input(_, _) => {}
             Event::Loop(_) => {
                 let clock = cpu.step();
-                ppu.step(clock);
+                cpu.MMU.PPU.step(clock);
                 window.draw_2d(&event, |context, graphics, _device| {});
             }
             _ => {}

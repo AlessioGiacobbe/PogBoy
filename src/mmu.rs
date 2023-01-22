@@ -6,15 +6,16 @@ pub mod mmu {
     use serde_json::Value;
     use crate::cartridge::cartridge::{Cartridge};
     use crate::cpu::CPU::CPU;
+    use crate::ppu::ppu::PPU;
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 0xCB;
 
     #[derive(Debug)]
-    pub struct MMU {
+    pub struct MMU<'a> {
         pub(crate) bios: [u8; 256],
         pub(crate) cartridge: Cartridge,
-        pub(crate) video_ram: [u8; 0x2000],
+        pub(crate) PPU: &'a mut PPU,
         pub(crate) external_ram: [u8; 0x2000],
         pub(crate) work_ram: [u8; 0x2000],
         pub(crate) io_registers: [u8; 0x100],
@@ -26,9 +27,9 @@ pub mod mmu {
     }
 
 
-    impl MMU {
+    impl<'a> MMU<'_> {
 
-        pub(crate) fn new(Cartridge: Option<Cartridge>) -> MMU {
+        pub(crate) fn new(Cartridge: Option<Cartridge>, PPU: &mut PPU) -> MMU {
             let op_codes_content = fs::read_to_string("./src/opcodes.json").expect("error reading file");
             let json_op_codes: Value = serde_json::from_str(&op_codes_content).unwrap();
 
@@ -53,7 +54,7 @@ pub mod mmu {
                     0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
                     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50],
                 cartridge: Cartridge.expect("Empty cartridge"),
-                video_ram: [0; 0x2000],
+                PPU,
                 external_ram: [0; 0x2000],
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
@@ -142,8 +143,7 @@ pub mod mmu {
                 },
                 //VRAM
                 0x8000..=0x9FFF => {
-                    //TODO should be moved into vga?
-                    self.video_ram[address - 0x8000]
+                    self.PPU.read_byte(address)
                 },
                 //External RAM
                 0xA000..=0xBFFF => {
@@ -160,7 +160,7 @@ pub mod mmu {
                 //Sprite attribute table
                 0xFE00..=0xFE9F => {
                     //TODO read from vga
-                    0
+                    self.PPU.read_byte(address)
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
@@ -203,7 +203,7 @@ pub mod mmu {
                 },
                 //VRAM
                 0x8000..=0x9FFF => {
-                    self.video_ram[address - 0x8000] = value;
+                    self.PPU.write_byte(address, value);
                 },
                 //External RAM
                 0xA000..=0xBFFF => {
@@ -219,16 +219,23 @@ pub mod mmu {
                 },
                 //Sprite attribute table
                 0xFE00..=0xFE9F => {
-                    //TODO read from vga
+                    self.PPU.write_byte(address, value)
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
                     panic!("address not usable")
                 }
                 //I/O Registers
-                0xFF00..=0xFF7F => {
+                0xFF00..=0xFF3F => {
                     self.io_registers[address - 0xFF00] = value
                 },
+                //PPU special registers
+                0xFF40..=0xFF4F => {
+                    self.PPU.write_byte(address, value)
+                },
+                0xFF50..=0xFF7F => {
+                    self.io_registers[address - 0xFF00] = value
+                }
                 //High RAM
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80] = value
