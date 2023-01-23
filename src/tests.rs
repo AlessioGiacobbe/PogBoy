@@ -24,9 +24,10 @@ fn create_dummy_ppu() -> PPU {
     PPU::new()
 }
 
-fn create_dummy_mmu<'a>(dummy_ppu: &'a mut PPU) -> MMU<'a> {
+fn create_dummy_mmu(dummy_ppu: &mut PPU) -> MMU {
     let dummy_cartridge = create_dummy_cartridge();
     let mut dummy_mmu = MMU::new(Some(dummy_cartridge), dummy_ppu);
+    dummy_mmu.PPU.video_ram = [1; 0x2000];
     dummy_mmu.external_ram = [2; 0x2000];
     dummy_mmu.work_ram = [3; 0x2000];
     dummy_mmu.io_registers = [4; 0x100];
@@ -105,8 +106,31 @@ fn add_sets_right_flags() {
 }
 
 #[test]
+fn tiles_are_generated_correctly(){
+    let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+
+    dummy_mmu.write_byte(0x8000, 0x3C);
+    dummy_mmu.write_byte(0x8001, 0x7E);
+    dummy_mmu.write_byte(0x8002, 0x42);
+    dummy_mmu.write_byte(0x8003, 0x42);
+    dummy_mmu.write_byte(0x8004, 0x42);
+    dummy_mmu.write_byte(0x8005, 0x42);
+    dummy_mmu.write_byte(0x8006, 0x42);
+    dummy_mmu.write_byte(0x8007, 0x42);
+    dummy_mmu.write_byte(0x8008, 0x7E);
+    dummy_mmu.write_byte(0x8009, 0x5E);
+    dummy_mmu.write_byte(0x800A, 0x7E);
+    dummy_mmu.write_byte(0x800B, 0x0A);
+    dummy_mmu.write_byte(0x800C, 0x7C);
+    dummy_mmu.write_byte(0x800D, 0x56);
+    dummy_mmu.write_byte(0x800E, 0x38);
+    dummy_mmu.write_byte(0x800F, 0x7C);
+}
+
+#[test]
 fn adc_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0xFF);
@@ -128,7 +152,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn sub_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x9);
@@ -157,7 +181,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn subc_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("c", 1);
@@ -176,7 +200,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn and_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x3);
@@ -197,7 +221,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn or_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x3);
@@ -224,7 +248,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn xor_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x3);
@@ -248,7 +272,7 @@ let mut dummy_ppu = create_dummy_ppu();
 #[test]
 fn cp_sets_right_flags(){
     //same as sub but we check that A didn't change
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0xFF);
@@ -273,7 +297,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn inc_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0xFF);
@@ -298,7 +322,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn dec_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x1);
@@ -325,7 +349,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn right_rotations_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x03);
@@ -363,7 +387,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn left_rotations_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("A", 0x81);
@@ -388,7 +412,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn sla_sra_and_srl_sets_right_flags() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -435,7 +459,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn swap_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -459,7 +483,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn bit_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -479,7 +503,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn reset_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -506,7 +530,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn set_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -533,7 +557,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn add_hl_nn_sets_right_flags(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     cpu.Registers.set_item("HL", 0xFFFF);
@@ -558,14 +582,15 @@ let mut dummy_ppu = create_dummy_ppu();
 fn memory_can_read_and_write(){
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+
     assert_eq!(dummy_mmu.read_byte(0x0), 0x31);
     dummy_mmu.write_byte(0x0, 0xFF);
     assert_eq!(dummy_mmu.read_byte(0x0), 0xFF);
 
     //TODO implement PPU memory tests
-    /*assert_eq!(dummy_mmu.read_byte(0x8000), 0x1);
+    assert_eq!(dummy_mmu.read_byte(0x8000), 0x1);
     dummy_mmu.write_byte(0x8000, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0x8000), 0xFF);*/
+    assert_eq!(dummy_mmu.read_byte(0x8000), 0xFF);
 
     assert_eq!(dummy_mmu.read_byte(0xA000), 0x2);
     dummy_mmu.write_byte(0xA000, 0xFF);
@@ -593,7 +618,7 @@ fn memory_can_read_and_write(){
 
 #[test]
 fn ld_hl_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -610,7 +635,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn inc_and_dec_hl_pointer_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -625,7 +650,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn memory_pointer_ops_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     let ld_hl_pointer_0xF_instruction = create_dummy_instruction("d8", 0xF);
@@ -648,7 +673,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn push_and_pop_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -668,7 +693,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn rst_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -680,7 +705,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn jump_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -702,7 +727,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn return_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -720,7 +745,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn c_pointer_instructions_works() {
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
@@ -736,7 +761,7 @@ let mut dummy_ppu = create_dummy_ppu();
 
 #[test]
 fn a_register_with_d8_operand_instructions_works(){
-let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
     let d8_instruction = create_dummy_instruction("d8", 0xFF);
