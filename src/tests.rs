@@ -1,6 +1,7 @@
 use crate::cpu::CPU::JumpCondition;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
+use crate::ppu::ppu::TilePixelValues;
 use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
@@ -110,6 +111,18 @@ fn tiles_are_generated_correctly(){
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
+    let dummy_tile: ppu::ppu::Tile = [
+        [TilePixelValues::Zero, TilePixelValues::Two, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Two, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::One, TilePixelValues::One, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::Two, TilePixelValues::Zero],
+        [TilePixelValues::Zero, TilePixelValues::Two, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Two, TilePixelValues::Zero, TilePixelValues::Zero],
+    ];
+
+    //write dummy tile as bytes into tileset position 0
     dummy_mmu.write_byte(0x8000, 0x3C);
     dummy_mmu.write_byte(0x8001, 0x7E);
     dummy_mmu.write_byte(0x8002, 0x42);
@@ -126,6 +139,14 @@ fn tiles_are_generated_correctly(){
     dummy_mmu.write_byte(0x800D, 0x56);
     dummy_mmu.write_byte(0x800E, 0x38);
     dummy_mmu.write_byte(0x800F, 0x7C);
+
+    let tile = dummy_mmu.PPU.tile_set[0];
+
+    for (tile_row, _) in tile.iter().enumerate() {
+        for (tile_column, _) in tile[tile_row].iter().enumerate() {
+            assert_eq!(tile[tile_row][tile_column], dummy_tile[tile_row][tile_column])
+        }
+    }
 }
 
 #[test]

@@ -4,10 +4,12 @@ pub mod ppu {
 
     const COLORS: [&'static str; 4] = ["#0f380f", "#306230", "#8bac0f", "#9bbc0f"];
 
-    type Tile = [[TilePixelValues; 8]; 8];
+    pub(crate) type Tile = [[TilePixelValues; 8]; 8];
 
-    #[derive(Copy,Clone, Debug)]
-    enum TilePixelValues {
+    //each value should refer to a specific color depending on the current mapping
+    //(it can be shifted to do cool stuff)
+    #[derive(Copy,Clone, Debug, PartialEq)]
+    pub(crate) enum TilePixelValues {
         Zero = 0,
         One = 1,
         Two = 2,
@@ -50,7 +52,7 @@ pub mod ppu {
         current_line: u32,
         mode: u8,
         pub(crate) video_ram: [u8; 0x2000],
-        tile_set: [Tile; 384]
+        pub(crate) tile_set: [Tile; 384]
     }
 
     impl Debug for PPU {
@@ -145,10 +147,10 @@ pub mod ppu {
 
                 let current_column_mask_position = 1 << (7 - tile_column);
 
-                let byte_value_for_position = if (self.video_ram[address] & current_column_mask_position) > 1  { 1 } else { 0 };
-                let byte_value_for_next_position = if (self.video_ram[address + 1] & current_column_mask_position) > 1 { 2 } else { 0 };
+                let bit_value_for_position = if (self.video_ram[address] & current_column_mask_position) > 1  { 1 } else { 0 };
+                let bit_value_for_next_position = if (self.video_ram[address + 1] & current_column_mask_position) > 1 { 2 } else { 0 };
 
-                let tile_value = match byte_value_for_position + byte_value_for_next_position {
+                let tile_value = match bit_value_for_position + bit_value_for_next_position {
                     0 => TilePixelValues::Zero,
                     1 => TilePixelValues::One,
                     2 => TilePixelValues::Two,
@@ -159,7 +161,6 @@ pub mod ppu {
                 self.tile_set[tile_number][tile_row][tile_column] = tile_value;
             }
 
-            print_tile(self.tile_set[0]);
         }
 
         pub(crate) fn read_byte(&self, address: usize) -> u8 {
