@@ -1,7 +1,7 @@
 use crate::cpu::CPU::JumpCondition;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
-use crate::ppu::ppu::TilePixelValues;
+use crate::ppu::ppu::{LCDCFlags, TilePixelValues};
 use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
@@ -169,6 +169,27 @@ fn adc_sets_right_flags(){
     cpu.Registers.set_item("HL", 0xA000);   //should point to memory filled with 0x2
     cpu.adc_a_hl();
     assert_eq!(cpu.Registers.get_item("A"), 0x3);
+}
+
+#[test]
+fn lcdc_flags_are_read_correctly(){
+    let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+
+    dummy_mmu.write_byte(0xFF40, 0xFF);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Window_enable), true);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Bg_enable), true);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::LCD_enabled), true);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Obj_enable), true);
+
+    dummy_mmu.write_byte(0xFF40, 0x4);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Obj_size), true);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::LCD_enabled), false);
+
+    dummy_mmu.write_byte(0xFF40, 0x20);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Window_enable), true);
+    assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Obj_size), false);
+
 }
 
 #[test]

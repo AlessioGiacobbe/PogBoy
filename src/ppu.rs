@@ -8,13 +8,33 @@ pub mod ppu {
 
     //each value should refer to a specific color depending on the current mapping
     //(it can be shifted to do cool stuff)
-    #[derive(Copy,Clone, Debug, PartialEq)]
+    #[derive(Copy, Clone, Debug, PartialEq)]
     pub(crate) enum TilePixelValues {
         Zero = 0,
         One = 1,
         Two = 2,
         Three = 3
     }
+
+    #[derive(Debug)]
+    pub(crate) enum PPU_mode {
+        HBlank = 0,
+        VBlank = 1,
+        OAM = 2,
+        VRAM = 3
+    }
+
+    pub(crate) enum LCDCFlags {
+        LCD_enabled = 7,
+        Tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
+        Window_enable = 5,  //should display window
+        BG_tile_area = 4,   //0=8800-97FF, 1=8000-8FFF
+        BG_tile_map_area = 3,   //determines which tile map to use 0=9800-9BFF, 1=9C00-9FFF
+        Obj_size = 2,   //sprite size 0=8x8, 1=8x16
+        Obj_enable = 1,    //should sprites be displayed?
+        Bg_enable = 0   //hide backgorund and window
+    }
+
 
     impl Display for TilePixelValues {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -31,7 +51,7 @@ pub mod ppu {
     fn create_empty_tile() -> Tile {
         [[TilePixelValues::Zero; 8]; 8]
     }
-    
+
     fn print_tile(Tile: Tile) {
         for tile_row in Tile {
 
@@ -43,21 +63,22 @@ pub mod ppu {
 
             println!("{}", tile_line)
         }
-    } 
+    }
 
     pub struct PPU {
         framebuffer: [u8; 160 * 144 * 3],
         alpha_framebuffer: [u8; 160 * 144 * 4],
         clock: u32,
         current_line: u32,
-        mode: u8,
+        mode: PPU_mode,
+        lcd_control: u8,
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) tile_set: [Tile; 384]
     }
 
     impl Debug for PPU {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            write!(f, "PPU - mode : {} - clock : {}", self.mode, self.clock)
+            write!(f, "PPU - mode : {:?} - clock : {}", self.mode, self.clock)
         }
     }
 
@@ -70,8 +91,9 @@ pub mod ppu {
                video_ram: [0; 0x2000],
                current_line: 0,
                clock: 0,
-               mode: 0,
-               tile_set: [create_empty_tile(); 384]
+               mode: PPU_mode::HBlank,
+               tile_set: [create_empty_tile(); 384],
+               lcd_control: 0
            }
         }
 
@@ -80,44 +102,44 @@ pub mod ppu {
 
             match self.mode {
                 //horizontal blanking
-                0 => {
+                PPU_mode::HBlank => {
                     if self.clock >= 204 {
                         self.clock = 0;
                         self.current_line += 1;
 
                         if self.current_line == 143 {
                             //last line, go to v blank
-                            self.mode = 1;
+                            self.mode = PPU_mode::VBlank;
                         } else {
                             //scan another line
-                            self.mode = 2;
+                            self.mode = PPU_mode::OAM;
                         }
                     }
                 },
                 //vertical blanking
-                1 => {
+                PPU_mode::VBlank => {
                     if self.clock >= 456 {
                         self.clock = 0;
                         self.current_line += 1;
 
                         if self.current_line > 153 {
-                            self.mode = 2;
+                            self.mode = PPU_mode::OAM;
                             self.current_line = 0;
                         }
                     }
                 },
                 // OAM read
-                2 => {
+                PPU_mode::OAM => {
                     if self.clock >= 80 {
                         self.clock = 0;
-                        self.mode = 3;
+                        self.mode = PPU_mode::VRAM;
                     }
                 },
                 // VRAM read and complete line scan
-                3 => {
+                PPU_mode::VRAM => {
                     if self.clock >= 172 {
                         self.clock = 0;
-                        self.mode = 0;
+                        self.mode = PPU_mode::HBlank;
                         self.render_scan();
                     }
                 },
@@ -128,7 +150,7 @@ pub mod ppu {
         pub(crate) fn render_scan(&mut self) {
         }
 
-        pub(crate) fn update_tile(&mut self, address: usize, value: u8) {
+        pub(crate) fn update_tile(&mut self, address: usize) {
             let address = address & 0x1FFE;
 
             //each tile occupies 16 bytes, we find tile index dividing the address by 16
@@ -167,7 +189,10 @@ pub mod ppu {
             match address {
                 0x8000..=0x9FFF => {
                     self.video_ram[address - 0x8000]
-                }
+                },
+                0xFF40 => {
+                    self.lcd_control
+                },
                 _ => 0
             }
         }
@@ -176,10 +201,20 @@ pub mod ppu {
             match address {
                 0x8000..=0x9FFF => {
                     self.video_ram[address - 0x8000] = value;
-                    self.update_tile(address, value);
-                }
+                    if address < 0x9800 {
+                        self.update_tile(address);
+                    }
+                },
+                0xFF40 => {
+                    self.lcd_control = value;
+                },
                 _ => ()
             }
+        }
+
+        pub(crate) fn get_lcdc_value(&self, lcdc_flag: LCDCFlags) -> bool{
+            let bit_number = lcdc_flag as u8;
+            return ((self.lcd_control >> bit_number) & 0x1) == 1
         }
     }
 
