@@ -23,7 +23,13 @@ fn main() {
     let mut mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
 
-    let mut window: PistonWindow = WindowSettings::new("Pog!", [160, 144]).exit_on_esc(true).build().unwrap();
+
+    loop {
+        let clock = cpu.step();
+        cpu.MMU.PPU.step(clock);
+    }
+
+    /*let mut window: PistonWindow = WindowSettings::new("Pog!", [160, 144]).exit_on_esc(true).build().unwrap();
 
     while let Some(event) = window.next() {
         match event {
@@ -36,5 +42,5 @@ fn main() {
             _ => {}
         }
 
-    }
+    }*/
 }

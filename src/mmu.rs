@@ -165,7 +165,16 @@ pub mod mmu {
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
                     panic!("address not usable")
-                }
+                },
+                0xFF00 => {
+                    self.PPU.read_byte(address)
+                },
+                0xFF41 => {
+                    self.PPU.read_byte(address)
+                },
+                0xFF44 => {
+                    self.PPU.read_byte(address)
+                },
                 //I/O Registers
                 0xFF00..=0xFF7F => {
                     self.io_registers[address - 0xFF00]
@@ -186,7 +195,8 @@ pub mod mmu {
         }
 
         pub(crate) fn write_byte(&mut self, address: i32, value: u8){
-            println!("Writing byte {} to {:04x}", value, address);
+            //println!("Writing byte {} to 0x{:04x}", value, address);
+
             let address = address as usize;
             return match address {
                 //BIOS
@@ -225,6 +235,15 @@ pub mod mmu {
                 0xFEA0..=0xFEFF => {
                     panic!("address not usable")
                 }
+                0xFF00 => {
+                    self.PPU.write_byte(address, value)
+                },
+                0xFF41 => {
+                    self.PPU.write_byte(address, value)
+                },
+                0xFF44 => {
+                    self.PPU.write_byte(address, value)
+                },
                 //I/O Registers
                 0xFF00..=0xFF3F => {
                     self.io_registers[address - 0xFF00] = value

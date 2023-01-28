@@ -16,12 +16,24 @@ pub mod ppu {
         Three = 3
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub(crate) enum PPU_mode {
         HBlank = 0,
         VBlank = 1,
         OAM = 2,
         VRAM = 3
+    }
+
+    impl From<u8> for PPU_mode{
+        fn from(value: u8) -> Self {
+            match value {
+                0 => PPU_mode::HBlank,
+                1 => PPU_mode::VBlank,
+                2 => PPU_mode::OAM,
+                3 => PPU_mode::VRAM,
+                _ => PPU_mode::HBlank
+            }
+        }
     }
 
     pub(crate) enum LCDCFlags {
@@ -70,7 +82,7 @@ pub mod ppu {
         alpha_framebuffer: [u8; 160 * 144 * 4],
         clock: u32,
         current_line: u32,
-        mode: PPU_mode,
+        pub(crate) mode: PPU_mode,
         lcd_control: u8,
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) tile_set: [Tile; 384]
@@ -193,6 +205,12 @@ pub mod ppu {
                 0xFF40 => {
                     self.lcd_control
                 },
+                0xFF41 => {
+                    self.mode.clone() as u8
+                },
+                0xFF44 => {
+                    self.current_line as u8
+                },
                 _ => 0
             }
         }
@@ -207,6 +225,12 @@ pub mod ppu {
                 },
                 0xFF40 => {
                     self.lcd_control = value;
+                },
+                0xFF41 => {
+                    self.mode = PPU_mode::try_from(value).unwrap()
+                },
+                0xFF44 => {
+                    self.current_line = value as u32
                 },
                 _ => ()
             }

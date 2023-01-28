@@ -952,7 +952,7 @@ pub mod CPU{
             let hl = self.Registers.get_item("HL");
             let value_at_hl = self.MMU.read_byte(hl as i32);
 
-            let result = value_at_hl + 1;
+            let result = value_at_hl.wrapping_add(1);
 
             self.Registers.set_item("n", 0);
             self.Registers.set_item("h", CPU::calculate_half_carry(value_at_hl as i16, 0, 0, HalfCarryOperationsMode::Increment) as u16);
@@ -1241,7 +1241,7 @@ pub mod CPU{
         pub(crate) fn rl_value(&mut self, value: u8) -> u8 {
             let carry = (value & 0x80) >> 7;
             let current_carry = self.Registers.get_item("c") as u8;
-            let result = value << 1 | current_carry;
+            let result = (value << 1) | current_carry;
 
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
