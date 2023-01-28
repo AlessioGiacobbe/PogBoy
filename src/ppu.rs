@@ -2,8 +2,7 @@ pub mod ppu {
     use std::fmt::{Debug, Display, Formatter};
     use crate::cpu::CPU::CPU;
 
-    const COLORS: [&'static str; 4] = ["#0f380f", "#306230", "#8bac0f", "#9bbc0f"];
-
+    //each tile is 8x8 pixels
     pub(crate) type Tile = [[TilePixelValues; 8]; 8];
 
     //each value should refer to a specific color depending on the current mapping
@@ -77,15 +76,22 @@ pub mod ppu {
         }
     }
 
+    const PPU_TILES_NUMBER: usize = 384;
+    const TOTAL_SCANLINES: u32 = 153;
+    const VISIBLE_SCANLINES: u8 = 144;
+    const HBLANK_DURATION_DOTS: u32 = 204;
+    const VBLANK_DURATION_DOTS: u32 = 456;
+    const OAM_DURATION_DOTS: u32 = 80;
+    const VRAM_DURATION_DOTS: u32 = 172;
+
+
     pub struct PPU {
-        framebuffer: [u8; 160 * 144 * 3],
-        alpha_framebuffer: [u8; 160 * 144 * 4],
         clock: u32,
         current_line: u32,
         pub(crate) mode: PPU_mode,
         lcd_control: u8,
         pub(crate) video_ram: [u8; 0x2000],
-        pub(crate) tile_set: [Tile; 384]
+        pub(crate) tile_set: [Tile; PPU_TILES_NUMBER]
     }
 
     impl Debug for PPU {
@@ -98,13 +104,11 @@ pub mod ppu {
 
         pub(crate) fn new() -> PPU {
            PPU {
-               framebuffer: [0; 69120],
-               alpha_framebuffer: [0; 92160],
                video_ram: [0; 0x2000],
                current_line: 0,
                clock: 0,
                mode: PPU_mode::HBlank,
-               tile_set: [create_empty_tile(); 384],
+               tile_set: [create_empty_tile(); PPU_TILES_NUMBER],
                lcd_control: 0
            }
         }
@@ -115,11 +119,11 @@ pub mod ppu {
             match self.mode {
                 //horizontal blanking
                 PPU_mode::HBlank => {
-                    if self.clock >= 204 {
+                    if self.clock >= HBLANK_DURATION_DOTS {
                         self.clock = 0;
                         self.current_line += 1;
 
-                        if self.current_line == 143 {
+                        if self.current_line == (VISIBLE_SCANLINES - 1) {
                             //last line, go to v blank
                             self.mode = PPU_mode::VBlank;
                         } else {
@@ -130,11 +134,11 @@ pub mod ppu {
                 },
                 //vertical blanking
                 PPU_mode::VBlank => {
-                    if self.clock >= 456 {
+                    if self.clock >= VBLANK_DURATION_DOTS {
                         self.clock = 0;
                         self.current_line += 1;
 
-                        if self.current_line > 153 {
+                        if self.current_line > TOTAL_SCANLINES {
                             self.mode = PPU_mode::OAM;
                             self.current_line = 0;
                         }
@@ -142,14 +146,14 @@ pub mod ppu {
                 },
                 // OAM read
                 PPU_mode::OAM => {
-                    if self.clock >= 80 {
+                    if self.clock >= OAM_DURATION_DOTS {
                         self.clock = 0;
                         self.mode = PPU_mode::VRAM;
                     }
                 },
                 // VRAM read and complete line scan
                 PPU_mode::VRAM => {
-                    if self.clock >= 172 {
+                    if self.clock >= VRAM_DURATION_DOTS {
                         self.clock = 0;
                         self.mode = PPU_mode::HBlank;
                         self.render_scan();
@@ -163,6 +167,7 @@ pub mod ppu {
         }
 
         pub(crate) fn update_tile(&mut self, address: usize) {
+            //address is normalized removing LSB
             let address = address & 0x1FFE;
 
             //each tile occupies 16 bytes, we find tile index dividing the address by 16
