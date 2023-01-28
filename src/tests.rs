@@ -642,10 +642,6 @@ fn memory_can_read_and_write(){
     dummy_mmu.write_byte(0xC000, 0xFF);
     assert_eq!(dummy_mmu.read_byte(0xC000), 0xFF);
 
-    assert_eq!(dummy_mmu.read_byte(0xFF00), 0x4);
-    dummy_mmu.write_byte(0xFF00, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0xFF00), 0xFF);
-
     assert_eq!(dummy_mmu.read_byte(0xFF80), 0x5);
     dummy_mmu.write_byte(0xFF80, 0xFF);
     assert_eq!(dummy_mmu.read_byte(0xFF80), 0xFF);

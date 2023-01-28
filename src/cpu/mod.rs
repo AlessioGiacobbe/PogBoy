@@ -14,6 +14,7 @@ pub mod CPU{
         pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool,
         pub(crate) clock: u32,
+        is_past_bios: bool
     }
 
     #[derive(PartialEq)]
@@ -58,7 +59,8 @@ pub mod CPU{
                 MMU,
                 Interrupt: Default::default(),
                 is_stopped: false,
-                clock: 0
+                clock: 0,
+                is_past_bios: false
             }
         }
 
@@ -68,6 +70,11 @@ pub mod CPU{
                 }
 
                 let address = self.Registers.get_item("PC");
+
+                if !self.is_past_bios && address > 0xFF {
+                    self.is_past_bios = true
+                }
+
                 let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
                 self.clock += if instruction.cycles.len() > 2 { instruction.cycles[1] } else { instruction.cycles[0] };

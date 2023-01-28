@@ -167,7 +167,8 @@ pub mod mmu {
                     panic!("address not usable")
                 },
                 0xFF00 => {
-                    self.PPU.read_byte(address)
+                    //TODO read from joypad
+                    0
                 },
                 0xFF41 => {
                     self.PPU.read_byte(address)
@@ -236,7 +237,7 @@ pub mod mmu {
                     panic!("address not usable")
                 }
                 0xFF00 => {
-                    self.PPU.write_byte(address, value)
+                    ()
                 },
                 0xFF41 => {
                     self.PPU.write_byte(address, value)
