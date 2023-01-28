@@ -23,7 +23,6 @@ fn main() {
     let mut mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
 
-
     loop {
         let clock = cpu.step();
         cpu.MMU.PPU.step(clock);

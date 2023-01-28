@@ -21,6 +21,7 @@ pub mod mmu {
         pub(crate) io_registers: [u8; 0x100],
         pub(crate) high_ram: [u8; 0x80],
         pub(crate) interrupt_enabled: bool,
+        pub(crate) is_past_bios: bool,
 
         pub(crate) unprefixed_op_codes: HashMap<u8, Instruction>,
         pub(crate) prefixed_op_codes: HashMap<u8, Instruction>,
@@ -60,6 +61,7 @@ pub mod mmu {
                 io_registers: [0; 0x100],
                 high_ram: [0; 0x80],
                 interrupt_enabled: false,
+                is_past_bios: false,
 
                 unprefixed_op_codes,
                 prefixed_op_codes
@@ -131,7 +133,11 @@ pub mod mmu {
             return match address {
                 //BIOS
                 0..=0xFF => {
-                    self.bios[address]
+                    if self.is_past_bios {
+                        self.cartridge.rom[address]
+                    } else {
+                        self.bios[address]
+                    }
                 }
                 //ROM bank 0
                 0x100..=0x3FFF => {
@@ -175,6 +181,9 @@ pub mod mmu {
                 },
                 0xFF44 => {
                     self.PPU.read_byte(address)
+                },
+                0xFF50 => {
+                    self.is_past_bios as u8
                 },
                 //I/O Registers
                 0xFF00..=0xFF7F => {
@@ -244,6 +253,9 @@ pub mod mmu {
                 },
                 0xFF44 => {
                     self.PPU.write_byte(address, value)
+                },
+                0xFF50 => {
+                    self.is_past_bios = (value == 1);
                 },
                 //I/O Registers
                 0xFF00..=0xFF3F => {
