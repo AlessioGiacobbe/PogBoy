@@ -179,7 +179,16 @@ pub mod mmu {
                 0xFF41 => {
                     self.PPU.read_byte(address)
                 },
+                0xFF42 => {
+                    self.PPU.read_byte(address)
+                },
+                0xFF43 => {
+                    self.PPU.read_byte(address)
+                },
                 0xFF44 => {
+                    self.PPU.read_byte(address)
+                },
+                0xFF47 => {
                     self.PPU.read_byte(address)
                 },
                 0xFF50 => {
@@ -251,11 +260,20 @@ pub mod mmu {
                 0xFF41 => {
                     self.PPU.write_byte(address, value)
                 },
+                0xFF42 => {
+                    self.PPU.write_byte(address, value)
+                },
+                0xFF43 => {
+                    self.PPU.write_byte(address, value)
+                },
                 0xFF44 => {
                     self.PPU.write_byte(address, value)
                 },
+                0xFF47 => {
+                    self.PPU.write_byte(address, value)
+                },
                 0xFF50 => {
-                    self.is_past_bios = (value == 1);
+                    self.is_past_bios = value == 1;
                 },
                 //I/O Registers
                 0xFF00..=0xFF3F => {

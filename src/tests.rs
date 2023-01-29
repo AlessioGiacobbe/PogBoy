@@ -1,7 +1,7 @@
 use crate::cpu::CPU::JumpCondition;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
-use crate::ppu::ppu::{LCDCFlags, TilePixelValues};
+use crate::ppu::ppu::{LCDCFlags, TilePixelValue};
 use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
@@ -112,14 +112,14 @@ fn tiles_are_generated_correctly(){
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
     let dummy_tile: ppu::ppu::Tile = [
-        [TilePixelValues::Zero, TilePixelValues::Two, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Two, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::One, TilePixelValues::One, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::One, TilePixelValues::Three, TilePixelValues::Two, TilePixelValues::Zero],
-        [TilePixelValues::Zero, TilePixelValues::Two, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Three, TilePixelValues::Two, TilePixelValues::Zero, TilePixelValues::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::One, TilePixelValue::One, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero, TilePixelValue::Zero],
     ];
 
     //write dummy tile as bytes into tileset position 0
@@ -652,6 +652,22 @@ fn memory_can_read_and_write(){
 
     dummy_mmu.write_word(0xA000, 0xC0FE);
     assert_eq!(dummy_mmu.read_word(0xA000), 0xC0FE);
+}
+
+#[test]
+fn color_from_bg_palette_is_loaded_correctly(){
+    let mut dummy_ppu = create_dummy_ppu();
+    let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+
+    dummy_mmu.write_byte(0xFF47, 0xFF);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(0), TilePixelValue::Three);
+
+    dummy_mmu.write_byte(0xFF47, 0x1B);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(0), TilePixelValue::Three);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(1), TilePixelValue::Two);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(2), TilePixelValue::One);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(3), TilePixelValue::Zero);
+
 }
 
 #[test]

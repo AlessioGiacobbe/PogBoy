@@ -3,12 +3,12 @@ pub mod ppu {
     use crate::cpu::CPU::CPU;
 
     //each tile is 8x8 pixels
-    pub(crate) type Tile = [[TilePixelValues; 8]; 8];
+    pub(crate) type Tile = [[TilePixelValue; 8]; 8];
 
     //each value should refer to a specific color depending on the current mapping
     //(it can be shifted to do cool stuff)
     #[derive(Copy, Clone, Debug, PartialEq)]
-    pub(crate) enum TilePixelValues {
+    pub(crate) enum TilePixelValue {
         Zero = 0,
         One = 1,
         Two = 2,
@@ -35,6 +35,18 @@ pub mod ppu {
         }
     }
 
+    impl From<u8> for TilePixelValue {
+        fn from(value: u8) -> Self {
+            match value {
+                0 => TilePixelValue::Zero,
+                1 => TilePixelValue::One,
+                2 => TilePixelValue::Two,
+                3 => TilePixelValue::Three,
+                _ => TilePixelValue::Zero
+            }
+        }
+    }
+
     pub(crate) enum LCDCFlags {
         LCD_enabled = 7,
         Tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
@@ -47,20 +59,20 @@ pub mod ppu {
     }
 
 
-    impl Display for TilePixelValues {
+    impl Display for TilePixelValue {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             let tile_pixel_corresponding_emoji = match self {
-                TilePixelValues::Zero => "⚫",
-                TilePixelValues::One => "⭕",
-                TilePixelValues::Two => "🟤",
-                TilePixelValues::Three => "⚪"
+                TilePixelValue::Zero => "⚫",
+                TilePixelValue::One => "⭕",
+                TilePixelValue::Two => "🟤",
+                TilePixelValue::Three => "⚪"
             };
             write!(f, "{}", tile_pixel_corresponding_emoji)
         }
     }
 
     fn create_empty_tile() -> Tile {
-        [[TilePixelValues::Zero; 8]; 8]
+        [[TilePixelValue::Zero; 8]; 8]
     }
 
     fn print_tile(Tile: Tile) {
@@ -90,6 +102,9 @@ pub mod ppu {
         current_line: u32,
         pub(crate) mode: PPU_mode,
         lcd_control: u8,
+        scroll_y: u8,
+        scroll_x: u8,
+        background_palette_data: u8,
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) tile_set: [Tile; PPU_TILES_NUMBER]
     }
@@ -109,7 +124,10 @@ pub mod ppu {
                clock: 0,
                mode: PPU_mode::HBlank,
                tile_set: [create_empty_tile(); PPU_TILES_NUMBER],
-               lcd_control: 0
+               lcd_control: 0,
+               scroll_y: 0,
+               scroll_x: 0,
+               background_palette_data: 0
            }
         }
 
@@ -123,7 +141,7 @@ pub mod ppu {
                         self.clock = 0;
                         self.current_line += 1;
 
-                        if self.current_line == (VISIBLE_SCANLINES - 1) {
+                        if self.current_line == (VISIBLE_SCANLINES - 1) as u32 {
                             //last line, go to v blank
                             self.mode = PPU_mode::VBlank;
                         } else {
@@ -166,6 +184,15 @@ pub mod ppu {
         pub(crate) fn render_scan(&mut self) {
         }
 
+        pub(crate) fn get_color_from_bg_palette(&mut self, color_number: u8) -> TilePixelValue{
+            if color_number < 4 {
+                // get bits couples by moving right by number * 2 and mask with 3 (b11) to get the value
+                let value_for_color = (self.background_palette_data >> (color_number * 2)) & 0x3;
+                return TilePixelValue::from(value_for_color);
+            }
+            TilePixelValue::Zero
+        }
+
         pub(crate) fn update_tile(&mut self, address: usize) {
             //address is normalized removing LSB
             let address = address & 0x1FFE;
@@ -190,10 +217,10 @@ pub mod ppu {
                 let bit_value_for_next_position = if (self.video_ram[address + 1] & current_column_mask_position) > 1 { 2 } else { 0 };
 
                 let tile_value = match bit_value_for_position + bit_value_for_next_position {
-                    0 => TilePixelValues::Zero,
-                    1 => TilePixelValues::One,
-                    2 => TilePixelValues::Two,
-                    3 => TilePixelValues::Three,
+                    0 => TilePixelValue::Zero,
+                    1 => TilePixelValue::One,
+                    2 => TilePixelValue::Two,
+                    3 => TilePixelValue::Three,
                     value => panic!("{} Invalid tile value", value)
                 };
 
@@ -213,9 +240,18 @@ pub mod ppu {
                 0xFF41 => {
                     self.mode.clone() as u8
                 },
+                0xFF42 => {
+                    self.scroll_y
+                },
+                0xFF43 => {
+                    self.scroll_x
+                },
                 0xFF44 => {
                     self.current_line as u8
                 },
+                0xFF47 => {
+                    self.background_palette_data
+                }
                 _ => 0
             }
         }
@@ -234,8 +270,17 @@ pub mod ppu {
                 0xFF41 => {
                     self.mode = PPU_mode::try_from(value).unwrap()
                 },
+                0xFF42 => {
+                    self.scroll_y = value;  
+                },
+                0xFF43 => {
+                    self.scroll_x = value;
+                },
                 0xFF44 => {
                     self.current_line = value as u32
+                },
+                0xFF47 => {
+                    self.background_palette_data = value;
                 },
                 _ => ()
             }
