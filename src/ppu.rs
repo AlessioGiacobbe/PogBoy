@@ -49,9 +49,9 @@ pub mod ppu {
 
     pub(crate) enum LCDCFlags {
         LCD_enabled = 7,
-        Tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
+        Window_tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
         Window_enable = 5,  //should display window
-        BG_tile_area = 4,   //0=8800-97FF, 1=8000-8FFF
+        BG_tile_data_area = 4,   //0=8800-97FF, 1=8000-8FFF
         BG_tile_map_area = 3,   //determines which tile map to use 0=9800-9BFF, 1=9C00-9FFF
         Obj_size = 2,   //sprite size 0=8x8, 1=8x16
         Obj_enable = 1,    //should sprites be displayed?
@@ -114,6 +114,8 @@ pub mod ppu {
             write!(f, "PPU - mode : {:?} - clock : {}", self.mode, self.clock)
         }
     }
+
+    const SCREEN_HORIZONTAL_RESOLUTION: u32 = 160;
 
     impl PPU {
 
@@ -181,7 +183,46 @@ pub mod ppu {
             }
         }
 
+        //we render a single line scan (horizontally)
         pub(crate) fn render_scan(&mut self) {
+            //the tile map contains the index of the tile to be displayed
+            let background_tile_map_starting_address = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x9C00 - 0x8000 } else { 0x9800 - 0x8000 };
+
+            //current line and y scroll are represented in pixel, each tile is 8x8, we divide by 8 to get the tile number
+            let map_starting_point = ((self.current_line + self.scroll_y as u32) & 255) / 8;
+
+            //line offset is basically x offset divided by 8 because each tile is 8x8
+            let line_offset = (self.scroll_x / 8) as u32;
+
+            //retrieve tile id from tile map
+            let mut tile_id = self.video_ram[(background_tile_map_starting_address + map_starting_point + line_offset) as usize] as u16;
+            //if the first tile data set is used, we need to calculate the right id
+            if self.get_lcdc_value(LCDCFlags::BG_tile_data_area) && tile_id < 128 { tile_id += 256 }
+
+            //x and y indicates starting coordinates inside a tile
+            let mut x = self.scroll_x & 7;
+            let y = (self.current_line + self.scroll_y as u32) & 7;
+
+            let mut buffer_offset = self.current_line * SCREEN_HORIZONTAL_RESOLUTION; //*4 if we need to define R G B A
+
+
+            for _ in 0..SCREEN_HORIZONTAL_RESOLUTION - 1 {
+                let tile: Tile = self.tile_set[tile_id as usize];
+                let color_at_coordinates: TilePixelValue = tile[y as usize][x as usize];
+
+                //todo add color to buffer
+
+                buffer_offset += 1; //or 4 if we use RGBA
+                x += 1;
+
+                //if tile is ended we need to get the next tile
+                if x == 8 {
+                    x = 0;
+                    buffer_offset = (buffer_offset + 1) & 31;
+                    tile_id = self.video_ram[(background_tile_map_starting_address + map_starting_point + line_offset) as usize] as u16;
+                    if self.get_lcdc_value(LCDCFlags::BG_tile_data_area) && tile_id < 128 { tile_id += 256 }
+                }
+            }
         }
 
         pub(crate) fn get_color_from_bg_palette(&mut self, color_number: u8) -> TilePixelValue{
