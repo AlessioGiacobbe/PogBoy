@@ -19,5 +19,5 @@ Cargo.lock
 /src/*.gb
 /src/*.jpg
 /src/*.png
-
+/src/assets/*.ttf
 .DS_Store
