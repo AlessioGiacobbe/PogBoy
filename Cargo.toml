@@ -13,3 +13,5 @@ byteorder = "1"
 either = "1.8"
 phf = { version = "0.11", features = ["macros"] }
 piston_window = "*"
+image = "0.24.5"
+gfx = "0.18.2"

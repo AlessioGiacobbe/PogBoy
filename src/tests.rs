@@ -658,16 +658,16 @@ fn memory_can_read_and_write(){
 fn color_from_bg_palette_is_loaded_correctly(){
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+    let ppu_colors = ppu::ppu::COLORS;
 
     dummy_mmu.write_byte(0xFF47, 0xFF);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(0), TilePixelValue::Three);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
 
-    dummy_mmu.write_byte(0xFF47, 0x1B);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(0), TilePixelValue::Three);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(1), TilePixelValue::Two);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(2), TilePixelValue::One);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(3), TilePixelValue::Zero);
-
+    dummy_mmu.write_byte(0xFF47, 0x1B); //0b00-01-10-11
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::One), ppu_colors[2]);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Two), ppu_colors[1]);
+    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Three), ppu_colors[0]);
 }
 
 #[test]

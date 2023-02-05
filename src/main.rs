@@ -10,11 +10,15 @@ mod interrupt;
 #[cfg(test)]
 mod tests;
 
+use std::any::Any;
 use std::borrow::Borrow;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, RecvError, Sender, SyncSender};
 use std::thread;
-use piston_window::{Button, ButtonState, clear, Context, Event, Glyphs, Input, Key, math, PistonWindow, rectangle, text, TextureSettings, WindowSettings};
+use image;
+use gfx;
+use image::{ImageBuffer, Rgba};
+use piston_window::{Button, image as draw_image, ButtonState, clear, Context, Event, Glyphs, Input, Key, math, PistonWindow, rectangle, text, Texture, TextureContext, TextureSettings, WindowSettings};
 use piston_window::glyph_cache::rusttype::GlyphCache;
 use piston_window::types::{Color, Matrix2d};
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
@@ -24,15 +28,28 @@ use crate::ppu::ppu::PPU;
 
 fn main() {
 
-    let (cpu_sender, window_receiver) : (SyncSender<u32>, Receiver<u32>) = mpsc::sync_channel(1);
+    let (cpu_sender, window_receiver) : (Sender<ImageBuffer<Rgba<u8>, Vec<u8>>>, Receiver<ImageBuffer<Rgba<u8>, Vec<u8>>>) = mpsc::channel();
     let (window_sender, cpu_receiver) : (Sender<bool>, Receiver<bool>) = mpsc::channel();
 
     let cpu_thread = thread::spawn(move|| run_cpu(cpu_sender, cpu_receiver));
 
     let mut window: PistonWindow = WindowSettings::new("Pog!", [160, 144]).exit_on_esc(true).build().unwrap();
 
-    let mut glyphs: Glyphs = window.load_font("./src/assets/crash-a-like.ttf").unwrap();
+    let (mut texture, mut texture_context) = {
+        let mut texture_context = TextureContext {
+            factory: window.factory.clone(),
+            encoder: window.factory.create_command_buffer().into()
+        };
+        let mut image_buffer = image::ImageBuffer::new(160, 144);
+        let texture = Texture::from_image(
+            &mut texture_context,
+            &image_buffer,
+            &TextureSettings::new()
+        ).unwrap();
+        (texture, texture_context)
+    };
 
+    let mut acc = 0;
     while let Some(event) = window.next() {
         match event {
             Event::Input(input, _) => {
@@ -62,18 +79,17 @@ fn main() {
                 }
             }
             Event::Loop(_) => {
-                match window_receiver.recv() {
-                    Ok(cpu_info) => {
+                match window_receiver.try_recv() {
+                    Ok(current_image_buffer) => {
                         window.draw_2d(&event, |c: Context, mut g, device| {
                             clear([0.0, 0.0, 0.0, 1.0], g);
-                            text::Text::new_color([1.0, 1.0, 1.0, 1.0], 20).draw_pos(&*cpu_info.to_string(),
-                                                                                     [10.0, 50.0],
-                                                                                     &mut glyphs,
-                                                                                     &c.draw_state,
-                                                                                     c.transform,
-                                                                                     g).expect("TODO: panic message");
 
-                            glyphs.factory.encoder.flush(device);
+                            texture.update(
+                                &mut texture_context,
+                                &current_image_buffer).unwrap();
+
+                            draw_image(&texture, c.transform, g);
+                            texture_context.encoder.flush(device);
                         });
                     },
                     Err(_) => {}
@@ -88,7 +104,7 @@ fn main() {
 
 }
 
-fn run_cpu(cpu_sender: SyncSender<u32>, cpu_receiver: Receiver<bool>) {
+fn run_cpu(cpu_sender: Sender<ImageBuffer<Rgba<u8>, Vec<u8>>>, cpu_receiver: Receiver<bool>) {
     let cartridge: Cartridge = read_cartridge("image.gb");
     let mut ppu: PPU = PPU::new();
     let mut mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
@@ -97,7 +113,7 @@ fn run_cpu(cpu_sender: SyncSender<u32>, cpu_receiver: Receiver<bool>) {
     loop {
         let clock = cpu.step();
         cpu.MMU.PPU.step(clock);
-        let _ = cpu_sender.send(clock).expect("error sending to window");
+        let _ = cpu_sender.send(cpu.MMU.PPU.image_buffer.clone()).expect("error sending to window");
 
         //TODO receive real input from window key press
         let received = cpu_receiver.try_recv();

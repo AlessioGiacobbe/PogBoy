@@ -1,5 +1,6 @@
 pub mod ppu {
     use std::fmt::{Debug, Display, Formatter};
+    use image::{ImageBuffer, Rgba};
     use crate::cpu::CPU::CPU;
 
     //each tile is 8x8 pixels
@@ -96,6 +97,17 @@ pub mod ppu {
     const OAM_DURATION_DOTS: u32 = 80;
     const VRAM_DURATION_DOTS: u32 = 172;
 
+    const SCREEN_HORIZONTAL_RESOLUTION: u32 = 160;
+    const SCREEN_VERTICAL_RESOLUTION: u32 = 144;
+
+    pub(crate) const COLORS: [[u8; 3]; 4] = [ //cool red palette, colors should be based on palette map
+        [124, 63, 88], //#7c3f58
+        [235, 107, 111], //#eb6b6f
+        [249, 168, 117], //#f9a875
+        [255, 246, 211], //#fff6d3
+    ];
+
+
 
     pub struct PPU {
         clock: u32,
@@ -105,6 +117,7 @@ pub mod ppu {
         scroll_y: u8,
         scroll_x: u8,
         background_palette_data: u8,
+        pub(crate) image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) tile_set: [Tile; PPU_TILES_NUMBER]
     }
@@ -115,7 +128,6 @@ pub mod ppu {
         }
     }
 
-    const SCREEN_HORIZONTAL_RESOLUTION: u32 = 160;
 
     impl PPU {
 
@@ -129,7 +141,8 @@ pub mod ppu {
                lcd_control: 0,
                scroll_y: 0,
                scroll_x: 0,
-               background_palette_data: 0
+               background_palette_data: 0,
+               image_buffer: image::ImageBuffer::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION)
            }
         }
 
@@ -203,16 +216,18 @@ pub mod ppu {
             let mut x = self.scroll_x & 7;
             let y = (self.current_line + self.scroll_y as u32) & 7;
 
-            let mut buffer_offset = self.current_line * SCREEN_HORIZONTAL_RESOLUTION; //*4 if we need to define R G B A
+            let mut buffer_offset = self.current_line * SCREEN_HORIZONTAL_RESOLUTION;
 
 
             for _ in 0..SCREEN_HORIZONTAL_RESOLUTION - 1 {
                 let tile: Tile = self.tile_set[tile_id as usize];
                 let color_at_coordinates: TilePixelValue = tile[y as usize][x as usize];
 
+                //todo get x, y buffer coordinates from buffer_offset (right now buffer_offset is linear)
                 //todo add color to buffer
+                //self.image_buffer.put_pixel(10, 10, Rgba([255,255,255,255]));
 
-                buffer_offset += 1; //or 4 if we use RGBA
+                buffer_offset += 1;
                 x += 1;
 
                 //if tile is ended we need to get the next tile
@@ -225,13 +240,15 @@ pub mod ppu {
             }
         }
 
-        pub(crate) fn get_color_from_bg_palette(&mut self, color_number: u8) -> TilePixelValue{
+        //given a TilePixelValue returns corresponding palette color, using palette map (stored at 0xFF47)
+        pub(crate) fn get_color_from_bg_palette(&mut self, mut color_number: TilePixelValue) -> [u8; 3] {
+            let color_number = color_number as u8;
             if color_number < 4 {
                 // get bits couples by moving right by number * 2 and mask with 3 (b11) to get the value
                 let value_for_color = (self.background_palette_data >> (color_number * 2)) & 0x3;
-                return TilePixelValue::from(value_for_color);
+                return COLORS[value_for_color as usize];
             }
-            TilePixelValue::Zero
+            COLORS[0]
         }
 
         pub(crate) fn update_tile(&mut self, address: usize) {
