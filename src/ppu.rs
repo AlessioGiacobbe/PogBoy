@@ -1,6 +1,6 @@
 pub mod ppu {
     use std::fmt::{Debug, Display, Formatter};
-    use image::{ImageBuffer, Rgba};
+    use image::{ImageBuffer, Rgb, Rgba};
     use crate::cpu::CPU::CPU;
 
     //each tile is 8x8 pixels
@@ -89,6 +89,16 @@ pub mod ppu {
         }
     }
 
+    fn tile_to_pixels_buffer(Tile: Tile) -> [[Rgba<i32>; 8]; 8] {
+        let mut pixel_buffer = [[Rgba([255, 255, 255, 255]); 8]; 8];
+        for (x, tile_row) in Tile.iter().enumerate() {
+            for (y, tile_pixel) in tile_row.iter().enumerate() {
+                pixel_buffer[x][y] = Rgba::from([124, 63, 88, 255]);
+            }
+        }
+        pixel_buffer
+    }
+
     const PPU_TILES_NUMBER: usize = 384;
     const TOTAL_SCANLINES: u32 = 153;
     const VISIBLE_SCANLINES: u8 = 144;
@@ -100,11 +110,11 @@ pub mod ppu {
     const SCREEN_HORIZONTAL_RESOLUTION: u32 = 160;
     const SCREEN_VERTICAL_RESOLUTION: u32 = 144;
 
-    pub(crate) const COLORS: [[u8; 3]; 4] = [ //cool red palette, colors should be based on palette map
-        [124, 63, 88], //#7c3f58
-        [235, 107, 111], //#eb6b6f
-        [249, 168, 117], //#f9a875
-        [255, 246, 211], //#fff6d3
+    pub(crate) const COLORS: [[u8; 4]; 4] = [ //cool red palette, colors should be based on palette map
+        [124, 63, 88, 255], //#7c3f58
+        [235, 107, 111, 255], //#eb6b6f
+        [249, 168, 117, 255], //#f9a875
+        [255, 246, 211, 255], //#fff6d3
     ];
 
 
@@ -142,7 +152,7 @@ pub mod ppu {
                scroll_y: 0,
                scroll_x: 0,
                background_palette_data: 0,
-               image_buffer: image::ImageBuffer::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION)
+               image_buffer: image::ImageBuffer::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION),
            }
         }
 
@@ -221,11 +231,13 @@ pub mod ppu {
 
             for _ in 0..SCREEN_HORIZONTAL_RESOLUTION - 1 {
                 let tile: Tile = self.tile_set[tile_id as usize];
-                let color_at_coordinates: TilePixelValue = tile[y as usize][x as usize];
+                let color_number_at_coordinates: TilePixelValue = tile[y as usize][x as usize];
 
-                //todo get x, y buffer coordinates from buffer_offset (right now buffer_offset is linear)
-                //todo add color to buffer
-                //self.image_buffer.put_pixel(10, 10, Rgba([255,255,255,255]));
+                let color_at_coordinate = self.get_color_from_bg_palette(color_number_at_coordinates);
+
+                let buffer_x = buffer_offset % SCREEN_HORIZONTAL_RESOLUTION;
+                let buffer_y = buffer_offset / SCREEN_HORIZONTAL_RESOLUTION;
+                self.image_buffer.put_pixel(buffer_x & SCREEN_HORIZONTAL_RESOLUTION, buffer_y & SCREEN_VERTICAL_RESOLUTION , Rgba(color_at_coordinate));
 
                 buffer_offset += 1;
                 x += 1;
@@ -241,7 +253,7 @@ pub mod ppu {
         }
 
         //given a TilePixelValue returns corresponding palette color, using palette map (stored at 0xFF47)
-        pub(crate) fn get_color_from_bg_palette(&mut self, mut color_number: TilePixelValue) -> [u8; 3] {
+        pub(crate) fn get_color_from_bg_palette(&mut self, mut color_number: TilePixelValue) -> [u8; 4] {
             let color_number = color_number as u8;
             if color_number < 4 {
                 // get bits couples by moving right by number * 2 and mask with 3 (b11) to get the value
