@@ -15,6 +15,7 @@ use std::borrow::Borrow;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, RecvError, Sender, SyncSender};
 use std::thread;
+use imgui::*;
 use image;
 use gfx;
 use image::{ImageBuffer, Rgba};
@@ -28,7 +29,7 @@ use crate::ppu::ppu::PPU;
 
 fn main() {
 
-    let (cpu_sender, window_receiver) : (Sender<ImageBuffer<Rgba<u8>, Vec<u8>>>, Receiver<ImageBuffer<Rgba<u8>, Vec<u8>>>) = mpsc::channel();
+    let (cpu_sender, window_receiver) : (Sender<&Vec<u8>>, Receiver<&Vec<u8>>) = mpsc::channel();
     let (window_sender, cpu_receiver) : (Sender<bool>, Receiver<bool>) = mpsc::channel();
 
     let cpu_thread = thread::spawn(move|| run_cpu(cpu_sender, cpu_receiver));
@@ -84,9 +85,7 @@ fn main() {
                         window.draw_2d(&event, |c: Context, mut g, device| {
                             clear([0.0, 0.0, 0.0, 1.0], g);
 
-                            texture.update(
-                                &mut texture_context,
-                                &current_image_buffer).unwrap();
+                            //texture.update(&mut texture_context, current_image_buffer).unwrap();
 
                             draw_image(&texture, c.transform, g);
                             texture_context.encoder.flush(device);
@@ -104,8 +103,9 @@ fn main() {
 
 }
 
-fn run_cpu(cpu_sender: Sender<ImageBuffer<Rgba<u8>, Vec<u8>>>, cpu_receiver: Receiver<bool>) {
+fn run_cpu(cpu_sender: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>) {
     let cartridge: Cartridge = read_cartridge("image.gb");
+
     let mut ppu: PPU = PPU::new();
     let mut mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
@@ -113,7 +113,8 @@ fn run_cpu(cpu_sender: Sender<ImageBuffer<Rgba<u8>, Vec<u8>>>, cpu_receiver: Rec
     loop {
         let clock = cpu.step();
         cpu.MMU.PPU.step(clock);
-        let _ = cpu_sender.send(cpu.MMU.PPU.image_buffer.clone()).expect("error sending to window");
+        //let image_buffer = cpu.get_ppu_frame_buffer();
+        //let _ = cpu_sender.send(image_buffer).expect("error sending to window");
 
         //TODO receive real input from window key press
         let received = cpu_receiver.try_recv();
