@@ -45,7 +45,7 @@ fn main() {
             factory: window.factory.clone(),
             encoder: window.factory.create_command_buffer().into()
         };
-        let mut image_buffer = image::ImageBuffer::new(160, 144);
+        let mut image_buffer = image::ImageBuffer::new(160, 160);
         let texture = Texture::from_image(
             &mut texture_context,
             &image_buffer,
@@ -89,7 +89,6 @@ fn main() {
 
                 window.draw_2d(&event, |c: Context, mut g, device| {
                     clear([0.0, 0.0, 0.0, 1.0], g);
-
                     texture.update(&mut texture_context, &*image_buffer.lock().unwrap()).unwrap();
 
                     draw_image(&texture, c.transform, g);

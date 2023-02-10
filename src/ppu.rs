@@ -1,4 +1,5 @@
 pub mod ppu {
+    use std::borrow::BorrowMut;
     use std::fmt::{Debug, Display, Formatter};
     use image::{ImageBuffer, Rgb, Rgba, RgbaImage};
     use crate::cpu::CPU::CPU;
@@ -89,12 +90,28 @@ pub mod ppu {
         }
     }
 
-    pub(crate) fn tile_to_rgba_image(Tile: Tile) -> RgbaImage {
-        let mut rgba_image = RgbaImage::new(8, 8);
+    //given a tile and a mutable RgbaImage reference, draw the tile into the image using default color mapping and given x,y offsets
+    pub(crate) fn add_tile_to_rgba_image(Tile: Tile, rgba_image: &mut RgbaImage, (x_offset, y_offset) : (u32, u32)) {
         for (y, tile_row) in Tile.iter().enumerate() {
             for (x, tile_pixel) in tile_row.iter().enumerate() {
                 let color_at_coordinate = COLORS[*tile_pixel as usize];
-                rgba_image.put_pixel(x as u32, y as u32, Rgba(color_at_coordinate));
+                &rgba_image.put_pixel(x as u32 + x_offset, y as u32 + y_offset, Rgba(color_at_coordinate));
+            }
+        }
+    }
+
+    //dump a tile set into an RgbaImage
+    pub(crate) fn tile_set_to_rgba_image(tile_set: [Tile; PPU_TILES_NUMBER]) -> RgbaImage {
+        let (columns_number, rows_number): (u32, u32) =  (20, 20);
+        let mut rgba_image = RgbaImage::new(rows_number * 8, columns_number * 8);
+
+        for x_offset in 0..columns_number {
+            for y_offset in 0..rows_number {
+                let current_tile_index = ((x_offset*20) + y_offset) as usize;
+                if current_tile_index < PPU_TILES_NUMBER {
+                    let current_tile = tile_set[current_tile_index];
+                    add_tile_to_rgba_image(current_tile, rgba_image.borrow_mut(), (x_offset * 8, y_offset * 8));
+                }
             }
         }
         rgba_image
