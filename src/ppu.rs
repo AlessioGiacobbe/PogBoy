@@ -89,14 +89,15 @@ pub mod ppu {
         }
     }
 
-    fn tile_to_pixels_buffer(Tile: Tile) -> [[Rgba<i32>; 8]; 8] {
-        let mut pixel_buffer = [[Rgba([255, 255, 255, 255]); 8]; 8];
-        for (x, tile_row) in Tile.iter().enumerate() {
-            for (y, tile_pixel) in tile_row.iter().enumerate() {
-                pixel_buffer[x][y] = Rgba::from([124, 63, 88, 255]);
+    pub(crate) fn tile_to_rgba_image(Tile: Tile) -> RgbaImage {
+        let mut rgba_image = RgbaImage::new(8, 8);
+        for (y, tile_row) in Tile.iter().enumerate() {
+            for (x, tile_pixel) in tile_row.iter().enumerate() {
+                let color_at_coordinate = COLORS[*tile_pixel as usize];
+                rgba_image.put_pixel(x as u32, y as u32, Rgba(color_at_coordinate));
             }
         }
-        pixel_buffer
+        rgba_image
     }
 
     const PPU_TILES_NUMBER: usize = 384;

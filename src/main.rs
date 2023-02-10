@@ -5,6 +5,7 @@ mod cartridge;
 mod cpu;
 mod mmu;
 mod ppu;
+mod tests;
 mod interrupt;
 
 #[cfg(test)]
@@ -64,6 +65,7 @@ fn main() {
                                     Button::Keyboard(Key) => {
                                         match Key {
                                             Key::Escape => {
+                                                println!("{:?}", *image_buffer.lock().unwrap());
                                                 window_sender.send(true).unwrap();
                                             }
                                             _ => {}

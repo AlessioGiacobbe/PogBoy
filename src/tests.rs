@@ -1,7 +1,7 @@
 use crate::cpu::CPU::JumpCondition;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
-use crate::ppu::ppu::{LCDCFlags, TilePixelValue};
+use crate::ppu::ppu::{LCDCFlags, Tile, TilePixelValue};
 use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
@@ -19,6 +19,19 @@ fn create_dummy_cartridge() -> Cartridge {
         cartridge_info: Cartridge.cartridge_info,
         rom,    //NOP - LD A,0x0F
     }
+}
+
+pub(crate) fn create_dummy_tile() -> Tile {
+    [
+        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::One, TilePixelValue::One, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero, TilePixelValue::Zero],
+    ]
 }
 
 fn create_dummy_ppu() -> PPU {
@@ -106,21 +119,14 @@ fn add_sets_right_flags() {
     assert_eq!(cpu.Registers.get_item("A"), 0x3);
 }
 
+
+
 #[test]
 fn tiles_are_generated_correctly(){
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
-    let dummy_tile: ppu::ppu::Tile = [
-        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::One, TilePixelValue::One, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero, TilePixelValue::Zero],
-    ];
+    let dummy_tile: ppu::ppu::Tile = create_dummy_tile();
 
     //write dummy tile as bytes into tileset position 0
     dummy_mmu.write_byte(0x8000, 0x3C);
