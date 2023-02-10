@@ -1,6 +1,6 @@
 pub mod ppu {
     use std::fmt::{Debug, Display, Formatter};
-    use image::{ImageBuffer, Rgb, Rgba};
+    use image::{ImageBuffer, Rgb, Rgba, RgbaImage};
     use crate::cpu::CPU::CPU;
 
     //each tile is 8x8 pixels
@@ -127,7 +127,7 @@ pub mod ppu {
         scroll_y: u8,
         scroll_x: u8,
         background_palette_data: u8,
-        pub(crate) image_buffer: Vec<u8>,
+        pub(crate) image_buffer: RgbaImage,
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) tile_set: [Tile; PPU_TILES_NUMBER]
     }
@@ -152,7 +152,7 @@ pub mod ppu {
                scroll_y: 0,
                scroll_x: 0,
                background_palette_data: 0,
-               image_buffer: vec![0; (SCREEN_HORIZONTAL_RESOLUTION * SCREEN_VERTICAL_RESOLUTION * 4) as usize]
+               image_buffer: RgbaImage::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION)
            }
         }
 
@@ -226,7 +226,7 @@ pub mod ppu {
             let mut x = self.scroll_x & 7;
             let y = (self.current_line + self.scroll_y as u32) & 7;
 
-            let mut buffer_offset = self.current_line * SCREEN_HORIZONTAL_RESOLUTION * 4;
+            let mut buffer_offset = self.current_line * SCREEN_HORIZONTAL_RESOLUTION;
 
 
             for _ in 0..SCREEN_HORIZONTAL_RESOLUTION - 1 {
@@ -235,12 +235,11 @@ pub mod ppu {
 
                 let color_at_coordinate = self.get_color_from_bg_palette(color_number_at_coordinates);
 
-                self.image_buffer[(buffer_offset + 0) as usize] = color_at_coordinate[0];
-                self.image_buffer[(buffer_offset + 1) as usize] = color_at_coordinate[1];
-                self.image_buffer[(buffer_offset + 2) as usize] = color_at_coordinate[2];
-                self.image_buffer[(buffer_offset + 3) as usize] = color_at_coordinate[3];
+                let buffer_x = buffer_offset % SCREEN_HORIZONTAL_RESOLUTION;
+                let buffer_y = buffer_offset / SCREEN_HORIZONTAL_RESOLUTION;
+                self.image_buffer.put_pixel(buffer_x, buffer_y, Rgba(color_at_coordinate));
 
-                buffer_offset += 4;
+                buffer_offset += 1;
                 x += 1;
 
                 //if tile is ended we need to get the next tile
