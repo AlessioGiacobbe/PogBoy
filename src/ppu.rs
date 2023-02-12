@@ -17,7 +17,7 @@ pub mod ppu {
         Three = 3
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, PartialEq)]
     pub(crate) enum PPU_mode {
         HBlank = 0,
         VBlank = 1,
@@ -74,7 +74,7 @@ pub mod ppu {
     }
 
     fn create_empty_tile() -> Tile {
-        [[TilePixelValue::Zero; 8]; 8]
+        [[TilePixelValue::Two; 8]; 8]
     }
 
     fn print_tile(Tile: Tile) {
@@ -147,7 +147,7 @@ pub mod ppu {
         background_palette_data: u8,
         pub(crate) image_buffer: RgbaImage,
         pub(crate) video_ram: [u8; 0x2000],
-        pub(crate) tile_set: [Tile; PPU_TILES_NUMBER]
+        pub(crate) tile_set: [Tile; PPU_TILES_NUMBER],
     }
 
     impl Debug for PPU {
@@ -170,11 +170,11 @@ pub mod ppu {
                scroll_y: 0,
                scroll_x: 0,
                background_palette_data: 0,
-               image_buffer: RgbaImage::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION)
+               image_buffer: RgbaImage::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION),
            }
         }
 
-        pub(crate) fn step(&mut self, clock: u32) {
+        pub(crate) fn step(&mut self, clock: u32) -> PPU_mode {
             self.clock += clock;
 
             match self.mode {
@@ -183,6 +183,7 @@ pub mod ppu {
                     if self.clock >= HBLANK_DURATION_DOTS {
                         self.clock = 0;
                         self.current_line += 1;
+                        self.render_scanline();
 
                         if self.current_line == (VISIBLE_SCANLINES - 1) as u32 {
                             //last line, go to v blank
@@ -191,6 +192,7 @@ pub mod ppu {
                             //scan another line
                             self.mode = PPU_mode::OAM;
                         }
+
                     }
                 },
                 //vertical blanking
@@ -202,6 +204,7 @@ pub mod ppu {
                         if self.current_line > TOTAL_SCANLINES {
                             self.mode = PPU_mode::OAM;
                             self.current_line = 0;
+                            self.render_scanline();
                         }
                     }
                 },
@@ -217,56 +220,39 @@ pub mod ppu {
                     if self.clock >= VRAM_DURATION_DOTS {
                         self.clock = 0;
                         self.mode = PPU_mode::HBlank;
-                        self.render_scan();
                     }
                 },
                 _ => {}
             }
+            return self.mode.clone()
         }
 
-        //we render a single line scan (horizontally)
-        pub(crate) fn render_scan(&mut self) {
+        pub(crate) fn render_scanline(&mut self) {
             //the tile map contains the index of the tile to be displayed
-            let background_tile_map_starting_address = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x9C00 - 0x8000 } else { 0x9800 - 0x8000 };
+            let background_tile_map_starting_address: usize = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x1C00 } else { 0x1800 };
 
-            //current line and y scroll are represented in pixel, each tile is 8x8, we divide by 8 to get the tile number
-            let map_starting_point = ((self.current_line + self.scroll_y as u32) & 255) / 8;
-
-            //line offset is basically x offset divided by 8 because each tile is 8x8
-            let line_offset = (self.scroll_x / 8) as u32;
-
-            //retrieve tile id from tile map
-            let mut tile_id = self.video_ram[(background_tile_map_starting_address + map_starting_point + line_offset) as usize] as u16;
-            //if the first tile data set is used, we need to calculate the right id
-            if self.get_lcdc_value(LCDCFlags::BG_tile_data_area) && tile_id < 128 { tile_id += 256 }
-
-            //x and y indicates starting coordinates inside a tile
-            let mut x = self.scroll_x & 7;
-            let y = (self.current_line + self.scroll_y as u32) & 7;
-
-            let mut buffer_offset = self.current_line * SCREEN_HORIZONTAL_RESOLUTION;
+            //tile offset to render tiles sub-portions
+            let mut x_tile_offset = self.scroll_x & 8;
+            let mut y_tile_offset = (self.current_line + self.scroll_y as u32) & 7;
 
 
-            for _ in 0..SCREEN_HORIZONTAL_RESOLUTION - 1 {
-                let tile: Tile = self.tile_set[tile_id as usize];
-                let color_number_at_coordinates: TilePixelValue = tile[y as usize][x as usize];
+            for pixel in 0..SCREEN_HORIZONTAL_RESOLUTION {
+                //viewport offsets used to retrieve right tile id from tile_map in vram
+                // each row (y) is 32 tiles (from the total 256x256 viewport), each tile is 8 pixel (hence 8*32)
+                let y_offset = ((self.current_line + self.scroll_y as u32) / 8 * 32) as usize;
+                let x_offset = ((pixel as u8 + self.scroll_x) / 8) as usize;
+
+                let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as usize;
+                if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) && tile_id < 128 { tile_id += 256 }
+
+                let tile: Tile = self.tile_set[tile_id];
+                let color_number_at_coordinates: TilePixelValue = tile[y_tile_offset as usize][x_tile_offset as usize];
 
                 let color_at_coordinate = self.get_color_from_bg_palette(color_number_at_coordinates);
 
-                let buffer_x = buffer_offset % SCREEN_HORIZONTAL_RESOLUTION;
-                let buffer_y = buffer_offset / SCREEN_HORIZONTAL_RESOLUTION;
-                self.image_buffer.put_pixel(buffer_x, buffer_y, Rgba(color_at_coordinate));
+                x_tile_offset = (x_tile_offset + 1) % 8;
 
-                buffer_offset += 1;
-                x += 1;
-
-                //if tile is ended we need to get the next tile
-                if x == 8 {
-                    x = 0;
-                    buffer_offset = (buffer_offset + 1) & 31;
-                    tile_id = self.video_ram[(background_tile_map_starting_address + map_starting_point + line_offset) as usize] as u16;
-                    if self.get_lcdc_value(LCDCFlags::BG_tile_data_area) && tile_id < 128 { tile_id += 256 }
-                }
+                self.image_buffer.put_pixel(pixel, self.current_line, Rgba(color_at_coordinate));
             }
         }
 
@@ -293,7 +279,7 @@ pub mod ppu {
             let tile_row = (address - (tile_number * 16)) / 2;
 
             //rewrite each bit in that row
-            for tile_column in 0..7 {
+            for tile_column in 0..8 {
 
                 //for each bit we look into vram to get it's value
                 //and mix it with the next byte data (address + 1)
@@ -301,8 +287,8 @@ pub mod ppu {
 
                 let current_column_mask_position = 1 << (7 - tile_column);
 
-                let bit_value_for_position = if (self.video_ram[address] & current_column_mask_position) > 1  { 1 } else { 0 };
-                let bit_value_for_next_position = if (self.video_ram[address + 1] & current_column_mask_position) > 1 { 2 } else { 0 };
+                let bit_value_for_position = if (self.video_ram[address] & current_column_mask_position) >= 1  { 1 } else { 0 };
+                let bit_value_for_next_position = if (self.video_ram[address + 1] & current_column_mask_position) >= 1 { 2 } else { 0 };
 
                 let tile_value = match bit_value_for_position + bit_value_for_next_position {
                     0 => TilePixelValue::Zero,

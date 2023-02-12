@@ -5,7 +5,6 @@ mod cartridge;
 mod cpu;
 mod mmu;
 mod ppu;
-mod tests;
 mod interrupt;
 
 #[cfg(test)]
@@ -26,7 +25,7 @@ use piston_window::types::{Color, Matrix2d};
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
 use crate::mmu::mmu::MMU;
-use crate::ppu::ppu::PPU;
+use crate::ppu::ppu::{PPU, PPU_mode};
 
 fn main() {
 
@@ -65,7 +64,6 @@ fn main() {
                                     Button::Keyboard(Key) => {
                                         match Key {
                                             Key::Escape => {
-                                                println!("{:?}", *image_buffer.lock().unwrap());
                                                 window_sender.send(true).unwrap();
                                             }
                                             _ => {}
@@ -85,12 +83,9 @@ fn main() {
             }
             Event::Loop(_) => {
 
-                //println!("array condiviso {:?}", .unwrap())
-
                 window.draw_2d(&event, |c: Context, mut g, device| {
-                    clear([0.0, 0.0, 0.0, 1.0], g);
-                    texture.update(&mut texture_context, &*image_buffer.lock().unwrap()).unwrap();
 
+                    texture.update(&mut texture_context, &*image_buffer.lock().unwrap()).unwrap();
                     draw_image(&texture, c.transform, g);
                     texture_context.encoder.flush(device);
                 });
@@ -113,10 +108,12 @@ fn run_cpu(cpu_sender: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buf
 
     loop {
         let clock = cpu.step();
+        let current_cpu_mode = cpu.MMU.PPU.step(clock);
 
-        let mut image_buffer = image_buffer_reference.lock().unwrap();
-        (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
-        cpu.MMU.PPU.step(clock);
+        if current_cpu_mode == PPU_mode::HBlank {
+            let mut image_buffer = image_buffer_reference.lock().unwrap();
+            (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
+        }
 
         //TODO receive real input from window key press
         let received = cpu_receiver.try_recv();

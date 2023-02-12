@@ -23,7 +23,7 @@ fn create_dummy_cartridge() -> Cartridge {
 
 pub(crate) fn create_dummy_tile() -> Tile {
     [
-        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
+        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Three],
         [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
         [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
         [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
@@ -129,8 +129,8 @@ fn tiles_are_generated_correctly(){
     let dummy_tile: ppu::ppu::Tile = create_dummy_tile();
 
     //write dummy tile as bytes into tileset position 0
-    dummy_mmu.write_byte(0x8000, 0x3C);
-    dummy_mmu.write_byte(0x8001, 0x7E);
+    dummy_mmu.write_byte(0x8000, 0x3D);
+    dummy_mmu.write_byte(0x8001, 0x7F);
     dummy_mmu.write_byte(0x8002, 0x42);
     dummy_mmu.write_byte(0x8003, 0x42);
     dummy_mmu.write_byte(0x8004, 0x42);
