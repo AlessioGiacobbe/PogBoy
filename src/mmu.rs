@@ -1,11 +1,9 @@
 pub mod mmu {
     use std::collections::HashMap;
-    use std::fmt::{Debug, Formatter};
+    use std::fmt::{Debug};
     use std::fs;
-    use byteorder::{LittleEndian as byteorderLittleEndian, ReadBytesExt};
     use serde_json::Value;
     use crate::cartridge::cartridge::{Cartridge};
-    use crate::cpu::CPU::CPU;
     use crate::ppu::ppu::PPU;
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 

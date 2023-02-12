@@ -6,7 +6,6 @@ pub mod CPU{
     use crate::interrupt::interrupt::Interrupt;
     use crate::mmu::mmu::MMU;
     use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
-    use crate::ppu::ppu::PPU;
 
     pub struct CPU<'a> {
         pub(crate) Registers: Registers,
@@ -1139,7 +1138,7 @@ pub mod CPU{
 
         //reset bit at position n in register r
         pub(crate) fn res_n_r(&mut self, position: u8, target_register: &str){
-            let mut current_value = self.Registers.get_item(target_register) as u8;
+            let current_value = self.Registers.get_item(target_register) as u8;
             let result = self.res_n_value(position, current_value);
             self.Registers.set_item(target_register, result as u16);
         }
@@ -1158,7 +1157,7 @@ pub mod CPU{
 
         //set bit at position n in register r
         pub(crate) fn set_n_r(&mut self, position: u8, target_register: &str){
-            let mut current_value = self.Registers.get_item(target_register) as u8;
+            let current_value = self.Registers.get_item(target_register) as u8;
             let result = self.set_n_value(position, current_value);
             self.Registers.set_item(target_register, result as u16);
         }
@@ -1420,7 +1419,7 @@ pub mod CPU{
         }
 
         pub(crate) fn read_from_stack(&mut self) -> u16 {
-            let mut sp = self.Registers.get_item("SP");
+            let sp = self.Registers.get_item("SP");
             let first_8_bits = self.MMU.read_byte(sp as i32) as u16;
             let last_8_bits = self.MMU.read_byte((sp + 1) as i32) as u16;
             self.Registers.set_item("SP", sp + 2);

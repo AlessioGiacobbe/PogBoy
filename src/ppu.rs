@@ -1,8 +1,7 @@
 pub mod ppu {
     use std::borrow::BorrowMut;
     use std::fmt::{Debug, Display, Formatter};
-    use image::{ImageBuffer, Rgb, Rgba, RgbaImage};
-    use crate::cpu::CPU::CPU;
+    use image::{Rgba, RgbaImage};
 
     //each tile is 8x8 pixels
     pub(crate) type Tile = [[TilePixelValue; 8]; 8];
@@ -74,7 +73,7 @@ pub mod ppu {
     }
 
     fn create_empty_tile() -> Tile {
-        [[TilePixelValue::Two; 8]; 8]
+        [[TilePixelValue::Zero; 8]; 8]
     }
 
     fn print_tile(Tile: Tile) {
@@ -95,7 +94,7 @@ pub mod ppu {
         for (y, tile_row) in Tile.iter().enumerate() {
             for (x, tile_pixel) in tile_row.iter().enumerate() {
                 let color_at_coordinate = COLORS[*tile_pixel as usize];
-                &rgba_image.put_pixel(x as u32 + x_offset, y as u32 + y_offset, Rgba(color_at_coordinate));
+                rgba_image.put_pixel(x as u32 + x_offset, y as u32 + y_offset, Rgba(color_at_coordinate));
             }
         }
     }
@@ -233,7 +232,7 @@ pub mod ppu {
 
             //tile offset to render tiles sub-portions
             let mut x_tile_offset = self.scroll_x & 8;
-            let mut y_tile_offset = (self.current_line + self.scroll_y as u32) & 7;
+            let y_tile_offset = (self.current_line + self.scroll_y as u32) & 7;
 
 
             for pixel in 0..SCREEN_HORIZONTAL_RESOLUTION {
@@ -257,7 +256,7 @@ pub mod ppu {
         }
 
         //given a TilePixelValue returns corresponding palette color, using palette map (stored at 0xFF47)
-        pub(crate) fn get_color_from_bg_palette(&mut self, mut color_number: TilePixelValue) -> [u8; 4] {
+        pub(crate) fn get_color_from_bg_palette(&mut self, color_number: TilePixelValue) -> [u8; 4] {
             let color_number = color_number as u8;
             if color_number < 4 {
                 // get bits couples by moving right by number * 2 and mask with 3 (b11) to get the value

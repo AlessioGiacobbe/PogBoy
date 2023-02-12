@@ -33,10 +33,6 @@ pub mod Registers {
         pub(crate) HL: u16,
         pub(crate) PC: u16,
         pub(crate) SP: u16,
-        pub(crate) LOW_REGISTERS: phf::Map<&'static str, &'static str>,
-        pub(crate) HIGH_REGISTERS: phf::Map<&'static str, &'static str>,
-        pub(crate) REGISTERS: [&'static str; 6],
-        pub(crate) FLAGS: phf::Map<&'static str, u8>
     }
 
     impl fmt::Display for Registers {
@@ -55,10 +51,6 @@ pub mod Registers {
                 HL: 0,
                 PC: 0,
                 SP: 0xFFFE,   // 0xFFFE : end of high ram (stack pointer goes backwards)
-                LOW_REGISTERS,
-                HIGH_REGISTERS,
-                REGISTERS,
-                FLAGS
             }
         }
 
