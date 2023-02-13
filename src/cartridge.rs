@@ -84,7 +84,7 @@ pub mod cartridge {
     const HEX_HEADER_END_ADDRESS: usize = 0x14F;
 
     pub fn read_cartridge(file_name: &str) -> Cartridge {
-        let mut rom = File::open(format!("./src/{}", file_name)).expect("rom not found");
+        let mut rom = File::open(format!("./src/roms/{}", file_name)).expect("rom not found");
 
         let mut rom_buffer = Vec::new();
         rom.read_to_end(&mut rom_buffer).expect("Can't read ROM");

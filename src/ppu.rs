@@ -106,7 +106,7 @@ pub mod ppu {
 
         for x_offset in 0..columns_number {
             for y_offset in 0..rows_number {
-                let current_tile_index = ((x_offset*20) + y_offset) as usize;
+                let current_tile_index = ((y_offset*20) + x_offset) as usize;
                 if current_tile_index < PPU_TILES_NUMBER {
                     let current_tile = tile_set[current_tile_index];
                     add_tile_to_rgba_image(current_tile, rgba_image.borrow_mut(), (x_offset * 8, y_offset * 8));

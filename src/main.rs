@@ -13,10 +13,11 @@ mod tests;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::{env, thread};
+use std::path::Path;
 use std::time::Duration;
 use image;
-use chrono;
 use image::{RgbaImage};
+use image::ColorType::{Rgb8, Rgba8};
 use piston_window::{Button, image as draw_image, ButtonState, Context, Event, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
@@ -118,6 +119,8 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buffer_refer
         //TODO receive real input from window key press
         let received = cpu_receiver.try_recv();
         if received.is_ok() {
+            let tile_set_dump: RgbaImage = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
+            image::save_buffer(&Path::new("last_tile_set.png"), &*tile_set_dump.into_vec(), 20 * 8, 20 * 8, Rgba8).expect("TODO: panic message");
             break
         }
     }
