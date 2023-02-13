@@ -18,7 +18,7 @@ pub mod mmu {
         pub(crate) work_ram: [u8; 0x2000],
         pub(crate) io_registers: [u8; 0x100],
         pub(crate) high_ram: [u8; 0x80],
-        pub(crate) interrupt_enabled: bool,
+        pub(crate) interrupt_enabled: u8,
         pub(crate) is_past_bios: bool,
 
         pub(crate) unprefixed_op_codes: HashMap<u8, Instruction>,
@@ -58,7 +58,7 @@ pub mod mmu {
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
                 high_ram: [0; 0x80],
-                interrupt_enabled: false,
+                interrupt_enabled: 0,
                 is_past_bios: false,
 
                 unprefixed_op_codes,
@@ -168,7 +168,8 @@ pub mod mmu {
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
-                    panic!("address not usable")
+                    return 0xFF;
+                    panic!("{} address not usable", address)
                 },
                 0xFF00 => {
                     //TODO read from joypad
@@ -202,7 +203,6 @@ pub mod mmu {
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    //TODO should be moved into interrupt struct/file
                     self.interrupt_enabled as u8
                 },
                 _ => {
@@ -250,7 +250,7 @@ pub mod mmu {
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
-                    panic!("address not usable")
+                    //panic!("{} address not usable", address)
                 }
                 0xFF00 => {
                     ()
@@ -290,10 +290,7 @@ pub mod mmu {
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    if value != 0 && value != 1 {
-                        panic!("value {} not assignable to interrupt enabled flag", value)
-                    }
-                    self.interrupt_enabled = value != 0
+                    self.interrupt_enabled = value
                 },
                 _ => {
                     panic!("Address {} out of range!", address)

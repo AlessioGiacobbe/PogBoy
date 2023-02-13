@@ -182,7 +182,6 @@ pub mod ppu {
                     if self.clock >= HBLANK_DURATION_DOTS {
                         self.clock = 0;
                         self.current_line += 1;
-                        self.render_scanline();
 
                         if self.current_line == (VISIBLE_SCANLINES - 1) as u32 {
                             //last line, go to v blank
@@ -203,7 +202,6 @@ pub mod ppu {
                         if self.current_line > TOTAL_SCANLINES {
                             self.mode = PPU_mode::OAM;
                             self.current_line = 0;
-                            self.render_scanline();
                         }
                     }
                 },
@@ -218,6 +216,7 @@ pub mod ppu {
                 PPU_mode::VRAM => {
                     if self.clock >= VRAM_DURATION_DOTS {
                         self.clock = 0;
+                        self.render_scanline();
                         self.mode = PPU_mode::HBlank;
                     }
                 },
@@ -241,11 +240,17 @@ pub mod ppu {
                 let y_offset = ((self.current_line + self.scroll_y as u32) / 8 * 32) as usize;
                 let x_offset = ((pixel as u8 + self.scroll_x) / 8) as usize;
 
-                let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as usize;
-                if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) && tile_id < 128 { tile_id += 256 }
+                let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as u16;
+                let mut tile = None;
 
-                let tile: Tile = self.tile_set[tile_id];
-                let color_number_at_coordinates: TilePixelValue = tile[y_tile_offset as usize][x_tile_offset as usize];
+                if !self.get_lcdc_value(LCDCFlags::BG_tile_data_area) {
+                    let fixed_tile_id = 256_u16.wrapping_add((tile_id as i8) as u16);
+                    tile = Some(self.tile_set[fixed_tile_id as usize]);
+                }else {
+                    tile = Some(self.tile_set[tile_id as usize]);
+                }
+
+                let color_number_at_coordinates: TilePixelValue = tile.unwrap()[y_tile_offset as usize][x_tile_offset as usize];
 
                 let color_at_coordinate = self.get_color_from_bg_palette(color_number_at_coordinates);
 

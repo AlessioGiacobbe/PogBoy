@@ -12,16 +12,20 @@ mod tests;
 
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
-use std::thread;
+use std::{env, thread};
+use std::time::Duration;
 use image;
+use chrono;
 use image::{RgbaImage};
 use piston_window::{Button, image as draw_image, ButtonState, Context, Event, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
 use crate::mmu::mmu::MMU;
-use crate::ppu::ppu::{PPU, PPU_mode};
+use crate::ppu::ppu::{PPU, PPU_mode, tile_set_to_rgba_image};
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    let rom_name = args.last().unwrap().clone();
 
     let (cpu_sender, _) : (Sender<&Vec<u8>>, Receiver<&Vec<u8>>) = mpsc::channel();
     let (window_sender, cpu_receiver) : (Sender<bool>, Receiver<bool>) = mpsc::channel();
@@ -29,7 +33,7 @@ fn main() {
     let image_buffer = Arc::new(Mutex::new(RgbaImage::new(160, 144)));
     let image_buffer_reference = image_buffer.clone();
 
-    let cpu_thread = thread::spawn(move|| run_cpu(cpu_sender, cpu_receiver, image_buffer_reference));
+    let cpu_thread = thread::spawn(move|| run_cpu(cpu_sender, cpu_receiver, image_buffer_reference, rom_name));
 
     let mut window: PistonWindow = WindowSettings::new("Pog!", [160, 144]).exit_on_esc(true).build().unwrap();
 
@@ -93,8 +97,8 @@ fn main() {
 
 }
 
-fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buffer_reference: Arc<Mutex<RgbaImage>>) {
-    let cartridge: Cartridge = read_cartridge("image.gb");
+fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buffer_reference: Arc<Mutex<RgbaImage>>, rom_name: String) {
+    let cartridge: Cartridge = read_cartridge(&rom_name);
 
     let mut ppu: PPU = PPU::new();
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
@@ -107,6 +111,8 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buffer_refer
         if current_cpu_mode == PPU_mode::HBlank {
             let mut image_buffer = image_buffer_reference.lock().unwrap();
             (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
+            //let tile_set_dump = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
+            //(*image_buffer) = tile_set_dump;
         }
 
         //TODO receive real input from window key press
