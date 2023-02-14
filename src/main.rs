@@ -29,7 +29,7 @@ fn main() {
     let rom_name = args.last().unwrap().clone();
 
     let (cpu_sender, _) : (Sender<&Vec<u8>>, Receiver<&Vec<u8>>) = mpsc::channel();
-    let (window_sender, cpu_receiver) : (Sender<bool>, Receiver<bool>) = mpsc::channel();
+    let (window_sender, cpu_receiver) : (Sender<Key>, Receiver<Key>) = mpsc::channel();
 
     let image_buffer = Arc::new(Mutex::new(RgbaImage::new(160, 144)));
     let image_buffer_reference = image_buffer.clone();
@@ -60,13 +60,8 @@ fn main() {
                         match ButtonArgs.state {
                             ButtonState::Press => {
                                 match ButtonArgs.button {
-                                    Button::Keyboard(Key) => {
-                                        match Key {
-                                            Key::Escape => {
-                                                window_sender.send(true).unwrap();
-                                            }
-                                            _ => {}
-                                        }
+                                    Button::Keyboard(key) => {
+                                        window_sender.send(key).unwrap();
                                     }
                                     _ => {}
                                 }
@@ -75,7 +70,7 @@ fn main() {
                         }
                     }
                     Input::Close(_) => {
-                        window_sender.send(true).unwrap();
+                        window_sender.send(Key::Escape).unwrap();
                     }
                     _ => {}
                 }
@@ -98,14 +93,15 @@ fn main() {
 
 }
 
-fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buffer_reference: Arc<Mutex<RgbaImage>>, rom_name: String) {
+fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_reference: Arc<Mutex<RgbaImage>>, rom_name: String) {
     let cartridge: Cartridge = read_cartridge(&rom_name);
 
     let mut ppu: PPU = PPU::new();
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
 
-    loop {
+
+    'main: loop {
         let clock = cpu.step();
         let current_cpu_mode = cpu.MMU.PPU.step(clock);
 
@@ -119,9 +115,36 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<bool>, image_buffer_refer
         //TODO receive real input from window key press
         let received = cpu_receiver.try_recv();
         if received.is_ok() {
-            let tile_set_dump: RgbaImage = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
-            image::save_buffer(&Path::new("last_tile_set.png"), &*tile_set_dump.into_vec(), 20 * 8, 20 * 8, Rgba8).expect("TODO: panic message");
-            break
+            match received.unwrap() {
+                Key::Escape => {
+                    break 'main
+                },
+                Key::T => {
+                    //toggle tileset area
+                    if cpu.MMU.read_byte(0xFF40) == 0x91 {
+                        cpu.MMU.write_byte(0xFF40, 0x81);
+                    }else{
+                        cpu.MMU.write_byte(0xFF40, 0x91);
+                    }
+                }
+                Key::D => {
+                    //dump current instruction
+                    cpu.MMU.disassemble((cpu.Registers.get_item("PC") - 10) as i32, 20, cpu.Registers.get_item("PC") as i32);
+
+                    //toggle cpu logging
+                    cpu.logging = !cpu.logging;
+
+                    //dump current tileset
+                    let tile_set_dump: RgbaImage = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
+                    image::save_buffer(&Path::new("last_tile_set.png"), &*tile_set_dump.into_vec(), 20 * 8, 20 * 8, Rgba8).expect("TODO: panic message");
+
+                    //dump lcdc status
+                    cpu.MMU.PPU.print_lcdc_status();
+
+                    //todo dump tile maps (at 0x9800 and 0x9C00)
+                }
+                _ => {}
+            }
         }
     }
 }

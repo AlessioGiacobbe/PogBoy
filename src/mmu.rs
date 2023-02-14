@@ -163,18 +163,19 @@ pub mod mmu {
                 },
                 //Sprite attribute table
                 0xFE00..=0xFE9F => {
-                    //TODO read from vga
                     self.PPU.read_byte(address)
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
                     return 0xFF;
-                    panic!("{} address not usable", address)
                 },
                 0xFF00 => {
                     //TODO read from joypad
                     0
                 },
+                0xFF40 => {
+                    self.PPU.read_byte(address)
+                }
                 0xFF41 => {
                     self.PPU.read_byte(address)
                 },
@@ -255,24 +256,6 @@ pub mod mmu {
                 0xFF00 => {
                     ()
                 },
-                0xFF41 => {
-                    self.PPU.write_byte(address, value)
-                },
-                0xFF42 => {
-                    self.PPU.write_byte(address, value)
-                },
-                0xFF43 => {
-                    self.PPU.write_byte(address, value)
-                },
-                0xFF44 => {
-                    self.PPU.write_byte(address, value)
-                },
-                0xFF47 => {
-                    self.PPU.write_byte(address, value)
-                },
-                0xFF50 => {
-                    self.is_past_bios = value == 1;
-                },
                 //I/O Registers
                 0xFF00..=0xFF3F => {
                     self.io_registers[address - 0xFF00] = value
@@ -281,7 +264,10 @@ pub mod mmu {
                 0xFF40..=0xFF4F => {
                     self.PPU.write_byte(address, value)
                 },
-                0xFF50..=0xFF7F => {
+                0xFF50 => {
+                    self.is_past_bios = value == 1;
+                },
+                0xFF51..=0xFF7F => {
                     self.io_registers[address - 0xFF00] = value
                 }
                 //High RAM

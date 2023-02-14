@@ -52,7 +52,7 @@ pub mod ppu {
         LCD_enabled = 7,
         Window_tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
         Window_enable = 5,  //should display window
-        BG_tile_data_area = 4,   //0=8800-97FF, 1=8000-8FFF
+        BG_tile_set_area = 4,   //0=8800-97FF, 1=8000-8FFF
         BG_tile_map_area = 3,   //determines which tile map to use 0=9800-9BFF, 1=9C00-9FFF
         Obj_size = 2,   //sprite size 0=8x8, 1=8x16
         Obj_enable = 1,    //should sprites be displayed?
@@ -140,7 +140,7 @@ pub mod ppu {
         clock: u32,
         current_line: u32,
         pub(crate) mode: PPU_mode,
-        lcd_control: u8,
+        pub(crate) lcd_control: u8,
         scroll_y: u8,
         scroll_x: u8,
         background_palette_data: u8,
@@ -243,7 +243,7 @@ pub mod ppu {
                 let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as u16;
                 let mut tile = None;
 
-                if !self.get_lcdc_value(LCDCFlags::BG_tile_data_area) {
+                if !self.get_lcdc_value(LCDCFlags::BG_tile_set_area) {
                     let fixed_tile_id = 256_u16.wrapping_add((tile_id as i8) as u16);
                     tile = Some(self.tile_set[fixed_tile_id as usize]);
                 }else {
@@ -367,6 +367,28 @@ pub mod ppu {
         pub(crate) fn get_lcdc_value(&self, lcdc_flag: LCDCFlags) -> bool{
             let bit_number = lcdc_flag as u8;
             return ((self.lcd_control >> bit_number) & 0x1) == 1
+        }
+
+        pub(crate) fn print_lcdc_status(&self) {
+            println!("LCD control (0xFF40) - 0x{:02x} \
+            LCD enabled - {}, \
+            Window tile map area - {}, \
+            Window enabled - {}, \
+            BG tile set area - {}, \
+            BG tile map area - {}, \
+            Obj size - {}, \
+            Obj enabled - {}, \
+            Bg enabled - {}",
+                     self.lcd_control,
+                     self.get_lcdc_value(LCDCFlags::LCD_enabled),
+                     if self.get_lcdc_value(LCDCFlags::Window_tile_map_area) { "0x9C00" } else { "0x9800" },
+                     self.get_lcdc_value(LCDCFlags::Window_enable),
+                     if self.get_lcdc_value(LCDCFlags::BG_tile_set_area) { "0x8000" } else { "0x8800" },
+                     if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { "0x9C00" } else { "0x9800" },
+                     if self.get_lcdc_value(LCDCFlags::Obj_size) { "8x16" } else { "8x8" },
+                     self.get_lcdc_value(LCDCFlags::Obj_enable),
+                     self.get_lcdc_value(LCDCFlags::Bg_enable),
+            )
         }
     }
 

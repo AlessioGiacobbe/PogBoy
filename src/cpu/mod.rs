@@ -13,6 +13,7 @@ pub mod CPU{
         pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool,
         pub(crate) clock: u32,
+        pub(crate) logging: bool,
     }
 
     #[derive(PartialEq)]
@@ -58,11 +59,15 @@ pub mod CPU{
                 Interrupt: Default::default(),
                 is_stopped: false,
                 clock: 0,
+                logging: false
             }
         }
 
         pub(crate) fn step(&mut self) -> u32 {
                 if self.is_stopped {
+                    if self.logging {
+                        println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"))
+                    }
                     return 0
                 }
 
@@ -73,8 +78,10 @@ pub mod CPU{
                 self.Registers.set_item("PC", next_address as u16);
                 self.clock += if instruction.cycles.len() > 2 { instruction.cycles[1] } else { instruction.cycles[0] };
 
-                //println!("STATUS BEFORE EXECUTING 0x{:04X} {}", address, self);
-                //println!("0x{:02X} Executing {} (op code 0x{:02X})", address, instruction, instruction.opcode);
+                if self.logging {
+                    println!("0x{:02X} Executing {} (op code 0x{:02X})", address, instruction, instruction.opcode);
+                }
+
                 //println!("Executing {} (op code 0x{:02X})", instruction, instruction.opcode);
                 match self.execute(instruction) {
                     Err(instruction) => {
