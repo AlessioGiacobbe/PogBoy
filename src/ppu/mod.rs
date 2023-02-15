@@ -24,6 +24,17 @@ pub mod ppu {
         VRAM = 3
     }
 
+    pub(crate) enum LCDCFlags {
+        LCD_enabled = 7,
+        Window_tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
+        Window_enable = 5,  //should display window
+        BG_tile_set_area = 4,   //0=8800-97FF, 1=8000-8FFF
+        BG_tile_map_area = 3,   //determines which tile map to use 0=9800-9BFF, 1=9C00-9FFF
+        Obj_size = 2,   //sprite size 0=8x8, 1=8x16
+        Obj_enable = 1,    //should sprites be displayed?
+        Bg_enable = 0   //hide backgorund and window
+    }
+
     impl From<u8> for PPU_mode{
         fn from(value: u8) -> Self {
             match value {
@@ -47,18 +58,6 @@ pub mod ppu {
             }
         }
     }
-
-    pub(crate) enum LCDCFlags {
-        LCD_enabled = 7,
-        Window_tile_map_area = 6,  //determines which background map to use 0=9800-9BFF, 1=9C00-9FFF
-        Window_enable = 5,  //should display window
-        BG_tile_set_area = 4,   //0=8800-97FF, 1=8000-8FFF
-        BG_tile_map_area = 3,   //determines which tile map to use 0=9800-9BFF, 1=9C00-9FFF
-        Obj_size = 2,   //sprite size 0=8x8, 1=8x16
-        Obj_enable = 1,    //should sprites be displayed?
-        Bg_enable = 0   //hide backgorund and window
-    }
-
 
     impl Display for TilePixelValue {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -87,6 +86,10 @@ pub mod ppu {
 
             println!("{}", tile_line)
         }
+    }
+
+    pub fn dump_tile_map(video_ram: [u8; 0x2000]) {
+
     }
 
     //given a tile and a mutable RgbaImage reference, draw the tile into the image using default color mapping and given x,y offsets
@@ -133,8 +136,6 @@ pub mod ppu {
         [249, 168, 117, 255], //#f9a875
         [255, 246, 211, 255], //#fff6d3
     ];
-
-
 
     pub struct PPU {
         clock: u32,

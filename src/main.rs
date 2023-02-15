@@ -22,7 +22,7 @@ use piston_window::{Button, image as draw_image, ButtonState, Context, Event, In
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
 use crate::mmu::mmu::MMU;
-use crate::ppu::ppu::{PPU, PPU_mode, tile_set_to_rgba_image};
+use crate::ppu::ppu::{PPU, PPU_mode, tile_set_to_rgba_image, dump_tile_map};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -119,6 +119,10 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
                 Key::Escape => {
                     break 'main
                 },
+                Key::L => {
+                    //toggle cpu logging
+                    cpu.logging = !cpu.logging;
+                }
                 Key::T => {
                     //toggle tileset area
                     if cpu.MMU.read_byte(0xFF40) == 0x91 {
@@ -131,9 +135,6 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
                     //dump current instruction
                     cpu.MMU.disassemble((cpu.Registers.get_item("PC") - 10) as i32, 20, cpu.Registers.get_item("PC") as i32);
 
-                    //toggle cpu logging
-                    cpu.logging = !cpu.logging;
-
                     //dump current tileset
                     let tile_set_dump: RgbaImage = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
                     image::save_buffer(&Path::new("last_tile_set.png"), &*tile_set_dump.into_vec(), 20 * 8, 20 * 8, Rgba8).expect("TODO: panic message");
@@ -142,6 +143,7 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
                     cpu.MMU.PPU.print_lcdc_status();
 
                     //todo dump tile maps (at 0x9800 and 0x9C00)
+                    dump_tile_map(cpu.MMU.PPU.video_ram);
                 }
                 _ => {}
             }

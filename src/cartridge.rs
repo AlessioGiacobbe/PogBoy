@@ -7,7 +7,7 @@ pub mod cartridge {
 
     #[derive(Clone, Debug)]
     pub struct Cartridge {
-        pub(crate) cartridge_info: CartridgeInfo,
+        pub(crate) cartridge_info: Option<CartridgeInfo>,
         pub(crate) rom: Vec<u8>
     }
 
@@ -94,7 +94,7 @@ pub mod cartridge {
         let cartridge_info: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
 
         Cartridge {
-            cartridge_info,
+            cartridge_info: Some(cartridge_info),
             rom: rom_buffer
         }
     }

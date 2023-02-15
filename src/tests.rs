@@ -1,11 +1,15 @@
+use crate::cartridge::cartridge::CartridgeInfo;
 use crate::cpu::CPU::JumpCondition;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
-use crate::ppu::ppu::{LCDCFlags, Tile, TilePixelValue};
+use crate::ppu::ppu::{COLORS, LCDCFlags, Tile, TilePixelValue};
 use super::*;
 
 fn create_dummy_cartridge() -> Cartridge {
-    let Cartridge: Cartridge = read_cartridge("image.gb");
+    let Cartridge: Cartridge = Cartridge {
+        cartridge_info: None,
+        rom: vec![]
+    };
     let mut rom = vec![0; 0x108];
     rom[0x100] = 0x00;
     rom[0x101] = 0x3E;
@@ -46,7 +50,7 @@ fn create_dummy_mmu(dummy_ppu: &mut PPU) -> MMU {
     dummy_mmu.work_ram = [3; 0x2000];
     dummy_mmu.io_registers = [4; 0x100];
     dummy_mmu.high_ram = [5; 0x80];
-    dummy_mmu.interrupt_enabled = true;
+    dummy_mmu.interrupt_enabled = 0x1;
     dummy_mmu
 }
 
@@ -126,7 +130,7 @@ fn tiles_are_generated_correctly(){
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
-    let dummy_tile: ppu::ppu::Tile = create_dummy_tile();
+    let dummy_tile: Tile = create_dummy_tile();
 
     //write dummy tile as bytes into tileset position 0
     dummy_mmu.write_byte(0x8000, 0x3D);
@@ -664,7 +668,7 @@ fn memory_can_read_and_write(){
 fn color_from_bg_palette_is_loaded_correctly(){
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let ppu_colors = ppu::ppu::COLORS;
+    let ppu_colors = COLORS;
 
     dummy_mmu.write_byte(0xFF47, 0xFF);
     assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
