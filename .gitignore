@@ -17,6 +17,7 @@ Cargo.lock
 # custom
 
 *.png
+*.txt
 /src/*.gb
 /src/roms/*.gb
 /src/*.jpg

@@ -88,8 +88,15 @@ pub mod ppu {
         }
     }
 
-    pub fn dump_tile_map(video_ram: [u8; 0x2000]) {
-
+    pub fn dump_tile_map(video_ram: [u8; 0x2000], base_offset: usize) -> String {
+        let mut dump = "".to_owned();
+        for tile_number in 0..(32*32) {
+            if tile_number % 32 == 0 && tile_number != 0 {
+                dump.push_str(" \n")
+            }
+            dump.push_str(&format!("{:03} - ", video_ram[base_offset + tile_number as usize]));
+        }
+        dump
     }
 
     //given a tile and a mutable RgbaImage reference, draw the tile into the image using default color mapping and given x,y offsets

@@ -12,7 +12,8 @@ mod tests;
 
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
-use std::{env, thread};
+use std::{env, fs, thread};
+use std::fs::File;
 use std::path::Path;
 use std::time::Duration;
 use image;
@@ -143,7 +144,11 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
                     cpu.MMU.PPU.print_lcdc_status();
 
                     //todo dump tile maps (at 0x9800 and 0x9C00)
-                    dump_tile_map(cpu.MMU.PPU.video_ram);
+                    let first_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1800);
+                    fs::write("tm1.txt", first_tile_map).expect("Unable to write file");
+
+                    let second_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1C00);
+                    fs::write("tm2.txt", second_tile_map).expect("Unable to write file");
                 }
                 _ => {}
             }
