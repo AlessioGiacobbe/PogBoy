@@ -23,7 +23,7 @@ use piston_window::{Button, image as draw_image, ButtonState, Context, Event, In
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
 use crate::mmu::mmu::MMU;
-use crate::ppu::ppu::{PPU, PPU_mode, tile_set_to_rgba_image, dump_tile_map};
+use crate::ppu::ppu::{PPU, PPU_mode, tile_set_to_rgba_image, dump_tile_map, dump_current_screen_tiles};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -149,6 +149,9 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
 
                     let second_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1C00);
                     fs::write("tm2.txt", second_tile_map).expect("Unable to write file");
+
+                    let current_screen_tiles = format!("{:?}", dump_current_screen_tiles(cpu.MMU.PPU));
+                    fs::write("current_screen_tiles.txt", current_screen_tiles).expect("Unable to write file");
                 }
                 _ => {}
             }

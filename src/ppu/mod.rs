@@ -3,8 +3,22 @@ pub mod ppu {
     use std::fmt::{Debug, Display, Formatter};
     use image::{Rgba, RgbaImage};
 
+    const PPU_TILES_NUMBER: usize = 384;
+    const TOTAL_SCANLINES: u32 = 153;
+    const VISIBLE_SCANLINES: u8 = 144;
+    const HBLANK_DURATION_DOTS: u32 = 204;
+    const VBLANK_DURATION_DOTS: u32 = 456;
+    const OAM_DURATION_DOTS: u32 = 80;
+    const VRAM_DURATION_DOTS: u32 = 172;
+
+    const SCREEN_HORIZONTAL_RESOLUTION: u32 = 160;
+    const SCREEN_VERTICAL_RESOLUTION: u32 = 144;
+
+    const TILE_SIZE: u32 = 8;
+    const TILES_IN_VISIBLE_LINE: u32 = SCREEN_HORIZONTAL_RESOLUTION / TILE_SIZE;
+
     //each tile is 8x8 pixels
-    pub(crate) type Tile = [[TilePixelValue; 8]; 8];
+    pub(crate) type Tile = [[TilePixelValue; TILE_SIZE as usize]; TILE_SIZE as usize];
 
     //each value should refer to a specific color depending on the current mapping
     //(it can be shifted to do cool stuff)
@@ -72,7 +86,7 @@ pub mod ppu {
     }
 
     fn create_empty_tile() -> Tile {
-        [[TilePixelValue::Zero; 8]; 8]
+        [[TilePixelValue::Zero; TILE_SIZE as usize]; TILE_SIZE as usize]
     }
 
     fn print_tile(Tile: Tile) {
@@ -97,6 +111,14 @@ pub mod ppu {
             dump.push_str(&format!("{:03} - ", video_ram[base_offset + tile_number as usize]));
         }
         dump
+    }
+
+    pub fn dump_current_screen_tiles(mut ppu: &mut PPU) -> [[u16; 20]; SCREEN_VERTICAL_RESOLUTION as usize] {
+        let mut screen_dump = [[0_u16; 20]; SCREEN_VERTICAL_RESOLUTION as usize];
+        for screen_line in 0..SCREEN_VERTICAL_RESOLUTION {
+            screen_dump[screen_line as usize] = ppu.render_scanline(screen_line);
+        }
+        screen_dump
     }
 
     //given a tile and a mutable RgbaImage reference, draw the tile into the image using default color mapping and given x,y offsets
@@ -125,17 +147,6 @@ pub mod ppu {
         }
         rgba_image
     }
-
-    const PPU_TILES_NUMBER: usize = 384;
-    const TOTAL_SCANLINES: u32 = 153;
-    const VISIBLE_SCANLINES: u8 = 144;
-    const HBLANK_DURATION_DOTS: u32 = 204;
-    const VBLANK_DURATION_DOTS: u32 = 456;
-    const OAM_DURATION_DOTS: u32 = 80;
-    const VRAM_DURATION_DOTS: u32 = 172;
-
-    const SCREEN_HORIZONTAL_RESOLUTION: u32 = 160;
-    const SCREEN_VERTICAL_RESOLUTION: u32 = 144;
 
     pub(crate) const COLORS: [[u8; 4]; 4] = [ //cool red palette, colors should be based on palette map
         [124, 63, 88, 255], //#7c3f58
@@ -224,7 +235,7 @@ pub mod ppu {
                 PPU_mode::VRAM => {
                     if self.clock >= VRAM_DURATION_DOTS {
                         self.clock = 0;
-                        self.render_scanline();
+                        self.render_current_line();
                         self.mode = PPU_mode::HBlank;
                     }
                 },
@@ -233,22 +244,27 @@ pub mod ppu {
             return self.mode.clone()
         }
 
-        pub(crate) fn render_scanline(&mut self) {
+        pub(crate) fn render_current_line(&mut self) {
+            self.render_scanline(self.current_line);
+        }
+
+        pub(crate) fn render_scanline(&mut self, line: u32) -> [u16; TILES_IN_VISIBLE_LINE as usize] {
             //the tile map contains the index of the tile to be displayed
             let background_tile_map_starting_address: usize = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x1C00 } else { 0x1800 };
 
             //tile offset to render tiles sub-portions
             let mut x_tile_offset = self.scroll_x & 8;
-            let y_tile_offset = (self.current_line + self.scroll_y as u32) & 7;
+            let y_tile_offset = (line + self.scroll_y as u32) & 7;
 
-
+            let mut used_tiles: [u16; TILES_IN_VISIBLE_LINE as usize] = [0; TILES_IN_VISIBLE_LINE as usize];
             for pixel in 0..SCREEN_HORIZONTAL_RESOLUTION {
                 //viewport offsets used to retrieve right tile id from tile_map in vram
                 // each row (y) is 32 tiles (from the total 256x256 viewport), each tile is 8 pixel (hence 8*32)
-                let y_offset = ((self.current_line + self.scroll_y as u32) / 8 * 32) as usize;
+                let y_offset = ((line + self.scroll_y as u32) / 8 * 32) as usize;
                 let x_offset = ((pixel as u8 + self.scroll_x) / 8) as usize;
 
                 let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as u16;
+                used_tiles[(pixel % 8) as usize] = tile_id;
                 let mut tile = None;
 
                 if !self.get_lcdc_value(LCDCFlags::BG_tile_set_area) {
@@ -264,8 +280,9 @@ pub mod ppu {
 
                 x_tile_offset = (x_tile_offset + 1) % 8;
 
-                self.image_buffer.put_pixel(pixel, self.current_line, Rgba(color_at_coordinate));
+                self.image_buffer.put_pixel(pixel, line, Rgba(color_at_coordinate));
             }
+            used_tiles
         }
 
         //given a TilePixelValue returns corresponding palette color, using palette map (stored at 0xFF47)
