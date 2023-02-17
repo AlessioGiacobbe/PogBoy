@@ -113,10 +113,10 @@ pub mod ppu {
         dump
     }
 
-    pub fn dump_current_screen_tiles(mut ppu: &mut PPU) -> [[u16; 20]; SCREEN_VERTICAL_RESOLUTION as usize] {
-        let mut screen_dump = [[0_u16; 20]; SCREEN_VERTICAL_RESOLUTION as usize];
-        for screen_line in 0..SCREEN_VERTICAL_RESOLUTION {
-            screen_dump[screen_line as usize] = ppu.render_scanline(screen_line);
+    pub fn dump_current_screen_tiles(mut ppu: &mut PPU) -> [[(u16, u16); 20]; (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize] {
+        let mut screen_dump = [[(0_u16, 0_u16); 20]; (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize];
+        for screen_line in 0..SCREEN_VERTICAL_RESOLUTION/TILE_SIZE {
+            screen_dump[screen_line as usize] = ppu.render_scanline(screen_line*TILE_SIZE);
         }
         screen_dump
     }
@@ -248,7 +248,7 @@ pub mod ppu {
             self.render_scanline(self.current_line);
         }
 
-        pub(crate) fn render_scanline(&mut self, line: u32) -> [u16; TILES_IN_VISIBLE_LINE as usize] {
+        pub(crate) fn render_scanline(&mut self, line: u32) -> [(u16, u16); TILES_IN_VISIBLE_LINE as usize] {
             //the tile map contains the index of the tile to be displayed
             let background_tile_map_starting_address: usize = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x1C00 } else { 0x1800 };
 
@@ -256,19 +256,19 @@ pub mod ppu {
             let mut x_tile_offset = self.scroll_x & 8;
             let y_tile_offset = (line + self.scroll_y as u32) & 7;
 
-            let mut used_tiles: [u16; TILES_IN_VISIBLE_LINE as usize] = [0; TILES_IN_VISIBLE_LINE as usize];
+            let mut used_tiles: [(u16, u16); TILES_IN_VISIBLE_LINE as usize] = [(0,0); TILES_IN_VISIBLE_LINE as usize];
             for pixel in 0..SCREEN_HORIZONTAL_RESOLUTION {
                 //viewport offsets used to retrieve right tile id from tile_map in vram
                 // each row (y) is 32 tiles (from the total 256x256 viewport), each tile is 8 pixel (hence 8*32)
-                let y_offset = ((line + self.scroll_y as u32) / 8 * 32) as usize;
+                let y_offset = (((line + self.scroll_y as u32) / 8 % 32) * 32) as usize;
                 let x_offset = ((pixel as u8 + self.scroll_x) / 8) as usize;
 
                 let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as u16;
-                used_tiles[(pixel % 8) as usize] = tile_id;
+                used_tiles[(pixel / 8) as usize] = (tile_id.clone(), (background_tile_map_starting_address + y_offset + x_offset) as u16);
                 let mut tile = None;
 
                 if !self.get_lcdc_value(LCDCFlags::BG_tile_set_area) {
-                    let fixed_tile_id = 256_u16.wrapping_add((tile_id as i8) as u16);
+                    let fixed_tile_id = 128_u16.wrapping_add((tile_id as i8) as u16);
                     tile = Some(self.tile_set[fixed_tile_id as usize]);
                 }else {
                     tile = Some(self.tile_set[tile_id as usize]);
