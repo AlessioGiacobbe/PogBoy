@@ -173,8 +173,7 @@ pub mod mmu {
                     return 0xFF;
                 },
                 0xFF00 => {
-                    //read from gamepad
-                    return 0
+                    return self.gamepad.read()
                 },
                 0xFF40 => {
                     self.PPU.read_byte(address)
@@ -198,7 +197,7 @@ pub mod mmu {
                     self.is_past_bios as u8
                 },
                 //I/O Registers
-                0xFF00..=0xFF7F => {
+                0xFF01..=0xFF7F => {
                     self.io_registers[address - 0xFF00]
                 },
                 //High RAM
@@ -257,7 +256,7 @@ pub mod mmu {
                     //panic!("{} address not usable", address)
                 }
                 0xFF00 => {
-                    ()
+                    self.gamepad.write(value)
                 },
                 //timer
                 0xFF05 => {

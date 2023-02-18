@@ -23,6 +23,7 @@ use image::ColorType::{Rgb8, Rgba8};
 use piston_window::{Button, ButtonState, Context, Event, image as draw_image, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
+use crate::gamepad::gamepad::ColumnType::{Action, Direction};
 use crate::mmu::mmu::MMU;
 use crate::ppu::ppu::{dump_current_screen_tiles, dump_tile_map, PPU, PPU_mode, tile_set_to_rgba_image};
 
@@ -31,7 +32,7 @@ fn main() {
     let rom_name = args.last().unwrap().clone();
 
     let (cpu_sender, _) : (Sender<&Vec<u8>>, Receiver<&Vec<u8>>) = mpsc::channel();
-    let (window_sender, cpu_receiver) : (Sender<Key>, Receiver<Key>) = mpsc::channel();
+    let (window_sender, cpu_receiver) : (Sender<(Key, ButtonState)>, Receiver<(Key, ButtonState)>) = mpsc::channel();
 
     let image_buffer = Arc::new(Mutex::new(RgbaImage::new(160, 144)));
     let image_buffer_reference = image_buffer.clone();
@@ -59,20 +60,15 @@ fn main() {
             Event::Input(input, _) => {
                 match input {
                     Input::Button(ButtonArgs) => {
-                        match ButtonArgs.state {
-                            ButtonState::Press => {
-                                match ButtonArgs.button {
-                                    Button::Keyboard(key) => {
-                                        window_sender.send(key).unwrap();
-                                    }
-                                    _ => {}
-                                }
+                        match ButtonArgs.button {
+                            Button::Keyboard(key) => {
+                                window_sender.send((key, ButtonArgs.state)).unwrap();
                             }
-                            ButtonState::Release => {}
+                            _ => {}
                         }
                     }
                     Input::Close(_) => {
-                        window_sender.send(Key::Escape).unwrap();
+                        window_sender.send((Key::Escape, ButtonState::Press)).unwrap();
                     }
                     _ => {}
                 }
@@ -95,7 +91,7 @@ fn main() {
 
 }
 
-fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_reference: Arc<Mutex<RgbaImage>>, rom_name: String) {
+fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, image_buffer_reference: Arc<Mutex<RgbaImage>>, rom_name: String) {
     let cartridge: Cartridge = read_cartridge(&rom_name);
 
     let mut ppu: PPU = PPU::new();
@@ -113,49 +109,64 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
             //(*image_buffer) = tile_set_dump;
         }
 
-        //TODO receive real input from window key press
         let received = cpu_receiver.try_recv();
         if received.is_ok() {
-            match received.unwrap() {
-                Key::Escape => {
-                    break 'main
-                },
-                Key::L => {
-                    //toggle cpu logging
-                    cpu.logging = !cpu.logging;
-                }
-                Key::T => {
-                    //toggle tileset area
-                    if cpu.MMU.read_byte(0xFF40) == 0x91 {
-                        cpu.MMU.write_byte(0xFF40, 0x81);
-                    }else{
-                        cpu.MMU.write_byte(0xFF40, 0x91);
+            let (key, state) = received.unwrap();
+            match state {
+                ButtonState::Press => {
+                    match key {
+                        Key::Escape => {
+                            break 'main
+                        },
+                        Key::L => {
+                            //toggle cpu logging
+                            cpu.logging = !cpu.logging;
+                        },
+                        Key::T => {
+                            //toggle tileset area
+                            if cpu.MMU.read_byte(0xFF40) == 0x91 {
+                                cpu.MMU.write_byte(0xFF40, 0x81);
+                            }else{
+                                cpu.MMU.write_byte(0xFF40, 0x91);
+                            }
+                        },
+                        Key::D => {
+                            println!("{}", cpu);
+
+                            //dump current instruction
+                            cpu.MMU.disassemble((cpu.Registers.get_item("PC") - 10) as i32, 20, cpu.Registers.get_item("PC") as i32);
+
+                            //dump current tileset
+                            let tile_set_dump: RgbaImage = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
+                            image::save_buffer(&Path::new("last_tile_set.png"), &*tile_set_dump.into_vec(), 20 * 8, 20 * 8, Rgba8).expect("TODO: panic message");
+
+                            //dump lcdc status
+                            cpu.MMU.PPU.print_lcdc_status();
+
+                            //todo dump tile maps (at 0x9800 and 0x9C00)
+                            let first_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1800);
+                            fs::write("tm1.txt", first_tile_map).expect("Unable to write file");
+
+                            let second_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1C00);
+                            fs::write("tm2.txt", second_tile_map).expect("Unable to write file");
+
+                            let current_screen_tiles = format!("{:?}", dump_current_screen_tiles(cpu.MMU.PPU));
+                            fs::write("current_screen_tiles.txt", current_screen_tiles).expect("Unable to write file");
+                        },
+                        Key::Down | Key::Up | Key::Left | Key::Right | Key::Space | Key::Comma | Key::X | Key::Z => {
+                            cpu.MMU.gamepad.key_pressed(key)
+                        },
+                        _ => {}
                     }
                 }
-                Key::D => {
-                    println!("{}", cpu);
-
-                    //dump current instruction
-                    cpu.MMU.disassemble((cpu.Registers.get_item("PC") - 10) as i32, 20, cpu.Registers.get_item("PC") as i32);
-
-                    //dump current tileset
-                    let tile_set_dump: RgbaImage = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
-                    image::save_buffer(&Path::new("last_tile_set.png"), &*tile_set_dump.into_vec(), 20 * 8, 20 * 8, Rgba8).expect("TODO: panic message");
-
-                    //dump lcdc status
-                    cpu.MMU.PPU.print_lcdc_status();
-
-                    //todo dump tile maps (at 0x9800 and 0x9C00)
-                    let first_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1800);
-                    fs::write("tm1.txt", first_tile_map).expect("Unable to write file");
-
-                    let second_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1C00);
-                    fs::write("tm2.txt", second_tile_map).expect("Unable to write file");
-
-                    let current_screen_tiles = format!("{:?}", dump_current_screen_tiles(cpu.MMU.PPU));
-                    fs::write("current_screen_tiles.txt", current_screen_tiles).expect("Unable to write file");
+                ButtonState::Release => {
+                    match key {
+                        Key::Down | Key::Up | Key::Left | Key::Right | Key::Space | Key::Comma | Key::X | Key::Z => {
+                            cpu.MMU.gamepad.key_released(key)
+                        },
+                        _ => {}
+                    }
                 }
-                _ => {}
             }
         }
     }
