@@ -38,6 +38,8 @@ pub(crate) fn create_dummy_tile() -> Tile {
     ]
 }
 
+fn create_dummy_gamepad() -> gamepad::gamepad::gamepad { gamepad::gamepad::gamepad::default() }
+
 fn create_dummy_ppu() -> PPU {
     PPU::new()
 }
@@ -296,6 +298,33 @@ fn or_sets_right_flags(){
     cpu.Registers.set_item("B", 0x3);
     cpu.or_a_r("B");
     assert_eq!(cpu.Registers.get_item("A"), 3);
+}
+
+#[test]
+fn gamepad_works() {
+    let mut dummy_gamepad = create_dummy_gamepad();
+
+    assert_eq!(dummy_gamepad.read(), 0xF);
+
+    dummy_gamepad.write(0x20);
+    assert_eq!(dummy_gamepad.read(), 0xF);
+
+    dummy_gamepad.write(0x20);
+    dummy_gamepad.key_pressed(Key::Z);
+    assert_eq!(dummy_gamepad.read(), 0b1110);
+
+    dummy_gamepad.key_released(Key::Z);
+    assert_eq!(dummy_gamepad.read(), 0xF);
+
+    dummy_gamepad.key_pressed(Key::Z);
+    dummy_gamepad.key_pressed(Key::X);
+    assert_eq!(dummy_gamepad.read(), 0b1100);
+
+    dummy_gamepad.write(0x10);
+    dummy_gamepad.key_pressed(Key::Down);
+    assert_eq!(dummy_gamepad.read(), 0b0111);
+    dummy_gamepad.key_pressed(Key::Right);
+    assert_eq!(dummy_gamepad.read(), 0b0110);
 }
 
 #[test]

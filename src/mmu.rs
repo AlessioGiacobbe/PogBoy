@@ -5,6 +5,7 @@ pub mod mmu {
     use serde_json::Value;
     use crate::cartridge::cartridge::{Cartridge};
     use crate::ppu::ppu::PPU;
+    use crate::gamepad::gamepad::gamepad;
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 0xCB;
@@ -14,6 +15,7 @@ pub mod mmu {
         pub(crate) bios: [u8; 256],
         pub(crate) cartridge: Cartridge,
         pub(crate) PPU: &'a mut PPU,
+        pub(crate) gamepad: gamepad,
         pub(crate) external_ram: [u8; 0x2000],
         pub(crate) work_ram: [u8; 0x2000],
         pub(crate) io_registers: [u8; 0x100],
@@ -54,6 +56,7 @@ pub mod mmu {
                     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50],
                 cartridge: Cartridge.expect("Empty cartridge"),
                 PPU,
+                gamepad: gamepad::default(),
                 external_ram: [0; 0x2000],
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
@@ -170,8 +173,8 @@ pub mod mmu {
                     return 0xFF;
                 },
                 0xFF00 => {
-                    //TODO read from joypad
-                    0
+                    //read from gamepad
+                    return 0
                 },
                 0xFF40 => {
                     self.PPU.read_byte(address)
@@ -256,8 +259,24 @@ pub mod mmu {
                 0xFF00 => {
                     ()
                 },
+                //timer
+                0xFF05 => {
+
+                },
+                //timer
+                0xFF06 => {
+
+                },
+                //timer controller
+                0xFF07 => {
+
+                },
                 //I/O Registers
-                0xFF00..=0xFF3F => {
+                0xFF01..=0xFF04 => {
+                    self.io_registers[address - 0xFF00] = value
+                },
+                //I/O Registers
+                0xFF08..=0xFF3F => {
                     self.io_registers[address - 0xFF00] = value
                 },
                 //PPU special registers

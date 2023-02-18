@@ -6,6 +6,7 @@ mod cpu;
 mod mmu;
 mod ppu;
 mod interrupt;
+mod gamepad;
 
 #[cfg(test)]
 mod tests;
@@ -17,13 +18,13 @@ use std::fs::File;
 use std::path::Path;
 use std::time::Duration;
 use image;
-use image::{RgbaImage};
+use image::RgbaImage;
 use image::ColorType::{Rgb8, Rgba8};
-use piston_window::{Button, image as draw_image, ButtonState, Context, Event, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
+use piston_window::{Button, ButtonState, Context, Event, image as draw_image, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
 use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
 use crate::mmu::mmu::MMU;
-use crate::ppu::ppu::{PPU, PPU_mode, tile_set_to_rgba_image, dump_tile_map, dump_current_screen_tiles};
+use crate::ppu::ppu::{dump_current_screen_tiles, dump_tile_map, PPU, PPU_mode, tile_set_to_rgba_image};
 
 fn main() {
     let args: Vec<String> = env::args().collect();

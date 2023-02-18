@@ -1,4 +1,5 @@
 mod registers;
+mod timer;
 
 pub mod CPU{
     use std::fmt::{Display, Formatter};
