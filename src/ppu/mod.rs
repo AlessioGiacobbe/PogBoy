@@ -1,6 +1,6 @@
 pub mod ppu {
     use std::borrow::BorrowMut;
-    use std::fmt::{Debug, Display, Formatter};
+    use std::fmt::{Debug, Display, format, Formatter};
     use image::{Rgba, RgbaImage};
 
     const PPU_TILES_NUMBER: usize = 384;
@@ -47,6 +47,18 @@ pub mod ppu {
         Obj_size = 2,   //sprite size 0=8x8, 1=8x16
         Obj_enable = 1,    //should sprites be displayed?
         Bg_enable = 0   //hide backgorund and window
+    }
+
+    #[derive(Copy, Clone)]
+    pub struct TileRow([(u16, u16); (SCREEN_HORIZONTAL_RESOLUTION/TILE_SIZE) as usize]);
+
+    impl Debug for TileRow {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            for (tile_id, address) in self.0.iter() {
+                write!(f, "[0x{:02X} - 0x{:04X}]", tile_id, address + 0x8000).expect("");
+            }
+            write!(f, "\n")
+        }
     }
 
     impl From<u8> for PPU_mode{
@@ -113,8 +125,8 @@ pub mod ppu {
         dump
     }
 
-    pub fn dump_current_screen_tiles(mut ppu: &mut PPU) -> [[(u16, u16); 20]; (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize] {
-        let mut screen_dump = [[(0_u16, 0_u16); 20]; (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize];
+    pub fn dump_current_screen_tiles(mut ppu: &mut PPU) -> [TileRow; (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize] {
+        let mut screen_dump = [TileRow([(0,0); (SCREEN_HORIZONTAL_RESOLUTION/TILE_SIZE) as usize]); (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize];
         for screen_line in 0..SCREEN_VERTICAL_RESOLUTION/TILE_SIZE {
             screen_dump[screen_line as usize] = ppu.render_scanline(screen_line*TILE_SIZE);
         }
@@ -248,7 +260,7 @@ pub mod ppu {
             self.render_scanline(self.current_line);
         }
 
-        pub(crate) fn render_scanline(&mut self, line: u32) -> [(u16, u16); TILES_IN_VISIBLE_LINE as usize] {
+        pub(crate) fn render_scanline(&mut self, line: u32) -> TileRow {
             //the tile map contains the index of the tile to be displayed
             let background_tile_map_starting_address: usize = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x1C00 } else { 0x1800 };
 
@@ -256,7 +268,7 @@ pub mod ppu {
             let mut x_tile_offset = self.scroll_x & 8;
             let y_tile_offset = (line + self.scroll_y as u32) & 7;
 
-            let mut used_tiles: [(u16, u16); TILES_IN_VISIBLE_LINE as usize] = [(0,0); TILES_IN_VISIBLE_LINE as usize];
+            let mut used_tiles: TileRow = TileRow([(0,0); TILES_IN_VISIBLE_LINE as usize]);
             for pixel in 0..SCREEN_HORIZONTAL_RESOLUTION {
                 //viewport offsets used to retrieve right tile id from tile_map in vram
                 // each row (y) is 32 tiles (from the total 256x256 viewport), each tile is 8 pixel (hence 8*32)
@@ -264,11 +276,12 @@ pub mod ppu {
                 let x_offset = ((pixel as u8 + self.scroll_x) / 8) as usize;
 
                 let mut tile_id = self.video_ram[(background_tile_map_starting_address + y_offset + x_offset) as usize] as u16;
-                used_tiles[(pixel / 8) as usize] = (tile_id.clone(), (background_tile_map_starting_address + y_offset + x_offset) as u16);
+                used_tiles.0[(pixel / 8) as usize] = (tile_id, (background_tile_map_starting_address + y_offset + x_offset) as u16);
                 let mut tile = None;
 
                 if !self.get_lcdc_value(LCDCFlags::BG_tile_set_area) {
                     let fixed_tile_id = 128_u16.wrapping_add((tile_id as i8) as u16);
+                    used_tiles.0[(pixel / 8) as usize] = (fixed_tile_id, (background_tile_map_starting_address + y_offset + x_offset) as u16);
                     tile = Some(self.tile_set[fixed_tile_id as usize]);
                 }else {
                     tile = Some(self.tile_set[tile_id as usize]);

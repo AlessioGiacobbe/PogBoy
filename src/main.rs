@@ -101,7 +101,6 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
 
-
     'main: loop {
         let clock = cpu.step();
         let current_cpu_mode = cpu.MMU.PPU.step(clock);
@@ -133,6 +132,8 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<Key>, image_buffer_refere
                     }
                 }
                 Key::D => {
+                    println!("{}", cpu);
+
                     //dump current instruction
                     cpu.MMU.disassemble((cpu.Registers.get_item("PC") - 10) as i32, 20, cpu.Registers.get_item("PC") as i32);
 

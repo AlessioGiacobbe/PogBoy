@@ -92,7 +92,9 @@ pub mod CPU{
                         panic!("⚠️{:#04x} NOT IMPLEMENTED⚠️ {:?}", instruction.opcode, instruction)
                     },
                     _ => {
-                        //println!("STATUS AFTER EXECUTING 0x{:04X} {}", address, self);
+                        if self.logging {
+                            println!("STATUS AFTER EXECUTING 0x{:04X} {}", address, self);
+                        }
                         return self.clock
                     }
                 };
@@ -1002,7 +1004,6 @@ pub mod CPU{
         }
 
         pub(crate) fn ld_r_d8(&mut self, destination: &str, instruction: Instruction){
-            //TODO move operand finding somewhere else, this function should just receive a number
             let d8 = instruction.operands.into_iter().find(|operand| operand.name == "d8").expect("Operand d8 not found");
             self.Registers.set_item(destination, d8.value.expect("Operand d8 has no value"))
         }
