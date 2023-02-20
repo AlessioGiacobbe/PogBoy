@@ -280,7 +280,7 @@ pub mod ppu {
                 let mut tile = None;
 
                 if !self.get_lcdc_value(LCDCFlags::BG_tile_set_area) {
-                    let fixed_tile_id = 128_u16.wrapping_add((tile_id as i8) as u16);
+                    let fixed_tile_id = 256_u16.wrapping_add((tile_id as i8) as u16);
                     used_tiles.0[(pixel / 8) as usize] = (fixed_tile_id, (background_tile_map_starting_address + y_offset + x_offset) as u16);
                     tile = Some(self.tile_set[fixed_tile_id as usize]);
                 }else {
@@ -354,6 +354,8 @@ pub mod ppu {
                     self.lcd_control
                 },
                 0xFF41 => {
+                    //lol, should implement a lot more
+                    //println!("reading {:?}", self.mode as u8);
                     self.mode.clone() as u8
                 },
                 0xFF42 => {

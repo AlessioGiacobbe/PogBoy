@@ -634,13 +634,13 @@ pub mod CPU{
 
         pub(crate) fn inc_nn(&mut self, name: &str){
             let mut current_value = self.Registers.get_item(name) as i16;
-            current_value += 1;
+            current_value = current_value.wrapping_add(1);
             self.Registers.set_item(name, current_value as u16);
         }
 
         pub(crate) fn dec_nn(&mut self, name: &str){
             let mut current_value = self.Registers.get_item(name) as i16;
-            current_value -= 1;
+            current_value = current_value.wrapping_sub(1);
             self.Registers.set_item(name, current_value as u16);
         }
 
@@ -839,6 +839,10 @@ pub mod CPU{
         fn and_a_value(&mut self, to_and: i16){
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value & to_and;
+
+            if self.logging && current_value == 1 {
+                println!("hey!")
+            }
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", 0);

@@ -328,6 +328,14 @@ fn gamepad_works() {
 }
 
 #[test]
+fn set_item_works() {
+    let mut dummy_ppu = create_dummy_ppu();
+    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+    let mut cpu = CPU::new(dummy_mmu);
+    cpu.Registers.set_item("AF", 0x3);
+}
+
+#[test]
 fn xor_sets_right_flags(){
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
