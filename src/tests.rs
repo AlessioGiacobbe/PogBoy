@@ -6,6 +6,9 @@ use crate::memory::op_codes_parser::op_codes_parser::{Instruction, Operand};
 use crate::ppu::ppu::{COLORS, LCDCFlags, Tile, TilePixelValue};
 use super::*;
 
+const INTERRUPT_ENABLED_ADDRESS: i32 = 0xFFFF;
+const INTERRUPT_FLAG_ADDRESS: i32 = 0xFF0F;
+
 fn create_dummy_cartridge() -> Cartridge {
     let Cartridge: Cartridge = Cartridge {
         cartridge_info: None,
@@ -905,28 +908,41 @@ fn interrupt_checks_works(){
     cpu.check_interrupts();
     assert_eq!(cpu.MMU.interrupt_master_enabled, 1);
 
-    let interrupt_enabled_address = 0xFFFF;
-    let interrupt_flag_address = 0xFF0F;
-
-    cpu.MMU.write_byte(interrupt_enabled_address, 0xFF);
-    cpu.MMU.write_byte(interrupt_flag_address, 0x1); //1 = Vblank interrupt
+    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
+    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x1); //1 = Vblank interrupt
     cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE0);    //initial value because 0x1 should be unset
+    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE0);    //initial value because 0x1 should be unset
     assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
 
-    cpu.MMU.write_byte(interrupt_flag_address, 0x8);
+    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x8);
     cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE8);    //nothing happened because interrupt_master_enabled is still 0
+    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE8);    //nothing happened because interrupt_master_enabled is still 0
     assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
 
     cpu.MMU.interrupt_master_enabled = 1;
-    cpu.MMU.write_byte(interrupt_enabled_address, 0x0);
+    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0x0);
     cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE8);    //nothing happened because interrupt_enabled is 0 (no interrupts allowed)
+    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE8);    //nothing happened because interrupt_enabled is 0 (no interrupts allowed)
 
-    cpu.MMU.write_byte(interrupt_enabled_address, 0xFF);
+    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
     cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE0);
+    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE0);
+}
+
+
+#[test]
+fn interrupt_handler_sets_right_pc_address_and_SP(){
+    let mut dummy_ppu = create_dummy_ppu();
+    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+    let mut cpu = CPU::new(dummy_mmu);
+
+    cpu.Registers.PC = 42; //dummy value
+    cpu.MMU.interrupt_master_enabled = 1;
+    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
+    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x8); //1 = Vblank interrupt
+    cpu.check_interrupts();
+    assert_eq!(cpu.Registers.PC, 0x58);
+    assert_eq!(cpu.read_from_stack(), 42);
 }
 
 //TODO test ld_hl_sp_r8 & add_sp_r8

@@ -12,7 +12,7 @@ pub mod CPU{
     pub struct CPU<'a> {
         pub(crate) Registers: Registers,
         pub(crate) MMU: MMU<'a>,
-        pub(crate) is_stopped: bool,
+        pub(crate) is_halted: bool,
         pub(crate) clock: u32,
         pub(crate) logging: bool,
     }
@@ -48,20 +48,18 @@ pub mod CPU{
             CPU {
                 Registers,
                 MMU,
-                is_stopped: false,
+                is_halted: false,
                 clock: 0,
                 logging: false
             }
         }
 
         pub(crate) fn step(&mut self) -> u32 {
-                if self.is_stopped {
+                if self.is_halted {
                     if self.logging {
                         println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"));
-                        /*self.Registers.set_item("PC", self.Registers.get_item("PC") + 1);
-                        self.is_stopped = false;*/
                     }
-                    return 0
+                    //what to do while halted?
                 }
 
                 self.check_interrupts();
@@ -375,7 +373,7 @@ pub mod CPU{
                     0x0D => self.dec( "C"), //0x0D DEC C
                     0x0E => self.ld_r_d8( "C", instruction), //0x0E LD C,d8
                     0x0F => self.rrc_r("A"), //0x0F RRCA
-                    0x10 => self.is_stopped = true, //0x10 STOP
+                    0x10 => {}, //0x10 STOP
                     0x11 => self.ld_nn( instruction.operands, "DE"), //0x11 LD DE, d16
                     0x12 => self.ld_address_value("DE", "A"), //0x12 LD (DE),A
                     0x13 => self.inc_nn( "DE"), //0x13 INC DE
@@ -477,7 +475,7 @@ pub mod CPU{
                     0x73 => self.ld_address_value("HL", "E"), //0x73 LD (HL),E
                     0x74 => self.ld_address_value("HL", "H"), //0x74 LD (HL),H
                     0x75 => self.ld_address_value("HL", "L"), //0x75 LD (HL),L
-                    0x76 => self.is_stopped = true, //0x76 HALT
+                    0x76 => self.is_halted = true, //0x76 HALT
                     0x77 => self.ld_address_value("HL", "A"), //0x77 LD (HL),A
                     0x78 => self.ld_r_r("B", "A"), //0x78 LD A,B
                     0x79 => self.ld_r_r("C", "A"), //0x79 LD A,C
