@@ -11,7 +11,6 @@ pub mod CPU{
     pub struct CPU<'a> {
         pub(crate) Registers: Registers,
         pub(crate) MMU: MMU<'a>,
-        pub(crate) Interrupt: Interrupt,
         pub(crate) is_stopped: bool,
         pub(crate) clock: u32,
         pub(crate) logging: bool,
@@ -57,7 +56,6 @@ pub mod CPU{
             CPU {
                 Registers,
                 MMU,
-                Interrupt: Default::default(),
                 is_stopped: false,
                 clock: 0,
                 logging: false
@@ -67,7 +65,9 @@ pub mod CPU{
         pub(crate) fn step(&mut self) -> u32 {
                 if self.is_stopped {
                     if self.logging {
-                        println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"))
+                        println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"));
+                        /*self.Registers.set_item("PC", self.Registers.get_item("PC") + 1);
+                        self.is_stopped = false;*/
                     }
                     return 0
                 }
@@ -608,7 +608,7 @@ pub mod CPU{
                     0xF0 => self.ldh_a_a8(instruction), //0xF0 LDH A,(a8)
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
                     0xF2 => self.ld_a_c_pointer(), //0xF2 LD A,(C)
-                    0xF3 => self.Interrupt.enabled = false, //0xF3 DI
+                    0xF3 => self.MMU.Interrupt.enabled = false, //0xF3 DI
                     0xF4 => (), //0xF4 UNDEFINED
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
@@ -616,7 +616,7 @@ pub mod CPU{
                     0xF8 => self.ld_hl_sp_r8(instruction), //0xF8 LD HL,SP+r8
                     0xF9 => self.ld_sp_hl(), //0xF9 LD SP,HL
                     0xFA => self.ld_a_a16_pointer(instruction), //0xFA LD A,(a16)
-                    0xFB => self.Interrupt.enabled = true, //0xFB EI
+                    0xFB => self.MMU.Interrupt.enabled = true, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
                     0xFE => self.xor_a_d8(instruction), //0xFE XOR d8
@@ -1321,7 +1321,7 @@ pub mod CPU{
                     self.clock += 12;
                 }
                 if EnableInterrupts {
-                    self.Interrupt.enabled = true;
+                    self.MMU.Interrupt.enabled = true;
                 }
             }
         }

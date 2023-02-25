@@ -52,7 +52,6 @@ fn create_dummy_mmu(dummy_ppu: &mut PPU) -> MMU {
     dummy_mmu.work_ram = [3; 0x2000];
     dummy_mmu.io_registers = [4; 0x100];
     dummy_mmu.high_ram = [5; 0x80];
-    dummy_mmu.interrupt_enabled = 0x1;
     dummy_mmu
 }
 
@@ -304,7 +303,7 @@ fn or_sets_right_flags(){
 fn gamepad_works() {
     let mut dummy_gamepad = create_dummy_gamepad();
 
-    assert_eq!(dummy_gamepad.read(), 0xF);
+    assert_eq!(dummy_gamepad.read(), 0x0);
 
     dummy_gamepad.write(0x20);
     assert_eq!(dummy_gamepad.read(), 0xF);
@@ -693,7 +692,7 @@ fn memory_can_read_and_write(){
     dummy_mmu.write_byte(0xFF80, 0xFF);
     assert_eq!(dummy_mmu.read_byte(0xFF80), 0xFF);
 
-    assert_eq!(dummy_mmu.read_byte(0xFFFF), 1);
+    assert_eq!(dummy_mmu.read_byte(0xFFFF), 0);
     dummy_mmu.write_byte(0xFFFF, 0x0);
     assert_eq!(dummy_mmu.read_byte(0xFFFF), 0x0);
 
@@ -841,7 +840,7 @@ fn return_works(){
     cpu.ret(JumpCondition::Zero, true);
     assert_eq!(cpu.clock, 0xC);
     assert_eq!(cpu.Registers.get_item("PC"), 0xC0FE);
-    assert_eq!(cpu.Interrupt.enabled, true);
+    assert_eq!(cpu.MMU.Interrupt.enabled, true);
 }
 
 #[test]

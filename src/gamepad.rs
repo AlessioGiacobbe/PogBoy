@@ -1,11 +1,12 @@
 pub mod gamepad {
     use piston_window::Key;
-    use crate::gamepad::gamepad::ColumnType::{Action, Direction};
+    use crate::gamepad::gamepad::ColumnType::{Action, Direction, NotSelected};
 
     #[derive(Debug)]
     pub enum ColumnType {
         Action,
-        Direction
+        Direction,
+        NotSelected
     }
 
     #[derive(Debug)]
@@ -17,7 +18,7 @@ pub mod gamepad {
     impl Default for gamepad {
         fn default() -> Self {
             gamepad {
-                selected_column: Direction,
+                selected_column: NotSelected,
                 rows_value: (0xF, 0xF)
             }
         }
@@ -28,6 +29,7 @@ pub mod gamepad {
             match self.selected_column {
                 Direction => self.rows_value.1,
                 Action => self.rows_value.0,
+                NotSelected => 0,
                 _ => 0
             }
         }
@@ -36,7 +38,7 @@ pub mod gamepad {
             match value & 0x30 {
                 0x10 => self.selected_column = Direction,
                 0x20 => self.selected_column = Action,
-                _ => {}
+                _ => self.selected_column = NotSelected
             }
         }
 
@@ -59,7 +61,8 @@ pub mod gamepad {
         pub fn key_pressed(&mut self, key: Key) {
             match gamepad::get_column_and_bit_from_key(key) {
                 (Action, bit_mask) => self.rows_value.0 = self.rows_value.0 & !bit_mask,
-                (Direction, bit_mask) => self.rows_value.1 = self.rows_value.1 & !bit_mask
+                (Direction, bit_mask) => self.rows_value.1 = self.rows_value.1 & !bit_mask,
+                _ => {}
             };
         }
 
@@ -67,6 +70,7 @@ pub mod gamepad {
             match gamepad::get_column_and_bit_from_key(key) {
                 (Action, bit_mask) => self.rows_value.0 = self.rows_value.0 | bit_mask,
                 (Direction, bit_mask) => self.rows_value.1 = self.rows_value.1 | bit_mask,
+                _ => {}
             };
         }
     }

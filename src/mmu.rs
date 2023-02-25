@@ -5,6 +5,7 @@ pub mod mmu {
     use serde_json::Value;
     use crate::cartridge::cartridge::{Cartridge};
     use crate::ppu::ppu::PPU;
+    use crate::interrupt::interrupt::Interrupt;
     use crate::gamepad::gamepad::gamepad;
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
@@ -15,12 +16,12 @@ pub mod mmu {
         pub(crate) bios: [u8; 256],
         pub(crate) cartridge: Cartridge,
         pub(crate) PPU: &'a mut PPU,
+        pub(crate) Interrupt: Interrupt,
         pub(crate) gamepad: gamepad,
         pub(crate) external_ram: [u8; 0x2000],
         pub(crate) work_ram: [u8; 0x2000],
         pub(crate) io_registers: [u8; 0x100],
         pub(crate) high_ram: [u8; 0x80],
-        pub(crate) interrupt_enabled: u8,
         pub(crate) is_past_bios: bool,
 
         pub(crate) unprefixed_op_codes: HashMap<u8, Instruction>,
@@ -56,12 +57,12 @@ pub mod mmu {
                     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50],
                 cartridge: Cartridge.expect("Empty cartridge"),
                 PPU,
+                Interrupt: Default::default(),
                 gamepad: gamepad::default(),
                 external_ram: [0; 0x2000],
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
                 high_ram: [0; 0x80],
-                interrupt_enabled: 0,
                 is_past_bios: false,
 
                 unprefixed_op_codes,
@@ -175,6 +176,11 @@ pub mod mmu {
                 0xFF00 => {
                     return self.gamepad.read()
                 },
+                0xFF0F => {
+                    //IF Interrupt flag register
+                    //read from interrupt
+                    0
+                },
                 0xFF40 => {
                     self.PPU.read_byte(address)
                 }
@@ -200,13 +206,17 @@ pub mod mmu {
                 0xFF01..=0xFF7F => {
                     self.io_registers[address - 0xFF00]
                 },
+                0xFF85 => {
+                    //TODO
+                    0x1
+                },
                 //High RAM
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80]
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    self.interrupt_enabled as u8
+                    self.Interrupt.enabled as u8
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
@@ -270,6 +280,10 @@ pub mod mmu {
                 0xFF07 => {
 
                 },
+                0xFF0F => {
+                    //IF Interrupt flag register
+                    //write into interrupt
+                },
                 //I/O Registers
                 0xFF01..=0xFF04 => {
                     self.io_registers[address - 0xFF00] = value
@@ -294,7 +308,7 @@ pub mod mmu {
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    self.interrupt_enabled = value
+                    self.Interrupt.enabled = (value == 1)
                 },
                 _ => {
                     panic!("Address {} out of range!", address)

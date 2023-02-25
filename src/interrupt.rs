@@ -1,5 +1,6 @@
 pub mod interrupt {
 
+    #[derive(Debug)]
     pub struct Interrupt {
         pub(crate) enabled: bool
     }

@@ -98,6 +98,8 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
 
+    //cpu.MMU.disassemble(0x300, 0x400, 0x359);
+
     'main: loop {
         let clock = cpu.step();
         let current_cpu_mode = cpu.MMU.PPU.step(clock);
