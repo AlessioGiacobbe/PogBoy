@@ -6,7 +6,7 @@ pub mod mmu {
     use crate::cartridge::cartridge::{Cartridge};
     use crate::ppu::ppu::PPU;
     use crate::interrupt::interrupt::Interrupt;
-    use crate::gamepad::gamepad::gamepad;
+    use crate::io::gamepad;
     use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 0xCB;
@@ -17,7 +17,7 @@ pub mod mmu {
         pub(crate) cartridge: Cartridge,
         pub(crate) PPU: &'a mut PPU,
         pub(crate) Interrupt: Interrupt,
-        pub(crate) gamepad: gamepad,
+        pub(crate) gamepad: gamepad::gamepad::gamepad,
         pub(crate) external_ram: [u8; 0x2000],
         pub(crate) work_ram: [u8; 0x2000],
         pub(crate) io_registers: [u8; 0x100],
@@ -58,7 +58,7 @@ pub mod mmu {
                 cartridge: Cartridge.expect("Empty cartridge"),
                 PPU,
                 Interrupt: Default::default(),
-                gamepad: gamepad::default(),
+                gamepad: gamepad::gamepad::gamepad::default(),
                 external_ram: [0; 0x2000],
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
@@ -177,9 +177,7 @@ pub mod mmu {
                     return self.gamepad.read()
                 },
                 0xFF0F => {
-                    //IF Interrupt flag register
-                    //read from interrupt
-                    0
+                    return self.Interrupt.flag  //IF
                 },
                 0xFF40 => {
                     self.PPU.read_byte(address)
@@ -216,7 +214,7 @@ pub mod mmu {
                 },
                 //Master interrupt Enable register
                 0xFFFF => {
-                    self.Interrupt.master_enabled as u8
+                    self.Interrupt.enabled as u8
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
@@ -281,8 +279,7 @@ pub mod mmu {
 
                 },
                 0xFF0F => {
-                    //IF Interrupt flag register
-                    //write into interrupt
+                    self.Interrupt.flag = 0xE0 | value  // IF, most significant first 3 bits are always 1, hence 0xE0
                 },
                 //I/O Registers
                 0xFF01..=0xFF04 => {
@@ -308,7 +305,7 @@ pub mod mmu {
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    self.Interrupt.master_enabled = value
+                    self.Interrupt.enabled = value
                 },
                 _ => {
                     panic!("Address {} out of range!", address)

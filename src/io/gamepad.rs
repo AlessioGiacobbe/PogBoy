@@ -1,6 +1,6 @@
 pub mod gamepad {
     use piston_window::Key;
-    use crate::gamepad::gamepad::ColumnType::{Action, Direction, NotSelected};
+    use crate::io::gamepad::gamepad::ColumnType::{Action, Direction, NotSelected};
 
     #[derive(Debug)]
     pub enum ColumnType {
