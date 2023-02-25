@@ -1,8 +1,8 @@
-use crate::cartridge::cartridge::CartridgeInfo;
+use crate::memory::cartridge::cartridge::CartridgeInfo;
 use crate::cpu::CPU::JumpCondition;
 use crate::io::gamepad::gamepad::gamepad;
 use crate::mmu::mmu::MMU;
-use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
+use crate::memory::op_codes_parser::op_codes_parser::{Instruction, Operand};
 use crate::ppu::ppu::{COLORS, LCDCFlags, Tile, TilePixelValue};
 use super::*;
 
@@ -893,6 +893,40 @@ fn a_register_with_d8_operand_instructions_works(){
     cpu.cp_a_d8(d8_instruction);
     assert_eq!(cpu.Registers.get_item("A"), 0x0F);
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
+}
+
+#[test]
+fn interrupt_checks_works(){
+    let mut dummy_ppu = create_dummy_ppu();
+    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
+    let mut cpu = CPU::new(dummy_mmu);
+
+    cpu.MMU.interrupt_master_enabled = 1;
+    cpu.check_interrupts();
+    assert_eq!(cpu.MMU.interrupt_master_enabled, 1);
+
+    let interrupt_enabled_address = 0xFFFF;
+    let interrupt_flag_address = 0xFF0F;
+
+    cpu.MMU.write_byte(interrupt_enabled_address, 0xFF);
+    cpu.MMU.write_byte(interrupt_flag_address, 0x1); //1 = Vblank interrupt
+    cpu.check_interrupts();
+    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE0);    //initial value because 0x1 should be unset
+    assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
+
+    cpu.MMU.write_byte(interrupt_flag_address, 0x8);
+    cpu.check_interrupts();
+    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE8);    //nothing happened because interrupt_master_enabled is still 0
+    assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
+
+    cpu.MMU.interrupt_master_enabled = 1;
+    cpu.MMU.write_byte(interrupt_enabled_address, 0x0);
+    cpu.check_interrupts();
+    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE8);    //nothing happened because interrupt_enabled is 0 (no interrupts allowed)
+
+    cpu.MMU.write_byte(interrupt_enabled_address, 0xFF);
+    cpu.check_interrupts();
+    assert_eq!(cpu.MMU.read_byte(interrupt_flag_address), 0xE0);
 }
 
 //TODO test ld_hl_sp_r8 & add_sp_r8

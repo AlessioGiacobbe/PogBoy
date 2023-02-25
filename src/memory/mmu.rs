@@ -209,10 +209,6 @@ pub mod mmu {
                 0xFF01..=0xFF7F => {
                     self.io_registers[address - 0xFF00]
                 },
-                0xFF85 => {
-                    //TODO
-                    0x1
-                },
                 //High RAM
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80]
