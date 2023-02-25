@@ -214,9 +214,9 @@ pub mod mmu {
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80]
                 },
-                //Interrupt Enable register
+                //Master interrupt Enable register
                 0xFFFF => {
-                    self.Interrupt.enabled as u8
+                    self.Interrupt.master_enabled as u8
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
@@ -308,7 +308,7 @@ pub mod mmu {
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    self.Interrupt.enabled = (value == 1)
+                    self.Interrupt.master_enabled = value
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
