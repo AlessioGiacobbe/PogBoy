@@ -3,35 +3,36 @@ pub mod mmu {
     use std::fmt::{Debug};
     use std::fs;
     use serde_json::Value;
-    use crate::cartridge::cartridge::{Cartridge};
     use crate::ppu::ppu::PPU;
-    use crate::interrupt::interrupt::Interrupt;
+    use crate::memory::interrupt;
     use crate::io::gamepad;
-    use crate::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
+    use crate::memory::cartridge::cartridge::Cartridge;
+    use crate::memory::interrupt::interrupt::Interrupt;
+    use crate::memory::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 0xCB;
 
     #[derive(Debug)]
     pub struct MMU<'a> {
-        pub(crate) bios: [u8; 256],
-        pub(crate) cartridge: Cartridge,
-        pub(crate) PPU: &'a mut PPU,
-        pub(crate) Interrupt: Interrupt,
-        pub(crate) gamepad: gamepad::gamepad::gamepad,
-        pub(crate) external_ram: [u8; 0x2000],
-        pub(crate) work_ram: [u8; 0x2000],
-        pub(crate) io_registers: [u8; 0x100],
-        pub(crate) high_ram: [u8; 0x80],
-        pub(crate) is_past_bios: bool,
+        pub bios: [u8; 256],
+        pub cartridge: Cartridge,
+        pub PPU: &'a mut PPU,
+        pub Interrupt: Interrupt,
+        pub gamepad: gamepad::gamepad::gamepad,
+        pub external_ram: [u8; 0x2000],
+        pub work_ram: [u8; 0x2000],
+        pub io_registers: [u8; 0x100],
+        pub high_ram: [u8; 0x80],
+        pub is_past_bios: bool,
 
-        pub(crate) unprefixed_op_codes: HashMap<u8, Instruction>,
-        pub(crate) prefixed_op_codes: HashMap<u8, Instruction>,
+        pub unprefixed_op_codes: HashMap<u8, Instruction>,
+        pub prefixed_op_codes: HashMap<u8, Instruction>,
     }
 
 
     impl<'a> MMU<'_> {
 
-        pub(crate) fn new(Cartridge: Option<Cartridge>, PPU: &mut PPU) -> MMU {
+        pub fn new(Cartridge: Option<Cartridge>, PPU: &mut PPU) -> MMU {
             let op_codes_content = fs::read_to_string("./src/opcodes.json").expect("error reading file");
             let json_op_codes: Value = serde_json::from_str(&op_codes_content).unwrap();
 
@@ -70,7 +71,7 @@ pub mod mmu {
             }
         }
 
-        pub(crate) fn decode(&self, mut address: i32) -> (i32, Instruction) {
+        pub fn decode(&self, mut address: i32) -> (i32, Instruction) {
             let mut op_code = self.read_byte(address);
             address = address + 1;
             let instruction = {
@@ -115,7 +116,7 @@ pub mod mmu {
             (address, decoded_instruction)
         }
 
-        pub(crate) fn disassemble(&self, mut address: i32, quantity: i32, current_address: i32){
+        pub fn disassemble(&self, mut address: i32, quantity: i32, current_address: i32){
             println!();
             println!("-------------");
             for _ in 0..quantity{
@@ -130,7 +131,7 @@ pub mod mmu {
         }
 
 
-        pub(crate) fn read_byte(&self, address: i32) -> u8{
+        pub fn read_byte(&self, address: i32) -> u8{
             let address = address as usize;
             return match address {
                 //BIOS
@@ -222,7 +223,7 @@ pub mod mmu {
             }
         }
 
-        pub(crate) fn write_byte(&mut self, address: i32, value: u8){
+        pub fn write_byte(&mut self, address: i32, value: u8){
             //println!("Writing byte {} to 0x{:04x}", value, address);
 
             let address = address as usize;
@@ -313,12 +314,12 @@ pub mod mmu {
             }
         }
 
-        pub(crate) fn write_word(&mut self, address: i32, value: u16){
+        pub fn write_word(&mut self, address: i32, value: u16){
             self.write_byte(address, (value & 0x00FF) as u8);
             self.write_byte(address + 1, ((value & 0xFF00) >> 8) as u8);
         }
 
-        pub(crate) fn read_word(&mut self, address: i32) -> u16{
+        pub fn read_word(&mut self, address: i32) -> u16{
             let first_8_bits = self.read_byte(address as i32) as u16;
             let last_8_bits = self.read_byte((address + 1) as i32) as u16;
             (first_8_bits | last_8_bits << 8) as u16

@@ -6,9 +6,9 @@ mod op;
 pub mod CPU{
     use std::fmt::{Display, Formatter};
     use crate::cpu::registers::Registers::Registers;
-    use crate::interrupt::interrupt::Interrupt;
-    use crate::mmu::mmu::MMU;
-    use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
+    use crate::memory::interrupt;
+    use crate::memory::mmu::mmu::MMU;
+    use crate::memory::op_codes_parser::op_codes_parser::Instruction;
 
     pub struct CPU<'a> {
         pub(crate) Registers: Registers,

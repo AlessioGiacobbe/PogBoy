@@ -1,5 +1,6 @@
 use crate::cartridge::cartridge::CartridgeInfo;
 use crate::cpu::CPU::JumpCondition;
+use crate::io::gamepad::gamepad::gamepad;
 use crate::mmu::mmu::MMU;
 use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
 use crate::ppu::ppu::{COLORS, LCDCFlags, Tile, TilePixelValue};
@@ -38,7 +39,7 @@ pub(crate) fn create_dummy_tile() -> Tile {
     ]
 }
 
-fn create_dummy_gamepad() -> gamepad::gamepad::gamepad { gamepad::gamepad::gamepad::default() }
+fn create_dummy_gamepad() -> gamepad { gamepad::default() }
 
 fn create_dummy_ppu() -> PPU {
     PPU::new()
@@ -840,7 +841,6 @@ fn return_works(){
     cpu.ret(JumpCondition::Zero, true);
     assert_eq!(cpu.clock, 0xC);
     assert_eq!(cpu.Registers.get_item("PC"), 0xC0FE);
-    assert_eq!(cpu.MMU.Interrupt.enabled, true);
 }
 
 #[test]

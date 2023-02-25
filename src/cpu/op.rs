@@ -1,7 +1,7 @@
 pub mod op {
     use crate::cpu::CPU::{CPU};
     use crate::cpu::CPU::{JumpCondition, HalfCarryOperationsMode};
-    use crate::op_codes_parser::op_codes_parser::{Instruction, Operand};
+    use crate::memory::op_codes_parser::op_codes_parser::{Instruction, Operand};
     use crate::run_cpu;
 
     impl CPU<'_> {

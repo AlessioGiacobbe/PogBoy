@@ -7,8 +7,8 @@ pub mod cartridge {
 
     #[derive(Clone, Debug)]
     pub struct Cartridge {
-        pub(crate) cartridge_info: Option<CartridgeInfo>,
-        pub(crate) rom: Vec<u8>
+        pub cartridge_info: Option<CartridgeInfo>,
+        pub rom: Vec<u8>
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]

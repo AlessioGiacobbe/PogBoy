@@ -2,9 +2,9 @@ pub mod interrupt {
 
     #[derive(Debug)]
     pub struct Interrupt {
-        pub(crate) master_enabled: u8, //ime
-        pub(crate) enabled: u8, //ie
-        pub(crate) flag: u8 //if
+        pub master_enabled: u8, //ime
+        pub enabled: u8, //ie
+        pub flag: u8 //if
     }
 
     impl Interrupt {

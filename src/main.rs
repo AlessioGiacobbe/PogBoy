@@ -1,12 +1,9 @@
 extern crate core;
 
-mod op_codes_parser;
-mod cartridge;
 mod cpu;
-mod mmu;
 mod ppu;
-mod interrupt;
 mod io;
+mod memory;
 
 #[cfg(test)]
 mod tests;
@@ -21,9 +18,10 @@ use image;
 use image::RgbaImage;
 use image::ColorType::{Rgb8, Rgba8};
 use piston_window::{Button, ButtonState, Context, Event, image as draw_image, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
-use crate::cartridge::cartridge::{Cartridge, read_cartridge};
 use crate::cpu::CPU::CPU;
-use crate::mmu::mmu::MMU;
+use crate::memory::cartridge::cartridge::{Cartridge, CartridgeInfo, read_cartridge};
+use crate::memory::mmu;
+use crate::memory::mmu::mmu::MMU;
 use crate::ppu::ppu::{dump_current_screen_tiles, dump_tile_map, PPU, PPU_mode, tile_set_to_rgba_image};
 
 fn main() {

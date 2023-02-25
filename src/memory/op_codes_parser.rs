@@ -13,23 +13,23 @@ pub mod op_codes_parser {
 
     #[derive(Debug, Clone)]
     pub struct Operand {
-        pub(crate) immediate: bool,
-        pub(crate) name: String,
-        pub(crate) bytes: Option<u8>,
-        pub(crate) value: Option<u16>,
-        pub(crate) adjust: Option<AdjustTypes>
+        pub immediate: bool,
+        pub name: String,
+        pub bytes: Option<u8>,
+        pub value: Option<u16>,
+        pub adjust: Option<AdjustTypes>
     }
 
     #[derive(Debug, Clone)]
     pub struct Instruction {
-        pub(crate) opcode: u8,
-        pub(crate) immediate: bool,
-        pub(crate) operands: Vec<Operand>,
-        pub(crate) cycles: Vec<u32>,
-        pub(crate) bytes: u8,
-        pub(crate) mnemonic: String,
-        pub(crate) comment: Option<&'static str>,
-        pub(crate) prefixed: bool
+        pub opcode: u8,
+        pub immediate: bool,
+        pub operands: Vec<Operand>,
+        pub cycles: Vec<u32>,
+        pub bytes: u8,
+        pub mnemonic: String,
+        pub comment: Option<&'static str>,
+        pub prefixed: bool
     }
 
     impl fmt::Display for AdjustTypes {
