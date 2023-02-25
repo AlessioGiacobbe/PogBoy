@@ -6,7 +6,6 @@ mod op;
 pub mod CPU{
     use std::fmt::{Display, Formatter};
     use crate::cpu::registers::Registers::Registers;
-    use crate::memory::interrupt;
     use crate::memory::mmu::mmu::MMU;
     use crate::memory::op_codes_parser::op_codes_parser::Instruction;
 
@@ -603,7 +602,7 @@ pub mod CPU{
                     0xF0 => self.ldh_a_a8(instruction), //0xF0 LDH A,(a8)
                     0xF1 => self.pop_rr("AF"), //0xF1 POP AF
                     0xF2 => self.ld_a_c_pointer(), //0xF2 LD A,(C)
-                    0xF3 => self.MMU.Interrupt.master_enabled = 0, //0xF3 DI
+                    0xF3 => self.MMU.interrupt_master_enabled = 0, //0xF3 DI
                     0xF4 => (), //0xF4 UNDEFINED
                     0xF5 => self.push_rr("AF"), //0xF5 PUSH AF
                     0xF6 => self.or_a_n(instruction.operands),  //0xF6 OR d8
@@ -611,7 +610,7 @@ pub mod CPU{
                     0xF8 => self.ld_hl_sp_r8(instruction), //0xF8 LD HL,SP+r8
                     0xF9 => self.ld_sp_hl(), //0xF9 LD SP,HL
                     0xFA => self.ld_a_a16_pointer(instruction), //0xFA LD A,(a16)
-                    0xFB => self.MMU.Interrupt.master_enabled = 1, //0xFB EI
+                    0xFB => self.MMU.interrupt_master_enabled = 1, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
                     0xFE => self.xor_a_d8(instruction), //0xFE XOR d8

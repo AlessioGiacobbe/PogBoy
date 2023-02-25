@@ -4,10 +4,8 @@ pub mod mmu {
     use std::fs;
     use serde_json::Value;
     use crate::ppu::ppu::PPU;
-    use crate::memory::interrupt;
     use crate::io::gamepad;
     use crate::memory::cartridge::cartridge::Cartridge;
-    use crate::memory::interrupt::interrupt::Interrupt;
     use crate::memory::op_codes_parser::op_codes_parser::{get_instructions_from_json, Instruction, Operand};
 
     const INSTRUCTIONS_PREFIX: u8 = 0xCB;
@@ -17,13 +15,16 @@ pub mod mmu {
         pub bios: [u8; 256],
         pub cartridge: Cartridge,
         pub PPU: &'a mut PPU,
-        pub Interrupt: Interrupt,
         pub gamepad: gamepad::gamepad::gamepad,
         pub external_ram: [u8; 0x2000],
         pub work_ram: [u8; 0x2000],
         pub io_registers: [u8; 0x100],
         pub high_ram: [u8; 0x80],
         pub is_past_bios: bool,
+
+        pub interrupt_master_enabled: u8, //ime
+        pub interrupt_enabled: u8, //ie
+        pub interrupt_flag: u8, //if
 
         pub unprefixed_op_codes: HashMap<u8, Instruction>,
         pub prefixed_op_codes: HashMap<u8, Instruction>,
@@ -58,13 +59,16 @@ pub mod mmu {
                     0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50],
                 cartridge: Cartridge.expect("Empty cartridge"),
                 PPU,
-                Interrupt: Default::default(),
                 gamepad: gamepad::gamepad::gamepad::default(),
                 external_ram: [0; 0x2000],
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
                 high_ram: [0; 0x80],
                 is_past_bios: false,
+
+                interrupt_master_enabled: 0,
+                interrupt_enabled: 0,
+                interrupt_flag: 0,
 
                 unprefixed_op_codes,
                 prefixed_op_codes
@@ -178,7 +182,7 @@ pub mod mmu {
                     return self.gamepad.read()
                 },
                 0xFF0F => {
-                    return self.Interrupt.flag  //IF
+                    return self.interrupt_flag  //IF
                 },
                 0xFF40 => {
                     self.PPU.read_byte(address)
@@ -215,7 +219,7 @@ pub mod mmu {
                 },
                 //Master interrupt Enable register
                 0xFFFF => {
-                    self.Interrupt.enabled as u8
+                    self.interrupt_master_enabled as u8
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
@@ -280,7 +284,7 @@ pub mod mmu {
 
                 },
                 0xFF0F => {
-                    self.Interrupt.flag = 0xE0 | value  // IF, most significant first 3 bits are always 1, hence 0xE0
+                    self.interrupt_flag = 0xE0 | value  // IF, most significant first 3 bits are always 1, hence 0xE0
                 },
                 //I/O Registers
                 0xFF01..=0xFF04 => {
@@ -306,7 +310,7 @@ pub mod mmu {
                 },
                 //Interrupt Enable register
                 0xFFFF => {
-                    self.Interrupt.enabled = value
+                    self.interrupt_enabled = value
                 },
                 _ => {
                     panic!("Address {} out of range!", address)
