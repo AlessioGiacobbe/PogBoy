@@ -42,7 +42,6 @@ pub mod interrupts {
                 InterruptType::Serial => 0x58,
                 InterruptType::Joypad => 0x60
             };
-            println!("handling {}", self.Registers.PC)
         }
     }
 }

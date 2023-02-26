@@ -265,7 +265,7 @@ pub mod ppu {
             let background_tile_map_starting_address: usize = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x1C00 } else { 0x1800 };
 
             //tile offset to render tiles sub-portions
-            let mut x_tile_offset = self.scroll_x & 8;
+            let mut x_tile_offset = self.scroll_x & 7;
             let y_tile_offset = (line + self.scroll_y as u32) & 7;
 
             let mut used_tiles: TileRow = TileRow([(0,0); TILES_IN_VISIBLE_LINE as usize]);

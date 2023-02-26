@@ -95,18 +95,22 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     let mut ppu: PPU = PPU::new();
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
+    let mut previous_ppu_mode = PPU_mode::HBlank;
 
     //cpu.MMU.disassemble(0x300, 0x400, 0x359);
 
     'main: loop {
         let clock = cpu.step();
-        let current_cpu_mode = cpu.MMU.PPU.step(clock);
+        let current_ppu_mode = cpu.MMU.PPU.step(clock);
 
-        if current_cpu_mode == PPU_mode::HBlank {
+        if current_ppu_mode == PPU_mode::HBlank {
             let mut image_buffer = image_buffer_reference.lock().unwrap();
             (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
-            //let tile_set_dump = tile_set_to_rgba_image(cpu.MMU.PPU.tile_set);
-            //(*image_buffer) = tile_set_dump;
+        }
+
+        if previous_ppu_mode != current_ppu_mode {
+            if current_ppu_mode == PPU_mode::VBlank { cpu.request_interrupt(InterruptType::VBlank) }
+            previous_ppu_mode = current_ppu_mode;
         }
 
         let received = cpu_receiver.try_recv();
