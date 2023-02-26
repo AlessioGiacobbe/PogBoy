@@ -34,7 +34,7 @@ pub mod mmu {
     impl<'a> MMU<'_> {
 
         pub fn new(Cartridge: Option<Cartridge>, PPU: &mut PPU) -> MMU {
-            let op_codes_content = fs::read_to_string("./src/opcodes.json").expect("error reading file");
+            let op_codes_content = fs::read_to_string("./src/memory/opcodes.json").expect("error reading file");
             let json_op_codes: Value = serde_json::from_str(&op_codes_content).unwrap();
 
             let unprefixed_op_codes: HashMap<u8, Instruction> = get_instructions_from_json(&json_op_codes,"unprefixed");
