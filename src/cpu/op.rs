@@ -219,10 +219,6 @@ pub mod op {
             let current_value = self.Registers.get_item("A") as i16;
             let result = current_value & to_and;
 
-            if self.logging && current_value == 1 {
-                println!("hey!")
-            }
-
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", 0);
             self.Registers.set_item("h", 1);
