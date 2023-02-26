@@ -168,7 +168,7 @@ pub mod mmu {
                 },
                 //ECHO RAM (use is prohibited by Nintendo!)
                 0xE000..=0xFDFF => {
-                    panic!("tried to access echo ram")
+                    self.read_byte((address - 0x2000) as i32)  //redirect to internal ram
                 },
                 //Sprite attribute table
                 0xFE00..=0xFE9F => {
@@ -254,7 +254,7 @@ pub mod mmu {
                 },
                 //ECHO RAM (use is prohibited by Nintendo!)
                 0xE000..=0xFDFF => {
-                    panic!("tried to write echo ram")
+                    self.write_byte((address - 0x2000) as i32, value)  //redirect to internal ram
                 },
                 //Sprite attribute table
                 0xFE00..=0xFE9F => {

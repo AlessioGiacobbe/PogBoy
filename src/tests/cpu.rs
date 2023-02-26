@@ -1,100 +1,13 @@
-use crate::memory::cartridge::cartridge::CartridgeInfo;
-use crate::cpu::CPU::JumpCondition;
-use crate::io::gamepad::gamepad::gamepad;
-use crate::mmu::mmu::MMU;
-use crate::memory::op_codes_parser::op_codes_parser::{Instruction, Operand};
-use crate::ppu::ppu::{COLORS, LCDCFlags, Tile, TilePixelValue};
-use super::*;
-
-const INTERRUPT_ENABLED_ADDRESS: i32 = 0xFFFF;
-const INTERRUPT_FLAG_ADDRESS: i32 = 0xFF0F;
-
-fn create_dummy_cartridge() -> Cartridge {
-    let Cartridge: Cartridge = Cartridge {
-        cartridge_info: None,
-        rom: vec![]
-    };
-    let mut rom = vec![0; 0x108];
-    rom[0x100] = 0x00;
-    rom[0x101] = 0x3E;
-    rom[0x102] = 0x0F;
-    rom[0x103] = 0xCB;
-    rom[0x104] = 0x7C;
-    rom[0x105] = 0x21;
-    rom[0x106] = 0xFE;
-    rom[0x107] = 0xC0;
-    Cartridge {
-        cartridge_info: Cartridge.cartridge_info,
-        rom,    //NOP - LD A,0x0F
-    }
-}
-
-pub(crate) fn create_dummy_tile() -> Tile {
-    [
-        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Three],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::One, TilePixelValue::One, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::One, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero],
-        [TilePixelValue::Zero, TilePixelValue::Two, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Three, TilePixelValue::Two, TilePixelValue::Zero, TilePixelValue::Zero],
-    ]
-}
-
-fn create_dummy_gamepad() -> gamepad { gamepad::default() }
-
-fn create_dummy_ppu() -> PPU {
-    PPU::new()
-}
-
-fn create_dummy_mmu(dummy_ppu: &mut PPU) -> MMU {
-    let dummy_cartridge = create_dummy_cartridge();
-    let mut dummy_mmu = MMU::new(Some(dummy_cartridge), dummy_ppu);
-    dummy_mmu.PPU.video_ram = [1; 0x2000];
-    dummy_mmu.external_ram = [2; 0x2000];
-    dummy_mmu.work_ram = [3; 0x2000];
-    dummy_mmu.io_registers = [4; 0x100];
-    dummy_mmu.high_ram = [5; 0x80];
-    dummy_mmu
-}
-
-fn create_dummy_instruction(operand_name: &str, operand_value: u16) -> Instruction {
-    Instruction {
-        opcode: 0,
-        immediate: false,
-        operands: vec![
-            Operand {
-                immediate: false,
-                name: operand_name.parse().unwrap(),
-                bytes: None,
-                value: Some(operand_value),
-                adjust: None
-            }
-        ],
-        cycles: vec![],
-        bytes: 0,
-        mnemonic: "".to_string(),
-        comment: None,
-        prefixed: false
-    }
-}
+use crate::cpu::CPU::{CPU, JumpCondition};
+use crate::ppu::ppu::LCDCFlags;
+use crate::tests::factories::{create_dummy_instruction, create_dummy_mmu, create_dummy_ppu};
 
 #[test]
-fn decoder_can_parse_correctly(){
+fn set_item_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let (next_address, nop_instruction) = dummy_mmu.decode(0x100);
-    let (next_address, ld_a_d8_instruction) = dummy_mmu.decode(next_address);
-    let (next_address, bit_7_h) = dummy_mmu.decode(next_address);  //CB PREFIXED
-    let (_, ld_hl_d16_instruction) = dummy_mmu.decode(next_address);
-    println!("{} NOP INSTRUCT2iO", nop_instruction);
-    assert_eq!(nop_instruction.mnemonic, "NOP");
-    let d8 = ld_a_d8_instruction.operands.into_iter().find(|operand| operand.name == "d8").unwrap();
-    assert_eq!(d8.value.unwrap(), 0x0F);
-    assert_eq!(bit_7_h.prefixed, true);
-    let d16 = ld_hl_d16_instruction.operands.into_iter().find(|operand| operand.name == "d16").unwrap();
-    assert_eq!(d16.value.unwrap(), 0xC0FE);
+    let mut cpu = CPU::new(dummy_mmu);
+    cpu.Registers.set_item("AF", 0x3);
 }
 
 #[test]
@@ -128,41 +41,6 @@ fn add_sets_right_flags() {
     assert_eq!(cpu.Registers.get_item("A"), 0x3);
 }
 
-
-
-#[test]
-fn tiles_are_generated_correctly(){
-    let mut dummy_ppu = create_dummy_ppu();
-    let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-
-    let dummy_tile: Tile = create_dummy_tile();
-
-    //write dummy tile as bytes into tileset position 0
-    dummy_mmu.write_byte(0x8000, 0x3D);
-    dummy_mmu.write_byte(0x8001, 0x7F);
-    dummy_mmu.write_byte(0x8002, 0x42);
-    dummy_mmu.write_byte(0x8003, 0x42);
-    dummy_mmu.write_byte(0x8004, 0x42);
-    dummy_mmu.write_byte(0x8005, 0x42);
-    dummy_mmu.write_byte(0x8006, 0x42);
-    dummy_mmu.write_byte(0x8007, 0x42);
-    dummy_mmu.write_byte(0x8008, 0x7E);
-    dummy_mmu.write_byte(0x8009, 0x5E);
-    dummy_mmu.write_byte(0x800A, 0x7E);
-    dummy_mmu.write_byte(0x800B, 0x0A);
-    dummy_mmu.write_byte(0x800C, 0x7C);
-    dummy_mmu.write_byte(0x800D, 0x56);
-    dummy_mmu.write_byte(0x800E, 0x38);
-    dummy_mmu.write_byte(0x800F, 0x7C);
-
-    let tile = dummy_mmu.PPU.tile_set[0];
-
-    for (tile_row, _) in tile.iter().enumerate() {
-        for (tile_column, _) in tile[tile_row].iter().enumerate() {
-            assert_eq!(tile[tile_row][tile_column], dummy_tile[tile_row][tile_column])
-        }
-    }
-}
 
 #[test]
 fn adc_sets_right_flags(){
@@ -303,40 +181,6 @@ fn or_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("A"), 3);
 }
 
-#[test]
-fn gamepad_works() {
-    let mut dummy_gamepad = create_dummy_gamepad();
-
-    assert_eq!(dummy_gamepad.read(), 0x0);
-
-    dummy_gamepad.write(0x20);
-    assert_eq!(dummy_gamepad.read(), 0xF);
-
-    dummy_gamepad.write(0x20);
-    dummy_gamepad.key_pressed(Key::Z);
-    assert_eq!(dummy_gamepad.read(), 0b1110);
-
-    dummy_gamepad.key_released(Key::Z);
-    assert_eq!(dummy_gamepad.read(), 0xF);
-
-    dummy_gamepad.key_pressed(Key::Z);
-    dummy_gamepad.key_pressed(Key::X);
-    assert_eq!(dummy_gamepad.read(), 0b1100);
-
-    dummy_gamepad.write(0x10);
-    dummy_gamepad.key_pressed(Key::Down);
-    assert_eq!(dummy_gamepad.read(), 0b0111);
-    dummy_gamepad.key_pressed(Key::Right);
-    assert_eq!(dummy_gamepad.read(), 0b0110);
-}
-
-#[test]
-fn set_item_works() {
-    let mut dummy_ppu = create_dummy_ppu();
-    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let mut cpu = CPU::new(dummy_mmu);
-    cpu.Registers.set_item("AF", 0x3);
-}
 
 #[test]
 fn xor_sets_right_flags(){
@@ -670,55 +514,6 @@ fn add_hl_nn_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("h"), 1);
 }
 
-#[test]
-fn memory_can_read_and_write(){
-    let mut dummy_ppu = create_dummy_ppu();
-    let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-
-    assert_eq!(dummy_mmu.read_byte(0x0), 0x31);
-    dummy_mmu.write_byte(0x0, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0x0), 0xFF);
-
-    //TODO implement PPU memory tests
-    assert_eq!(dummy_mmu.read_byte(0x8000), 0x1);
-    dummy_mmu.write_byte(0x8000, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0x8000), 0xFF);
-
-    assert_eq!(dummy_mmu.read_byte(0xA000), 0x2);
-    dummy_mmu.write_byte(0xA000, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0xA000), 0xFF);
-
-    assert_eq!(dummy_mmu.read_byte(0xC000), 0x3);
-    dummy_mmu.write_byte(0xC000, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0xC000), 0xFF);
-
-    assert_eq!(dummy_mmu.read_byte(0xFF80), 0x5);
-    dummy_mmu.write_byte(0xFF80, 0xFF);
-    assert_eq!(dummy_mmu.read_byte(0xFF80), 0xFF);
-
-    assert_eq!(dummy_mmu.read_byte(0xFFFF), 0);
-    dummy_mmu.write_byte(0xFFFF, 0x0);
-    assert_eq!(dummy_mmu.read_byte(0xFFFF), 0x0);
-
-    dummy_mmu.write_word(0xA000, 0xC0FE);
-    assert_eq!(dummy_mmu.read_word(0xA000), 0xC0FE);
-}
-
-#[test]
-fn color_from_bg_palette_is_loaded_correctly(){
-    let mut dummy_ppu = create_dummy_ppu();
-    let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let ppu_colors = COLORS;
-
-    dummy_mmu.write_byte(0xFF47, 0xFF);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
-
-    dummy_mmu.write_byte(0xFF47, 0x1B); //0b00-01-10-11
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::One), ppu_colors[2]);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Two), ppu_colors[1]);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Three), ppu_colors[0]);
-}
 
 #[test]
 fn ld_hl_works(){
@@ -775,25 +570,6 @@ fn memory_pointer_ops_works(){
     assert_eq!(cpu.MMU.read_word(0xC000), 0xC0FE);
 }
 
-#[test]
-fn push_and_pop_works(){
-    let mut dummy_ppu = create_dummy_ppu();
-    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let mut cpu = CPU::new(dummy_mmu);
-
-    assert_eq!(cpu.Registers.get_item("SP"), 0xFFFE);
-    cpu.write_to_stack(0xC0FE);
-    assert_eq!(cpu.Registers.get_item("SP"), 0xFFFE - 2);
-    assert_eq!(cpu.read_from_stack(), 0xC0FE);
-
-    cpu.write_to_stack(0xFEAB);
-    assert_eq!(cpu.read_from_stack(), 0xFEAB);
-
-    cpu.Registers.set_item("BC", 0xFFEE);
-    cpu.push_rr("BC");
-    cpu.pop_rr("DE");
-    assert_eq!(cpu.Registers.get_item("DE"), 0xFFEE)
-}
 
 #[test]
 fn rst_works() {
@@ -896,53 +672,6 @@ fn a_register_with_d8_operand_instructions_works(){
     cpu.cp_a_d8(d8_instruction);
     assert_eq!(cpu.Registers.get_item("A"), 0x0F);
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
-}
-
-#[test]
-fn interrupt_checks_works(){
-    let mut dummy_ppu = create_dummy_ppu();
-    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let mut cpu = CPU::new(dummy_mmu);
-
-    cpu.MMU.interrupt_master_enabled = 1;
-    cpu.check_interrupts();
-    assert_eq!(cpu.MMU.interrupt_master_enabled, 1);
-
-    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
-    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x1); //1 = Vblank interrupt
-    cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE0);    //initial value because 0x1 should be unset
-    assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
-
-    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x8);
-    cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE8);    //nothing happened because interrupt_master_enabled is still 0
-    assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
-
-    cpu.MMU.interrupt_master_enabled = 1;
-    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0x0);
-    cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE8);    //nothing happened because interrupt_enabled is 0 (no interrupts allowed)
-
-    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
-    cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE0);
-}
-
-
-#[test]
-fn interrupt_handler_sets_right_pc_address_and_SP(){
-    let mut dummy_ppu = create_dummy_ppu();
-    let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
-    let mut cpu = CPU::new(dummy_mmu);
-
-    cpu.Registers.PC = 42; //dummy value
-    cpu.MMU.interrupt_master_enabled = 1;
-    cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
-    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x8); //1 = Vblank interrupt
-    cpu.check_interrupts();
-    assert_eq!(cpu.Registers.PC, 0x58);
-    assert_eq!(cpu.read_from_stack(), 42);
 }
 
 //TODO test ld_hl_sp_r8 & add_sp_r8
