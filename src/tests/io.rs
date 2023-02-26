@@ -1,5 +1,5 @@
 use piston_window::Key;
-use crate::cpu::CPU::CPU;
+use crate::cpu::CPU::{CPU, InterruptType};
 use crate::tests::factories::{create_dummy_gamepad, create_dummy_mmu, create_dummy_ppu};
 
 const INTERRUPT_ENABLED_ADDRESS: i32 = 0xFFFF;
@@ -44,12 +44,12 @@ fn interrupt_checks_works(){
     assert_eq!(cpu.MMU.interrupt_master_enabled, 1);
 
     cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
-    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x1); //1 = Vblank interrupt
+    cpu.request_interrupt(InterruptType::VBlank);
     cpu.check_interrupts();
-    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE0);    //initial value because 0x1 should be unset
+    assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE0);    //initial value because 0x1 should be unset after interrupt handling
     assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
 
-    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x8);
+    cpu.request_interrupt(InterruptType::Serial);
     cpu.check_interrupts();
     assert_eq!(cpu.MMU.read_byte(INTERRUPT_FLAG_ADDRESS), 0xE8);    //nothing happened because interrupt_master_enabled is still 0
     assert_eq!(cpu.MMU.interrupt_master_enabled, 0);
@@ -74,7 +74,7 @@ fn interrupt_handler_sets_right_pc_address_and_SP(){
     cpu.Registers.PC = 42; //dummy value
     cpu.MMU.interrupt_master_enabled = 1;
     cpu.MMU.write_byte(INTERRUPT_ENABLED_ADDRESS, 0xFF);
-    cpu.MMU.write_byte(INTERRUPT_FLAG_ADDRESS, 0x8); //1 = Vblank interrupt
+    cpu.request_interrupt(InterruptType::Serial);
     cpu.check_interrupts();
     assert_eq!(cpu.Registers.PC, 0x58);
     assert_eq!(cpu.read_from_stack(), 42);

@@ -68,7 +68,7 @@ pub mod mmu {
 
                 interrupt_master_enabled: 0,
                 interrupt_enabled: 0,
-                interrupt_flag: 0,
+                interrupt_flag: 0xE0,
 
                 unprefixed_op_codes,
                 prefixed_op_codes
@@ -213,9 +213,9 @@ pub mod mmu {
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80]
                 },
-                //Master interrupt Enable register
+                //interrupt Enable register
                 0xFFFF => {
-                    self.interrupt_master_enabled as u8
+                    self.interrupt_enabled as u8
                 },
                 _ => {
                     panic!("Address {} out of range!", address)

@@ -1,20 +1,13 @@
-
-
 pub mod interrupts {
-    use crate::cpu::CPU::CPU;
+    use crate::cpu::CPU::{CPU, InterruptType};
     use strum::IntoEnumIterator;
-    use strum_macros::EnumIter;
 
-    #[derive(Debug, EnumIter)]
-    pub enum InterruptType {
-     VBlank = 1,
-     LCD_STAT = 2,
-     Timer = 4,
-     Serial = 8,
-     Joypad = 16,
-    }
 
     impl CPU<'_> {
+        pub(crate) fn request_interrupt(&mut self, interrupt_type: InterruptType) {
+            self.MMU.interrupt_flag = self.MMU.interrupt_flag | (interrupt_type as u8)
+        }
+
         pub(crate) fn check_interrupts(&mut self) {
             let master_interrupts_enabled = self.MMU.interrupt_master_enabled != 0;
             let interrupts_enabled = self.MMU.interrupt_enabled != 0;
@@ -49,6 +42,7 @@ pub mod interrupts {
                 InterruptType::Serial => 0x58,
                 InterruptType::Joypad => 0x60
             };
+            println!("handling {}", self.Registers.PC)
         }
     }
 }

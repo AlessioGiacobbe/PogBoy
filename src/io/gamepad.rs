@@ -64,6 +64,7 @@ pub mod gamepad {
                 (Direction, bit_mask) => self.rows_value.1 = self.rows_value.1 & !bit_mask,
                 _ => {}
             };
+
         }
 
         pub fn key_released(&mut self, key: Key) {

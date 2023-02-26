@@ -8,6 +8,7 @@ pub mod CPU{
     use crate::cpu::registers::Registers::Registers;
     use crate::memory::mmu::mmu::MMU;
     use crate::memory::op_codes_parser::op_codes_parser::Instruction;
+    use strum_macros::EnumIter;
 
     pub struct CPU<'a> {
         pub(crate) Registers: Registers,
@@ -17,6 +18,14 @@ pub mod CPU{
         pub(crate) logging: bool,
     }
 
+    #[derive(Debug, EnumIter)]
+    pub enum InterruptType {
+        VBlank = 1,
+        LCD_STAT = 2,
+        Timer = 4,
+        Serial = 8,
+        Joypad = 16,
+    }
 
     #[derive(PartialEq)]
     pub enum JumpCondition {

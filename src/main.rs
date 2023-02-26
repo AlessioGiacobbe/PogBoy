@@ -19,6 +19,7 @@ use image::RgbaImage;
 use image::ColorType::{Rgb8, Rgba8};
 use piston_window::{Button, ButtonState, Context, Event, image as draw_image, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings};
 use crate::cpu::CPU::CPU;
+use crate::cpu::CPU::InterruptType;
 use crate::memory::cartridge::cartridge::{Cartridge, CartridgeInfo, read_cartridge};
 use crate::memory::mmu;
 use crate::memory::mmu::mmu::MMU;
@@ -142,7 +143,6 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
                             //dump lcdc status
                             cpu.MMU.PPU.print_lcdc_status();
 
-                            //todo dump tile maps (at 0x9800 and 0x9C00)
                             let first_tile_map = dump_tile_map(cpu.MMU.PPU.video_ram, 0x1800);
                             fs::write("tm1.txt", first_tile_map).expect("Unable to write file");
 
@@ -151,9 +151,13 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
 
                             let current_screen_tiles = format!("{:?}", dump_current_screen_tiles(cpu.MMU.PPU));
                             fs::write("current_screen_tiles.txt", current_screen_tiles).expect("Unable to write file");
+
+                            //dump interrupt related flags
+                            println!("Interrupts: IF: {:02X}, IE: {:02X}, IME: {:02X}", cpu.MMU.interrupt_flag, cpu.MMU.interrupt_enabled, cpu.MMU.interrupt_master_enabled)
                         },
                         Key::Down | Key::Up | Key::Left | Key::Right | Key::Space | Key::Comma | Key::X | Key::Z => {
-                            cpu.MMU.gamepad.key_pressed(key)
+                            cpu.MMU.gamepad.key_pressed(key);
+                            cpu.request_interrupt(InterruptType::Joypad);
                         },
                         _ => {}
                     }
