@@ -26,6 +26,11 @@ pub mod mmu {
         pub interrupt_enabled: u8, //ie
         pub interrupt_flag: u8, //if
 
+        pub timer_divider: u8,  //div
+        pub timer_counter: u8,  //tima
+        pub timer_modulo: u8, //tma
+        pub timer_control: u8, //tac
+
         pub unprefixed_op_codes: HashMap<u8, Instruction>,
         pub prefixed_op_codes: HashMap<u8, Instruction>,
     }
@@ -181,32 +186,34 @@ pub mod mmu {
                 0xFF00 => {
                     return self.gamepad.read()
                 },
+                //Div - Divider Registry (for timer)
+                0xFF04 => {
+                    self.timer_divider
+                },
+                //TIMA - timer counter
+                0xFF05 => {
+                    self.timer_counter
+                },
+                //TMA - timer modulo
+                0xFF06 => {
+                    self.timer_modulo
+                },
+                //TAC - timer control
+                0xFF07 => {
+                    self.timer_control
+                },
                 0xFF0F => {
                     return self.interrupt_flag  //IF
                 },
-                0xFF40 => {
-                    self.PPU.read_byte(address)
-                }
-                0xFF41 => {
-                    self.PPU.read_byte(address)
-                },
-                0xFF42 => {
-                    self.PPU.read_byte(address)
-                },
-                0xFF43 => {
-                    self.PPU.read_byte(address)
-                },
-                0xFF44 => {
-                    self.PPU.read_byte(address)
-                },
-                0xFF47 => {
+                //PPU special registers
+                0xFF40..=0xFF4F => {
                     self.PPU.read_byte(address)
                 },
                 0xFF50 => {
                     self.is_past_bios as u8
                 },
                 //I/O Registers
-                0xFF01..=0xFF7F => {
+                0xFF00..=0xFF7F => {
                     self.io_registers[address - 0xFF00]
                 },
                 //High RAM
@@ -267,28 +274,24 @@ pub mod mmu {
                 0xFF00 => {
                     self.gamepad.write(value)
                 },
-                //timer
+                //Div - Divider Registry (for timer)
+                0xFF04 => {
+                    self.timer_divider = value;
+                },
+                //TIMA - timer counter
                 0xFF05 => {
-
+                    self.timer_counter = value;
                 },
-                //timer
+                //TMA - timer modulo
                 0xFF06 => {
-
+                    self.timer_modulo = value;
                 },
-                //timer controller
+                //TAC - timer control
                 0xFF07 => {
-
+                    self.timer_control = value;
                 },
                 0xFF0F => {
                     self.interrupt_flag = 0xE0 | value  // IF, most significant first 3 bits are always 1, hence 0xE0
-                },
-                //I/O Registers
-                0xFF01..=0xFF04 => {
-                    self.io_registers[address - 0xFF00] = value
-                },
-                //I/O Registers
-                0xFF08..=0xFF3F => {
-                    self.io_registers[address - 0xFF00] = value
                 },
                 //PPU special registers
                 0xFF40..=0xFF4F => {
@@ -297,7 +300,7 @@ pub mod mmu {
                 0xFF50 => {
                     self.is_past_bios = value == 1;
                 },
-                0xFF51..=0xFF7F => {
+                0xFF00..=0xFF7F => {
                     self.io_registers[address - 0xFF00] = value
                 }
                 //High RAM

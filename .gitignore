@@ -20,6 +20,7 @@ Cargo.lock
 *.txt
 /src/*.gb
 /src/roms/*.gb
+/src/roms/tests/*.gb
 /src/*.jpg
 /src/*.png
 /src/assets/*.ttf
