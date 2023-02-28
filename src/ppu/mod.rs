@@ -161,15 +161,17 @@ pub mod ppu {
     }
 
     pub(crate) const COLORS: [[u8; 4]; 4] = [ //cool red palette, colors should be based on palette map
-        [124, 63, 88, 255], //#7c3f58
-        [235, 107, 111, 255], //#eb6b6f
-        [249, 168, 117, 255], //#f9a875
-        [255, 246, 211, 255], //#fff6d3
+        [124, 63, 88, 255], //#7c3f58           [248, 227, 196, 255],
+        [235, 107, 111, 255], //#eb6b6f         [204, 52, 149, 255],
+        [249, 168, 117, 255], //#f9a875        [107, 31, 177, 255],
+        [255, 246, 211, 255], //#fff6d3        [11, 6, 48, 255],
+
     ];
 
     pub struct PPU {
         clock: u32,
-        current_line: u32,
+        current_line: u32,  //ly
+        current_line_compare: u32, //lyc
         pub(crate) mode: PPU_mode,
         pub(crate) lcd_control: u8,
         scroll_y: u8,
@@ -186,13 +188,12 @@ pub mod ppu {
         }
     }
 
-
     impl PPU {
-
         pub(crate) fn new() -> PPU {
            PPU {
                video_ram: [0; 0x2000],
                current_line: 0,
+               current_line_compare: 0,
                clock: 0,
                mode: PPU_mode::HBlank,
                tile_set: [create_empty_tile(); PPU_TILES_NUMBER],

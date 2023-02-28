@@ -26,6 +26,8 @@ pub mod mmu {
         pub interrupt_enabled: u8, //ie
         pub interrupt_flag: u8, //if
 
+        pub timer_divider_clock: i32,   //div counter
+        pub timer_clock: i32,   //tima counter
         pub timer_divider: u8,  //div
         pub timer_counter: u8,  //tima
         pub timer_modulo: u8, //tma
@@ -74,6 +76,13 @@ pub mod mmu {
                 interrupt_master_enabled: 0,
                 interrupt_enabled: 0,
                 interrupt_flag: 0xE0,
+
+                timer_clock: 0,
+                timer_divider_clock: 0,
+                timer_divider: 0,
+                timer_counter: 0,
+                timer_modulo: 0,
+                timer_control: 0,
 
                 unprefixed_op_codes,
                 prefixed_op_codes
