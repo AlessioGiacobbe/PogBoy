@@ -23,7 +23,7 @@ use crate::cpu::CPU::InterruptType;
 use crate::memory::cartridge::cartridge::{Cartridge, CartridgeInfo, read_cartridge};
 use crate::memory::mmu;
 use crate::memory::mmu::mmu::MMU;
-use crate::ppu::ppu::{dump_current_screen_tiles, dump_tile_map, PPU, PPU_mode, tile_set_to_rgba_image};
+use crate::ppu::ppu::{dump_current_screen_tiles, dump_tile_map, PPU, PpuMode, tile_set_to_rgba_image};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -95,22 +95,24 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     let mut ppu: PPU = PPU::new();
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);
     let mut cpu: CPU = CPU::new(mmu);
-    let mut previous_ppu_mode = PPU_mode::HBlank;
 
     //cpu.MMU.disassemble(0x300, 0x400, 0x359);
 
     'main: loop {
         let clock = cpu.step();
-        let current_ppu_mode = cpu.MMU.PPU.step(clock);
+        let (current_ppu_mode, should_rise_vblank_interrupt, should_rise_stat_interrupt) = cpu.MMU.PPU.step(clock);
 
-        if current_ppu_mode == PPU_mode::HBlank {
+        if current_ppu_mode == PpuMode::HBlank {
             let mut image_buffer = image_buffer_reference.lock().unwrap();
             (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
         }
 
-        if previous_ppu_mode != current_ppu_mode {
-            if current_ppu_mode == PPU_mode::VBlank { cpu.request_interrupt(InterruptType::VBlank) }
-            previous_ppu_mode = current_ppu_mode;
+        if should_rise_vblank_interrupt {
+            cpu.request_interrupt(InterruptType::VBlank)
+        }
+
+        if should_rise_stat_interrupt {
+            cpu.request_interrupt(InterruptType::LCD_STAT)
         }
 
         let received = cpu_receiver.try_recv();

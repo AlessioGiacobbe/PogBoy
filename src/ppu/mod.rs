@@ -31,11 +31,19 @@ pub mod ppu {
     }
 
     #[derive(Debug, Clone, PartialEq)]
-    pub(crate) enum PPU_mode {
+    pub(crate) enum PpuMode {
         HBlank = 0,
         VBlank = 1,
         OAM = 2,
         VRAM = 3
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub(crate) enum StatInterruptType {
+        HBlank = 3,
+        VBlank = 4,
+        OAM = 5,
+        LYC_EQUALS_LY = 6
     }
 
     pub(crate) enum LCDCFlags {
@@ -61,14 +69,14 @@ pub mod ppu {
         }
     }
 
-    impl From<u8> for PPU_mode{
+    impl From<u8> for PpuMode{
         fn from(value: u8) -> Self {
             match value {
-                0 => PPU_mode::HBlank,
-                1 => PPU_mode::VBlank,
-                2 => PPU_mode::OAM,
-                3 => PPU_mode::VRAM,
-                _ => PPU_mode::HBlank
+                0 => PpuMode::HBlank,
+                1 => PpuMode::VBlank,
+                2 => PpuMode::OAM,
+                3 => PpuMode::VRAM,
+                _ => PpuMode::HBlank
             }
         }
     }
@@ -172,7 +180,7 @@ pub mod ppu {
         clock: u32,
         current_line: u32,  //ly
         current_line_compare: u32, //lyc
-        pub(crate) mode: PPU_mode,
+        pub(crate) lcd_status: u8,
         pub(crate) lcd_control: u8,
         scroll_y: u8,
         scroll_x: u8,
@@ -184,7 +192,7 @@ pub mod ppu {
 
     impl Debug for PPU {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            write!(f, "PPU - mode : {:?} - clock : {}", self.mode, self.clock)
+            write!(f, "PPU - mode : {:?} - clock : {}", 0, self.clock)
         }
     }
 
@@ -195,7 +203,7 @@ pub mod ppu {
                current_line: 0,
                current_line_compare: 0,
                clock: 0,
-               mode: PPU_mode::HBlank,
+               lcd_status: 0,
                tile_set: [create_empty_tile(); PPU_TILES_NUMBER],
                lcd_control: 0,
                scroll_y: 0,
@@ -205,56 +213,84 @@ pub mod ppu {
            }
         }
 
-        pub(crate) fn step(&mut self, clock: u32) -> PPU_mode {
-            self.clock += clock;
+        pub(crate) fn get_current_mode(&self) -> PpuMode {
+            return PpuMode::try_from((self.lcd_status & 0b11)).unwrap()
+        }
 
-            match self.mode {
+        pub(crate) fn set_current_mode(&mut self, ppu_mode: PpuMode) {
+            self.lcd_status = (self.lcd_control & 0b00) | ppu_mode as u8;
+        }
+
+        fn should_try_to_request_lyc_ly_interrupt(&mut self) -> bool {
+            if self.current_line == self.current_line_compare {
+                return self.should_rise_lcdc_interrupt(StatInterruptType::LYC_EQUALS_LY);
+            }
+            return false;
+        }
+
+        fn should_rise_lcdc_interrupt(&mut self, stat_interrupt_type: StatInterruptType) -> bool {
+            //check if stat interrupt type is enabled in lcd_status
+            return (self.lcd_status & (1 << stat_interrupt_type as u8)) != 0
+        }
+
+        pub(crate) fn step(&mut self, clock: u32) -> (PpuMode, bool, bool) {
+            self.clock += clock;
+            let (mut should_rise_vblank_interrupt, mut should_rise_stat_interrupt) = (false, false);
+
+            match self.get_current_mode() {
                 //horizontal blanking
-                PPU_mode::HBlank => {
+                PpuMode::HBlank => {
                     if self.clock >= HBLANK_DURATION_DOTS {
                         self.clock = 0;
                         self.current_line += 1;
 
                         if self.current_line == (VISIBLE_SCANLINES - 1) as u32 {
                             //last line, go to v blank
-                            self.mode = PPU_mode::VBlank;
+                            should_rise_vblank_interrupt = true;
+                            self.set_current_mode(PpuMode::VBlank);
+                            should_rise_stat_interrupt = self.should_rise_lcdc_interrupt(StatInterruptType::VBlank)
                         } else {
                             //scan another line
-                            self.mode = PPU_mode::OAM;
+                            self.set_current_mode(PpuMode::OAM);
                         }
 
+                        should_rise_stat_interrupt = self.should_rise_lcdc_interrupt(StatInterruptType::OAM);
+                        should_rise_stat_interrupt = self.should_try_to_request_lyc_ly_interrupt();
                     }
                 },
                 //vertical blanking
-                PPU_mode::VBlank => {
+                PpuMode::VBlank => {
                     if self.clock >= VBLANK_DURATION_DOTS {
                         self.clock = 0;
                         self.current_line += 1;
 
                         if self.current_line > TOTAL_SCANLINES {
-                            self.mode = PPU_mode::OAM;
+                            self.set_current_mode(PpuMode::OAM);
+                            should_rise_stat_interrupt = self.should_rise_lcdc_interrupt(StatInterruptType::OAM);
                             self.current_line = 0;
                         }
                     }
+                    should_rise_stat_interrupt = self.should_try_to_request_lyc_ly_interrupt();
                 },
                 // OAM read
-                PPU_mode::OAM => {
+                PpuMode::OAM => {
                     if self.clock >= OAM_DURATION_DOTS {
                         self.clock = 0;
-                        self.mode = PPU_mode::VRAM;
+                        self.set_current_mode(PpuMode::VRAM);
                     }
                 },
                 // VRAM read and complete line scan
-                PPU_mode::VRAM => {
+                PpuMode::VRAM => {
                     if self.clock >= VRAM_DURATION_DOTS {
                         self.clock = 0;
                         self.render_current_line();
-                        self.mode = PPU_mode::HBlank;
+                        self.set_current_mode(PpuMode::HBlank);
+                        should_rise_stat_interrupt = self.should_rise_lcdc_interrupt(StatInterruptType::HBlank)
                     }
                 },
                 _ => {}
             }
-            return self.mode.clone()
+            return (self.get_current_mode(), should_rise_vblank_interrupt, should_rise_stat_interrupt);
         }
 
         pub(crate) fn render_current_line(&mut self) {
@@ -355,9 +391,10 @@ pub mod ppu {
                     self.lcd_control
                 },
                 0xFF41 => {
-                    //lol, should implement a lot more
-                    //println!("reading {:?}", self.mode as u8);
-                    self.mode.clone() as u8
+                    if self.current_line == self.current_line_compare {
+                        return self.lcd_status | 1 << 2
+                    }
+                    self.lcd_status
                 },
                 0xFF42 => {
                     self.scroll_y
@@ -387,7 +424,7 @@ pub mod ppu {
                     self.lcd_control = value;
                 },
                 0xFF41 => {
-                    self.mode = PPU_mode::try_from(value).unwrap()
+                    self.lcd_status = value;
                 },
                 0xFF42 => {
                     self.scroll_y = value;  
