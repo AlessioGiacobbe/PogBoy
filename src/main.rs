@@ -10,7 +10,7 @@ mod tests;
 
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
-use std::{env, fs, thread};
+use std::{env, fs, thread, time};
 use std::fs::File;
 use std::path::Path;
 use std::time::Duration;
@@ -97,14 +97,22 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     let mut cpu: CPU = CPU::new(mmu);
 
     //cpu.MMU.disassemble(0x300, 0x400, 0x359);
+    let mut cycles_delta = 0;
+    let cycles_per_frame = 69905 * 4;
+
 
     'main: loop {
-        let clock = cpu.step();
+        let (clock, clock_delta) = cpu.step();
         let (current_ppu_mode, should_rise_vblank_interrupt, should_rise_stat_interrupt) = cpu.MMU.PPU.step(clock);
 
-        if current_ppu_mode == PpuMode::HBlank {
+        cycles_delta += clock_delta;
+
+        if cycles_delta >= cycles_per_frame {
             let mut image_buffer = image_buffer_reference.lock().unwrap();
             (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
+
+            thread::sleep(time::Duration::from_micros(16670));
+            cycles_delta -= cycles_per_frame;
         }
 
         if should_rise_vblank_interrupt {

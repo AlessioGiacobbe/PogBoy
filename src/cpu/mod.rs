@@ -63,7 +63,7 @@ pub mod CPU{
             }
         }
 
-        pub(crate) fn step(&mut self) -> u32 {
+        pub(crate) fn step(&mut self) -> (u32, u32) {
                 if self.is_halted {
                     if self.logging {
                         println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"));
@@ -78,7 +78,9 @@ pub mod CPU{
 
                 let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
-                self.clock += if instruction.cycles.len() > 2 { instruction.cycles[1] } else { instruction.cycles[0] };
+
+                let clock_increment = if instruction.cycles.len() > 2 { instruction.cycles[1] } else { instruction.cycles[0] };
+                self.clock += clock_increment;
 
                 if self.logging {
                     println!("0x{:02X} Executing {} (op code 0x{:02X})", address, instruction, instruction.opcode);
@@ -97,7 +99,7 @@ pub mod CPU{
                         if self.logging {
                             println!("STATUS AFTER EXECUTING 0x{:04X} {}", address, self);
                         }
-                        return self.clock
+                        return (self.clock, clock_increment)
                     }
                 };
         }
