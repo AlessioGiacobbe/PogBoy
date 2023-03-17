@@ -622,7 +622,7 @@ pub mod CPU{
                     0xFB => self.MMU.interrupt_master_enabled = 1, //0xFB EI
                     0xFC => (), //0xFC UNDEFINED
                     0xFD => (), //0xFD UNDEFINED
-                    0xFE => self.xor_a_d8(instruction), //0xFE XOR d8
+                    0xFE => self.cp_a_d8(instruction), //0xFE CP d8
                     0xFF => self.rst(0x38), //0xFF RST 38H
                     _ => return Err(instruction)
                 }
