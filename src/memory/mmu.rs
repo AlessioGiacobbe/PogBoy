@@ -283,6 +283,9 @@ pub mod mmu {
                 0xFF00 => {
                     self.gamepad.write(value)
                 },
+                0xFF01 => {
+                    println!("FF01 - 0x{:02X} ({:?})", value, value as char)
+                },
                 //Div - Divider Registry (for timer)
                 0xFF04 => {
                     self.timer_divider = value;

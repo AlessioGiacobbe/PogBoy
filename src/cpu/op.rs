@@ -793,7 +793,10 @@ pub mod op {
         }
 
         pub(crate) fn pop_rr(&mut self, pop_into: &str){
-            let value = self.read_from_stack();
+            let mut value = self.read_from_stack();
+            if pop_into == "AF" {
+                value &= 0xFFF0;
+            }
             self.Registers.set_item(pop_into, value)
         }
 
