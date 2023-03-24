@@ -180,7 +180,7 @@ pub mod op {
 
             self.Registers.set_item("A", result as u16);
             self.Registers.set_item("c", ((value + carry) > current_value) as u16);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value, value, 1, HalfCarryOperationsMode::GreaterThan) as u16);
+            self.Registers.set_item("h", (((current_value & 0xF) - (value & 0xF) - carry) < 0) as u16);
             self.Registers.set_item("n", 1);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
         }
@@ -736,12 +736,15 @@ pub mod op {
             if negative != 0 {
                 if half_carry != 0 {
                     current_value = (current_value - 0x6) & 0xFF;
+                    if carry == 1 {
+                        current_value &= 0xFF;
+                    }
                 }
                 if carry != 0 {
-                    current_value = current_value - 0x60;
+                    current_value = (current_value - 0x60) & 0xFF;
                 }
             }else{
-                if ((current_value & 0xF) > 9) || half_carry != 0 {
+                if half_carry != 0 || (current_value & 0xF) > 9  {
                     current_value = current_value + 6;
                 }
                 if carry != 0 || (current_value > 0x9F) {
