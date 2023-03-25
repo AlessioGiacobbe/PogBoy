@@ -733,29 +733,34 @@ pub mod op {
             let carry = self.Registers.get_item("c") as u8;
             let half_carry = self.Registers.get_item("h") as u8;
 
+            let mut result = 0;
+
+            if half_carry != 0 {
+                result |= 0x06
+            }
+
+            if carry != 0 {
+                result |= 0x60
+            }
+
             if negative != 0 {
-                if half_carry != 0 {
-                    current_value = (current_value - 0x6) & 0xFF;
-                    if carry == 1 {
-                        current_value &= 0xFF;
-                    }
+                current_value -= result;
+            } else {
+                if (current_value & 0x0F) > 0x09 {
+                    result |= 0x06
                 }
-                if carry != 0 {
-                    current_value = (current_value - 0x60) & 0xFF;
+
+                if current_value > 0x99 {
+                    result |= 0x60
                 }
-            }else{
-                if half_carry != 0 || (current_value & 0xF) > 9  {
-                    current_value = current_value + 6;
-                }
-                if carry != 0 || (current_value > 0x9F) {
-                    current_value = current_value + 0x60;
-                }
+
+                current_value += result;
             }
 
             self.Registers.set_item("A", current_value as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("z", (self.Registers.get_item("A") == 0) as u16);
-            self.Registers.set_item("c", (current_value > 0xFF) as u16);
+            self.Registers.set_item("c", (result & 0x60 != 0) as u16);
         }
 
         //supplement carry (0 -> 1, 1 -> 0)
