@@ -421,7 +421,7 @@ pub mod op {
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
 
             return result
         }
@@ -610,7 +610,7 @@ pub mod op {
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
 
             return result
         }
@@ -636,7 +636,7 @@ pub mod op {
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
 
             return result
         }
@@ -722,7 +722,7 @@ pub mod op {
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", 0);
+            self.Registers.set_item("z", (result == 0) as u16);
 
             return result
         }
