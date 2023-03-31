@@ -400,9 +400,9 @@ pub mod op {
             self.Registers.set_item("A", value as u16);
         }
 
-        pub(crate) fn rr_r(&mut self, to_rr: &str, should_set_zero: bool){
+        pub(crate) fn rr_r(&mut self, to_rr: &str, should_set_zero_flag: bool){
             let current_value = self.Registers.get_item(to_rr) as u8;
-            let result = self.rr_value(current_value, should_set_zero);
+            let result = self.rr_value(current_value, should_set_zero_flag);
             self.Registers.set_item(to_rr, result as u16);
         }
 
