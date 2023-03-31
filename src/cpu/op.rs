@@ -413,7 +413,7 @@ pub mod op {
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rr_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
+        pub(crate) fn rr_value(&mut self, value: u8, should_set_zero_flag: bool) -> u8 {
             let carry = value & 1;  //0th bit
             let current_carry = self.Registers.get_item("c") as u8;
             let result = value >> 1 | current_carry << 7;
@@ -422,7 +422,7 @@ pub mod op {
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
 
-            if should_set_zero {
+            if should_set_zero_flag {
                 self.Registers.set_item("z",  (result == 0) as u16);
             }else{
                 self.Registers.set_item("z",  0 as u16);
@@ -595,9 +595,9 @@ pub mod op {
         }
 
         //rrca is rotate right circular, no data is loss
-        pub(crate) fn rrc_r(&mut self, to_rrc: &str, should_set_zero: bool){
+        pub(crate) fn rrc_r(&mut self, to_rrc: &str, should_set_zero_flag: bool){
             let current_value = self.Registers.get_item(to_rrc) as u8;
-            let result = self.rrc_value(current_value, should_set_zero);
+            let result = self.rrc_value(current_value, should_set_zero_flag);
             self.Registers.set_item(to_rrc, result as u16);
         }
 
@@ -608,7 +608,7 @@ pub mod op {
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rrc_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
+        pub(crate) fn rrc_value(&mut self, value: u8, should_set_zero_flag: bool) -> u8 {
             let carry = value & 1;
             let result = value.rotate_right(1);
 
@@ -616,7 +616,7 @@ pub mod op {
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
 
-            if should_set_zero {
+            if should_set_zero_flag {
                 self.Registers.set_item("z",  (result == 0) as u16);
             }else{
                 self.Registers.set_item("z",  0 as u16);
@@ -624,9 +624,9 @@ pub mod op {
             return result
         }
 
-        pub(crate) fn rl_r(&mut self, to_rl: &str, should_set_zero: bool){
+        pub(crate) fn rl_r(&mut self, to_rl: &str, should_set_zero_flag: bool){
             let current_value = self.Registers.get_item(to_rl) as u8;
-            let result = self.rl_value(current_value, should_set_zero);
+            let result = self.rl_value(current_value, should_set_zero_flag);
             self.Registers.set_item(to_rl, result as u16);
         }
 
@@ -637,7 +637,7 @@ pub mod op {
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rl_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
+        pub(crate) fn rl_value(&mut self, value: u8, should_set_zero_flag: bool) -> u8 {
             let carry = (value & 0x80) >> 7;
             let current_carry = self.Registers.get_item("c") as u8;
             let result = (value << 1) | current_carry;
@@ -646,7 +646,7 @@ pub mod op {
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
 
-            if should_set_zero {
+            if should_set_zero_flag {
                 self.Registers.set_item("z",  (result == 0) as u16);
             }else{
                 self.Registers.set_item("z",  0 as u16);
@@ -716,9 +716,9 @@ pub mod op {
         }
 
 
-        pub(crate) fn rlc_r(&mut self, to_rlc: &str, should_set_zero: bool){
+        pub(crate) fn rlc_r(&mut self, to_rlc: &str, should_set_zero_flag: bool){
             let current_value = self.Registers.get_item(to_rlc) as u8;
-            let result = self.rlc_value(current_value, should_set_zero);
+            let result = self.rlc_value(current_value, should_set_zero_flag);
             self.Registers.set_item(to_rlc,result as u16);
         }
 
@@ -729,7 +729,7 @@ pub mod op {
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rlc_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
+        pub(crate) fn rlc_value(&mut self, value: u8, should_set_zero_flag: bool) -> u8 {
             let carry = (value & 0x80) >> 7;
             let result = value.rotate_left(1);
 
@@ -737,7 +737,7 @@ pub mod op {
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
 
-            if should_set_zero {
+            if should_set_zero_flag {
                 self.Registers.set_item("z", (result == 0) as u16);
             } else {
                 self.Registers.set_item("z", 0 as u16);
