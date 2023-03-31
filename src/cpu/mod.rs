@@ -107,38 +107,38 @@ pub mod CPU{
         pub(crate) fn execute(&mut self, instruction: Instruction) -> Result<(), Instruction> {
             if instruction.prefixed {
                 match instruction.opcode {
-                    0x00 => self.rlc_r("B"), //0x0 RLC B
-                    0x01 => self.rlc_r("C"), //0x01 RLC C
-                    0x02 => self.rlc_r("D"), //0x02 RLC D
-                    0x03 => self.rlc_r("E"), //0x03 RLC E
-                    0x04 => self.rlc_r("H"), //0x04 RLC H
-                    0x05 => self.rlc_r("L"), //0x05 RLC L
+                    0x00 => self.rlc_r("B", true), //0x0 RLC B
+                    0x01 => self.rlc_r("C", true), //0x01 RLC C
+                    0x02 => self.rlc_r("D", true), //0x02 RLC D
+                    0x03 => self.rlc_r("E", true), //0x03 RLC E
+                    0x04 => self.rlc_r("H", true), //0x04 RLC H
+                    0x05 => self.rlc_r("L", true), //0x05 RLC L
                     0x06 => self.rlc_hl_pointer(), //0x06 RLC (HL)
-                    0x07 => self.rlc_r("A"), //0x07 RLC A
-                    0x08 => self.rrc_r("B"), //0x08 RRC B
-                    0x09 => self.rrc_r("C"), //0x09 RRC C
-                    0x0A => self.rrc_r("D"), //0x0A RRC D
-                    0x0B => self.rrc_r("E"), //0x0B RRC E
-                    0x0C => self.rrc_r("H"), //0x0C RRC H
-                    0x0D => self.rrc_r("L"), //0x0D RRC L
+                    0x07 => self.rlc_r("A", true), //0x07 RLC A
+                    0x08 => self.rrc_r("B", true), //0x08 RRC B
+                    0x09 => self.rrc_r("C", true), //0x09 RRC C
+                    0x0A => self.rrc_r("D", true), //0x0A RRC D
+                    0x0B => self.rrc_r("E", true), //0x0B RRC E
+                    0x0C => self.rrc_r("H", true), //0x0C RRC H
+                    0x0D => self.rrc_r("L", true), //0x0D RRC L
                     0x0E => self.rrc_hl_pointer(), //0x0E RRC (HL)
-                    0x0F => self.rrc_r("A"), //0x0F RRC A
-                    0x10 => self.rl_r("B"), //0x10 RL B
-                    0x11 => self.rl_r("C"), //0x11 RL C
-                    0x12 => self.rl_r("D"), //0x12 RL D
-                    0x13 => self.rl_r("E"), //0x13 RL E
-                    0x14 => self.rl_r("H"), //0x14 RL H
-                    0x15 => self.rl_r("L"), //0x15 RL L
+                    0x0F => self.rrc_r("A", true), //0x0F RRC A
+                    0x10 => self.rl_r("B", true), //0x10 RL B
+                    0x11 => self.rl_r("C", true), //0x11 RL C
+                    0x12 => self.rl_r("D", true), //0x12 RL D
+                    0x13 => self.rl_r("E", true), //0x13 RL E
+                    0x14 => self.rl_r("H", true), //0x14 RL H
+                    0x15 => self.rl_r("L", true), //0x15 RL L
                     0x16 => self.rl_hl_pointer(), //0x16 RL (HL)
-                    0x17 => self.rl_r("A"), //0x17 RL A
-                    0x18 => self.rr_r("B"), //0x18 RR B
-                    0x19 => self.rr_r("C"), //0x19 RR C
-                    0x1A => self.rr_r("D"), //0x1A RR D
-                    0x1B => self.rr_r("E"), //0x1B RR E
-                    0x1C => self.rr_r("H"), //0x1C RR H
-                    0x1D => self.rr_r("L"), //0x1D RR L
+                    0x17 => self.rl_r("A", true), //0x17 RL A
+                    0x18 => self.rr_r("B", true), //0x18 RR B
+                    0x19 => self.rr_r("C", true), //0x19 RR C
+                    0x1A => self.rr_r("D", true), //0x1A RR D
+                    0x1B => self.rr_r("E", true), //0x1B RR E
+                    0x1C => self.rr_r("H", true), //0x1C RR H
+                    0x1D => self.rr_r("L", true), //0x1D RR L
                     0x1E => self.rr_hl_pointer(), //0x1E RR (HL)
-                    0x1F => self.rr_r("A"), //0x1F RR A
+                    0x1F => self.rr_r("A", true), //0x1F RR A
                     0x20 => self.sla_r("B"), //0x20 SLA B
                     0x21 => self.sla_r("C"), //0x21 SLA C
                     0x22 => self.sla_r("D"), //0x22 SLA D
@@ -364,7 +364,6 @@ pub mod CPU{
                     0xFE => self.set_hl_pointer(7), //0xFE  SET 7,(HL)
                     0xFF => self.set_n_r(7, "A"), //0xFF  SET 7,A
                     _ => return Err(instruction)
-                    //rlc_r v, rrc_r v, rl_r v, rr_r v, sla_r v, sra_r v, swap_r v, srl_r v, res_n_r v, bit_n_r v, set_n_r
                 }
             }else{
                 match instruction.opcode {
@@ -375,7 +374,7 @@ pub mod CPU{
                     0x04 => self.inc( "B"), //0x04 INC B
                     0x05 => self.dec( "B"), //0x05 DEC B
                     0x06 => self.ld_r_d8( "B", instruction), //0x06 LD B,d8
-                    0x07 => self.rlc_r("A"), //0x07 RLCA
+                    0x07 => self.rlc_r("A", false), //0x07 RLCA
                     0x08 => self.ld_a16_pointer_sp(instruction), //0x08 LD (a16),SP
                     0x09 => self.add_hl_n( "BC"), //0x09 ADD HL, BC
                     0x0A => self.ld_a_address("BC"), //0x0A LD A,(BC)
@@ -383,7 +382,7 @@ pub mod CPU{
                     0x0C => self.inc( "C"), //0x0C INC C
                     0x0D => self.dec( "C"), //0x0D DEC C
                     0x0E => self.ld_r_d8( "C", instruction), //0x0E LD C,d8
-                    0x0F => self.rrc_r("A"), //0x0F RRCA
+                    0x0F => self.rrc_r("A", false), //0x0F RRCA
                     0x10 => {}, //0x10 STOP
                     0x11 => self.ld_nn( instruction.operands, "DE"), //0x11 LD DE, d16
                     0x12 => self.ld_address_value("DE", "A"), //0x12 LD (DE),A
@@ -391,7 +390,7 @@ pub mod CPU{
                     0x14 => self.inc( "D"), //0x14 INC D
                     0x15 => self.dec( "D"), //0x15 DEC D
                     0x16 => self.ld_r_d8( "D", instruction), //0x16 LD D,d8
-                    0x17 => self.rl_r("A"), //0x17 RLA
+                    0x17 => self.rl_r("A", false), //0x17 RLA
                     0x18 => self.jr_r8(instruction, JumpCondition::None), //0x18 JR r8
                     0x19 => self.add_hl_n( "DE"), //0x19 ADD HL, DE
                     0x1A => self.ld_a_address("DE"), //0x1A LD A,(DE)
@@ -399,7 +398,7 @@ pub mod CPU{
                     0x1C => self.inc( "E"), //0x1C INC E
                     0x1D => self.dec( "E"), //0x1D DEC E
                     0x1E => self.ld_r_d8( "E", instruction), //0x1E LD E,d8
-                    0x1F => self.rr_r("A"), //0x1F RRA
+                    0x1F => self.rr_r("A", false), //0x1F RRA
                     0x20 => self.jr_r8(instruction, JumpCondition::NotZero), //0x20 JR NZ,r8
                     0x21 => self.ld_nn( instruction.operands, "HL"), //0x21 LD HL, d16
                     0x22 => self.ld_hl_pointer_dec_inc_a(true), //0x22 LD (HL+), A

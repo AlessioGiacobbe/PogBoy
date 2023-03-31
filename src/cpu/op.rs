@@ -400,20 +400,20 @@ pub mod op {
             self.Registers.set_item("A", value as u16);
         }
 
-        pub(crate) fn rr_r(&mut self, to_rr: &str){
+        pub(crate) fn rr_r(&mut self, to_rr: &str, should_set_zero: bool){
             let current_value = self.Registers.get_item(to_rr) as u8;
-            let result = self.rr_value(current_value);
+            let result = self.rr_value(current_value, should_set_zero);
             self.Registers.set_item(to_rr, result as u16);
         }
 
         pub(crate) fn rr_hl_pointer(&mut self) {
             let value_at_hl = self.Registers.get_item("HL") as i32;
             let current_value = self.MMU.read_byte(value_at_hl);
-            let result = self.rr_value(current_value);
+            let result = self.rr_value(current_value, true);
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rr_value(&mut self, value: u8) -> u8 {
+        pub(crate) fn rr_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
             let carry = value & 1;  //0th bit
             let current_carry = self.Registers.get_item("c") as u8;
             let result = value >> 1 | current_carry << 7;
@@ -421,7 +421,12 @@ pub mod op {
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
+
+            if should_set_zero {
+                self.Registers.set_item("z",  (result == 0) as u16);
+            }else{
+                self.Registers.set_item("z",  0 as u16);
+            }
 
             return result
         }
@@ -590,45 +595,49 @@ pub mod op {
         }
 
         //rrca is rotate right circular, no data is loss
-        pub(crate) fn rrc_r(&mut self, to_rrc: &str){
+        pub(crate) fn rrc_r(&mut self, to_rrc: &str, should_set_zero: bool){
             let current_value = self.Registers.get_item(to_rrc) as u8;
-            let result = self.rrc_value(current_value);
+            let result = self.rrc_value(current_value, should_set_zero);
             self.Registers.set_item(to_rrc, result as u16);
         }
 
         pub(crate) fn rrc_hl_pointer(&mut self) {
             let value_at_hl = self.Registers.get_item("HL") as i32;
             let current_value = self.MMU.read_byte(value_at_hl);
-            let result = self.rrc_value(current_value);
+            let result = self.rrc_value(current_value, true);
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rrc_value(&mut self, value: u8) -> u8 {
+        pub(crate) fn rrc_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
             let carry = value & 1;
             let result = value.rotate_right(1);
 
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
 
+            if should_set_zero {
+                self.Registers.set_item("z",  (result == 0) as u16);
+            }else{
+                self.Registers.set_item("z",  0 as u16);
+            }
             return result
         }
 
-        pub(crate) fn rl_r(&mut self, to_rl: &str){
+        pub(crate) fn rl_r(&mut self, to_rl: &str, should_set_zero: bool){
             let current_value = self.Registers.get_item(to_rl) as u8;
-            let result = self.rl_value(current_value);
+            let result = self.rl_value(current_value, should_set_zero);
             self.Registers.set_item(to_rl, result as u16);
         }
 
         pub(crate) fn rl_hl_pointer(&mut self) {
             let value_at_hl = self.Registers.get_item("HL") as i32;
             let current_value = self.MMU.read_byte(value_at_hl);
-            let result = self.rl_value(current_value);
+            let result = self.rl_value(current_value, true);
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rl_value(&mut self, value: u8) -> u8 {
+        pub(crate) fn rl_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
             let carry = (value & 0x80) >> 7;
             let current_carry = self.Registers.get_item("c") as u8;
             let result = (value << 1) | current_carry;
@@ -636,7 +645,12 @@ pub mod op {
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
+
+            if should_set_zero {
+                self.Registers.set_item("z",  (result == 0) as u16);
+            }else{
+                self.Registers.set_item("z",  0 as u16);
+            }
 
             return result
         }
@@ -702,27 +716,32 @@ pub mod op {
         }
 
 
-        pub(crate) fn rlc_r(&mut self, to_rlc: &str){
+        pub(crate) fn rlc_r(&mut self, to_rlc: &str, should_set_zero: bool){
             let current_value = self.Registers.get_item(to_rlc) as u8;
-            let result = self.rlc_value(current_value);
+            let result = self.rlc_value(current_value, should_set_zero);
             self.Registers.set_item(to_rlc,result as u16);
         }
 
         pub(crate) fn rlc_hl_pointer(&mut self) {
             let value_at_hl = self.Registers.get_item("HL") as i32;
             let current_value = self.MMU.read_byte(value_at_hl);
-            let result = self.rlc_value(current_value);
+            let result = self.rlc_value(current_value, true);
             self.MMU.write_byte(value_at_hl, result);
         }
 
-        pub(crate) fn rlc_value(&mut self, value: u8) -> u8 {
+        pub(crate) fn rlc_value(&mut self, value: u8, should_set_zero: bool) -> u8 {
             let carry = (value & 0x80) >> 7;
             let result = value.rotate_left(1);
 
             self.Registers.set_item("c", carry as u16);
             self.Registers.set_item("h", 0);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("z", (result == 0) as u16);
+
+            if should_set_zero {
+                self.Registers.set_item("z", (result == 0) as u16);
+            } else {
+                self.Registers.set_item("z", 0 as u16);
+            }
 
             return result
         }
