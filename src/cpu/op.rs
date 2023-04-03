@@ -186,15 +186,14 @@ pub mod op {
         }
 
         pub(crate) fn add_sp_r8(&mut self, Instruction: Instruction){
-            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as i8;
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as u32;
             let sp = self.Registers.get_item("SP") as u32;
+            let result = sp + ((r8 ^ 0x80) - 0x80);
+
+            self.Registers.set_item("c", (((sp & 0xFF) + (r8 & 0xFF)) > 0xFF) as u16);
+            self.Registers.set_item("h", (((sp & 0xF) + (r8 & 0xF)) > 0xF) as u16);
             self.Registers.set_item("z", 0);
             self.Registers.set_item("n", 0);
-
-            let result = sp.wrapping_add(r8 as u32);
-
-            self.Registers.set_item("c", (result & 0xFFFF0000) as u16);
-            self.Registers.set_item("h", ((sp & 0xF).wrapping_add((r8 & 0xF) as u32) > 0xF) as u16);
 
             self.Registers.set_item("SP", result as u16)
         }
@@ -308,15 +307,14 @@ pub mod op {
         }
 
         pub(crate) fn ld_hl_sp_r8(&mut self, Instruction: Instruction){
-            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as i8;
+            let r8 = Instruction.operands.into_iter().find(|operand| operand.name == "r8").expect("Operand r8 not found").value.unwrap() as u32;
             let sp = self.Registers.get_item("SP") as u32;
+            let result: u32 = sp + ((r8 ^ 0x80) - 0x80);
+
             self.Registers.set_item("z", 0);
             self.Registers.set_item("n", 0);
-
-            let result: u32 = sp.wrapping_add(r8 as u32);
-
-            self.Registers.set_item("c", (sp.wrapping_add(r8 as u32) > 0xFFFF) as u16);
-            self.Registers.set_item("h", ((sp & 0xF).wrapping_add((r8 & 0xF) as u32) > 0xF) as u16);
+            self.Registers.set_item("c", (((sp & 0xFF) + (r8 & 0xFF)) > 0xFF) as u16);
+            self.Registers.set_item("h", (((sp & 0xF) + (r8 & 0xF)) > 0xF) as u16);
 
             self.Registers.set_item("HL", result as u16)
         }
@@ -809,9 +807,9 @@ pub mod op {
             let to_add = self.Registers.get_item(to_add) as u32;
             let result: u32 = current_value + to_add;
             self.Registers.set_item("HL", result as u16);
-            self.Registers.set_item("c", (result & 0x10000 != 0) as u16); //if true, result is bigger than 16 bit max value
+            self.Registers.set_item("c", (result > 0xFFFF) as u16);
             self.Registers.set_item("n", 0);
-            self.Registers.set_item("h", CPU::calculate_half_carry(current_value as i16, to_add as i16, 0, HalfCarryOperationsMode::AddWords) as u16);
+            self.Registers.set_item("h", (((current_value & 0xFFF) + (to_add & 0xFFF)) > 0xFFF) as u16);
         }
 
         pub(crate) fn push_rr(&mut self, to_push: &str){
