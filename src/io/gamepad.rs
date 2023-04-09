@@ -1,4 +1,5 @@
 pub mod gamepad {
+    use std::collections::HashMap;
     use piston_window::Key;
     use crate::io::gamepad::gamepad::ColumnType::{Action, Direction, NotSelected};
 
@@ -11,68 +12,63 @@ pub mod gamepad {
 
     #[derive(Debug)]
     pub struct gamepad {
+        pub(crate) value: u8,
         pub(crate) selected_column: ColumnType,
-        pub(crate) rows_value: (u8, u8)
+        pub(crate) rows_value: (u8, u8),
+        pub(crate) pressed_buttons: HashMap<String, (u8, u8)>
     }
 
     impl Default for gamepad {
         fn default() -> Self {
             gamepad {
+                value: 0,
                 selected_column: NotSelected,
-                rows_value: (0xF, 0xF)
+                rows_value: (0xF, 0xF),
+                pressed_buttons: HashMap::new()
             }
         }
     }
 
     impl gamepad {
-        pub fn read(&self) -> u8 {
-            match self.selected_column {
-                Direction => self.rows_value.1,
-                Action => self.rows_value.0,
-                NotSelected => 0,
-                _ => 0
+
+
+        pub fn read(& self) -> u8 {
+            let mut result = self.value | 0b11001111;
+            for pressed_button in self.pressed_buttons.iter() {
+                let (_, (line, mask)) = pressed_button;
+                if line & result == 0 {
+                    result &= (0xFF & !mask);
+                }
             }
+            result
         }
 
         pub fn write(&mut self, value: u8) {
-            match value & 0x30 {
-                0x10 => self.selected_column = Direction,
-                0x20 => self.selected_column = Action,
-                _ => self.selected_column = NotSelected
-            }
+            self.value = value & 0b00110000;
         }
 
-        pub fn get_column_and_bit_from_key(key: Key) -> (ColumnType, u8) {
-            let mut value_for_key = match key {
-                Key::Down => (Direction, 3),
-                Key::Up => (Direction, 2),
-                Key::Left => (Direction, 1),
-                Key::Right => (Direction, 0),
-                Key::Space => (Action, 3), //Start
-                Key::Comma => (Action, 2), //Select
-                Key::X => (Action, 1),   //B
-                Key::Z => (Action, 0),   //A
+        pub fn get_line_and_mask_from_key(key: Key) -> (u8, u8) {
+            return match key {
+                Key::Down => (0x10, 0x08),
+                Key::Up => (0x10, 0x04),
+                Key::Left => (0x10, 0x02),
+                Key::Right => (0x10, 0x01),
+                Key::Space => (0x20, 0x08), //Start
+                Key::Comma => (0x20, 0x04), //Select
+                Key::X => (0x20, 0x02),   //B
+                Key::Z => (0x20, 0x01),   //A
                 _ => panic!("key {:?} not supported", key)
             };
-            value_for_key.1 = 1 << value_for_key.1;
-            value_for_key
         }
 
         pub fn key_pressed(&mut self, key: Key) {
-            match gamepad::get_column_and_bit_from_key(key) {
-                (Action, bit_mask) => self.rows_value.0 = self.rows_value.0 & !bit_mask,
-                (Direction, bit_mask) => self.rows_value.1 = self.rows_value.1 & !bit_mask,
-                _ => {}
-            };
-
+            let (line, mask) = gamepad::get_line_and_mask_from_key(key);
+            self.pressed_buttons.insert((line+mask).to_string(), (line, mask));
         }
 
         pub fn key_released(&mut self, key: Key) {
-            match gamepad::get_column_and_bit_from_key(key) {
-                (Action, bit_mask) => self.rows_value.0 = self.rows_value.0 | bit_mask,
-                (Direction, bit_mask) => self.rows_value.1 = self.rows_value.1 | bit_mask,
-                _ => {}
-            };
+            let (line, mask) = gamepad::get_line_and_mask_from_key(key);
+            self.pressed_buttons.remove(&*(line + mask).to_string());
         }
     }
 }

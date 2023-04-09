@@ -13,7 +13,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::{env, fs, thread, time};
 use std::fs::File;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant, SystemTime};
 use image;
 use image::RgbaImage;
 use image::ColorType::{Rgb8, Rgba8};
@@ -99,7 +99,7 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     //cpu.MMU.disassemble(0x300, 0x400, 0x359);
     let mut cycles_delta = 0;
     let cycles_per_frame = 69905 * 4;
-
+    let mut time_ref = Instant::now();
 
     'main: loop {
         let (clock, clock_delta) = cpu.step();
@@ -111,7 +111,14 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
             let mut image_buffer = image_buffer_reference.lock().unwrap();
             (*image_buffer) = cpu.MMU.PPU.image_buffer.clone();
 
-            thread::sleep(time::Duration::from_micros(16670));
+            let elapsed = Instant::now().duration_since(time_ref);
+            time_ref = Instant::now();
+
+            if elapsed.as_micros() < 16670 {
+                let sleep_time = time::Duration::from_micros((16670 - elapsed.as_micros()) as u64);
+                thread::sleep(sleep_time);
+            }
+
             cycles_delta -= cycles_per_frame;
         }
 
