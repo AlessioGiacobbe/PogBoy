@@ -98,7 +98,7 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
 
     //cpu.MMU.disassemble(0x300, 0x400, 0x359);
     let mut cycles_delta = 0;
-    let cycles_per_frame = 69905 * 4;
+    let cycles_per_frame = 69905;
     let mut time_ref = Instant::now();
 
     'main: loop {

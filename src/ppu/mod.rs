@@ -2,8 +2,10 @@ pub mod ppu {
     use std::borrow::BorrowMut;
     use std::fmt::{Debug, Display, format, Formatter};
     use image::{Rgba, RgbaImage};
+    use piston_window::math::add;
 
     const PPU_TILES_NUMBER: usize = 384;
+    const PPU_SPRITES_NUMBER: usize = 40;
     const TOTAL_SCANLINES: u32 = 153;
     const VISIBLE_SCANLINES: u8 = 144;
     const HBLANK_DURATION_DOTS: u32 = 204;
@@ -16,6 +18,17 @@ pub mod ppu {
 
     const TILE_SIZE: u32 = 8;
     const TILES_IN_VISIBLE_LINE: u32 = SCREEN_HORIZONTAL_RESOLUTION / TILE_SIZE;
+
+    #[derive(Copy, Clone, Debug, PartialEq)]
+    pub(crate) struct Sprite {
+        x_coordinate: i8,
+        y_coordinate: i8,
+        tile_number: u8,
+        background_priority: bool,
+        y_flip: bool,
+        x_flip: bool,
+        palette: bool
+    }
 
     //each tile is 8x8 pixels
     pub(crate) type Tile = [[TilePixelValue; TILE_SIZE as usize]; TILE_SIZE as usize];
@@ -108,6 +121,18 @@ pub mod ppu {
     fn create_empty_tile() -> Tile {
         [[TilePixelValue::Zero; TILE_SIZE as usize]; TILE_SIZE as usize]
     }
+    
+    fn create_empty_sprite() -> Sprite {
+        Sprite {
+            x_coordinate: -16,
+            y_coordinate: -8,
+            tile_number: 0,
+            background_priority: false,
+            y_flip: false,
+            x_flip: false,
+            palette: false
+        }
+    }
 
     fn print_tile(Tile: Tile) {
         for tile_row in Tile {
@@ -173,7 +198,6 @@ pub mod ppu {
         [235, 107, 111, 255], //#eb6b6f         [204, 52, 149, 255],
         [249, 168, 117, 255], //#f9a875        [107, 31, 177, 255],
         [255, 246, 211, 255], //#fff6d3        [11, 6, 48, 255],
-
     ];
 
     pub struct PPU {
@@ -185,9 +209,13 @@ pub mod ppu {
         scroll_y: u8,
         scroll_x: u8,
         background_palette_data: u8,
+        obj_0_palette_data: u8,
+        obj_1_palette_data: u8,
         pub(crate) image_buffer: RgbaImage,
+        pub(crate) oam: [u8; 0x2000],
         pub(crate) video_ram: [u8; 0x2000],
         pub(crate) tile_set: [Tile; PPU_TILES_NUMBER],
+        pub(crate) sprite_set: [Sprite; PPU_SPRITES_NUMBER]
     }
 
     impl Debug for PPU {
@@ -209,7 +237,11 @@ pub mod ppu {
                scroll_y: 0,
                scroll_x: 0,
                background_palette_data: 0,
+               obj_0_palette_data: 0,
+               obj_1_palette_data: 0,
+               oam: [0; 0x2000],
                image_buffer: RgbaImage::new(SCREEN_HORIZONTAL_RESOLUTION, SCREEN_VERTICAL_RESOLUTION),
+               sprite_set: [create_empty_sprite(); PPU_SPRITES_NUMBER],
            }
         }
 
@@ -326,7 +358,7 @@ pub mod ppu {
 
                 let color_number_at_coordinates: TilePixelValue = tile.unwrap()[y_tile_offset as usize][x_tile_offset as usize];
 
-                let color_at_coordinate = self.get_color_from_bg_palette(color_number_at_coordinates);
+                let color_at_coordinate = self.get_color_from_palette(color_number_at_coordinates, self.background_palette_data);
 
                 x_tile_offset = (x_tile_offset + 1) % 8;
 
@@ -336,14 +368,37 @@ pub mod ppu {
         }
 
         //given a TilePixelValue returns corresponding palette color, using palette map (stored at 0xFF47)
-        pub(crate) fn get_color_from_bg_palette(&mut self, color_number: TilePixelValue) -> [u8; 4] {
+        pub(crate) fn get_color_from_palette(&mut self, color_number: TilePixelValue, palette: u8) -> [u8; 4] {
             let color_number = color_number as u8;
             if color_number < 4 {
                 // get bits couples by moving right by number * 2 and mask with 3 (b11) to get the value
-                let value_for_color = (self.background_palette_data >> (color_number * 2)) & 0x3;
+                let value_for_color = (palette >> (color_number * 2)) & 0x3;
                 return COLORS[value_for_color as usize];
             }
             COLORS[0]
+        }
+
+        pub(crate) fn update_sprite(&mut self, address: usize, value: u8){
+            let value_as_i8 = value as i8;
+            let sprite_index = address >> 2; // /4
+            println!("updating sprite {}", value);
+
+            if sprite_index < 40 {
+
+                match address & 3 {
+                    0 => self.sprite_set[sprite_index].y_coordinate = value_as_i8 - 16,
+                    1 => self.sprite_set[sprite_index].x_coordinate = value_as_i8 - 8,
+                    2 => self.sprite_set[sprite_index].tile_number = value,
+                    3 => {
+                        self.sprite_set[sprite_index].palette = (value & 0x10) == 1;
+                        self.sprite_set[sprite_index].x_flip = (value & 0x20) == 1;
+                        self.sprite_set[sprite_index].y_flip = (value & 0x40) == 1;
+                        self.sprite_set[sprite_index].background_priority = (value & 0x80) == 1;
+                    },
+                    _ => {}
+                }
+
+            }
         }
 
         pub(crate) fn update_tile(&mut self, address: usize) {
@@ -387,6 +442,12 @@ pub mod ppu {
                 0x8000..=0x9FFF => {
                     self.video_ram[address - 0x8000]
                 },
+                0xFE00..=0xFEFF => {
+                    if address < 0xFEA0 {
+                        return self.oam[address - 0xFE00]
+                    }
+                    0
+                },
                 0xFF40 => {
                     self.lcd_control
                 },
@@ -407,6 +468,12 @@ pub mod ppu {
                 },
                 0xFF47 => {
                     self.background_palette_data
+                },
+                0xFF48 => {
+                    self.obj_0_palette_data
+                },
+                0xFF49 => {
+                    self.obj_1_palette_data
                 }
                 _ => 0
             }
@@ -418,6 +485,12 @@ pub mod ppu {
                     self.video_ram[address - 0x8000] = value;
                     if address < 0x9800 {
                         self.update_tile(address);
+                    }
+                },
+                0xFE00..=0xFEFF => {
+                    if address < 0xFEA0 {
+                        self.oam[address - 0xFE00] = value;
+                        self.update_sprite(address - 0xFE00, value);
                     }
                 },
                 0xFF40 => {
@@ -437,6 +510,12 @@ pub mod ppu {
                 },
                 0xFF47 => {
                     self.background_palette_data = value;
+                },
+                0xFF48 => {
+                    self.obj_0_palette_data = value;
+                },
+                0xFF49 => {
+                    self.obj_1_palette_data = value;
                 },
                 _ => ()
             }
