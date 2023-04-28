@@ -21,8 +21,8 @@ pub mod ppu {
 
     #[derive(Copy, Clone, Debug, PartialEq)]
     pub(crate) struct Sprite {
-        x: i8,
-        y: i8,
+        x: i32,
+        y: i32,
         tile_number: u8,
         background_priority: bool,
         y_flip: bool,
@@ -413,13 +413,12 @@ pub mod ppu {
         }
 
         pub(crate) fn update_sprite(&mut self, address: usize, value: u8){
-            let value_as_i8 = value as i8;
             let sprite_index = address >> 2; // /4
 
             if sprite_index < 40 {
                 match address & 3 {
-                    0 => self.sprite_set[sprite_index].y = value_as_i8 - 16,
-                    1 => self.sprite_set[sprite_index].x = value_as_i8 - 8,
+                    0 => self.sprite_set[sprite_index].y = value as i32 - 16,
+                    1 => self.sprite_set[sprite_index].x = value as i32 - 8,
                     2 => self.sprite_set[sprite_index].tile_number = value,
                     3 => {
                         self.sprite_set[sprite_index].palette = (value & 0x10) == 1;
