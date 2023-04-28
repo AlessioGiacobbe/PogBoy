@@ -21,8 +21,8 @@ pub mod ppu {
 
     #[derive(Copy, Clone, Debug, PartialEq)]
     pub(crate) struct Sprite {
-        x_coordinate: i8,
-        y_coordinate: i8,
+        x: i8,
+        y: i8,
         tile_number: u8,
         background_priority: bool,
         y_flip: bool,
@@ -124,8 +124,8 @@ pub mod ppu {
     
     fn create_empty_sprite() -> Sprite {
         Sprite {
-            x_coordinate: -16,
-            y_coordinate: -8,
+            x: -16,
+            y: -8,
             tile_number: 0,
             background_priority: false,
             y_flip: false,
@@ -161,7 +161,7 @@ pub mod ppu {
     pub fn dump_current_screen_tiles(mut ppu: &mut PPU) -> [TileRow; (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize] {
         let mut screen_dump = [TileRow([(0,0); (SCREEN_HORIZONTAL_RESOLUTION/TILE_SIZE) as usize]); (SCREEN_VERTICAL_RESOLUTION/TILE_SIZE) as usize];
         for screen_line in 0..SCREEN_VERTICAL_RESOLUTION/TILE_SIZE {
-            screen_dump[screen_line as usize] = ppu.render_scanline(screen_line*TILE_SIZE);
+            screen_dump[screen_line as usize] = ppu.render_background(screen_line*TILE_SIZE);
         }
         screen_dump
     }
@@ -326,10 +326,16 @@ pub mod ppu {
         }
 
         pub(crate) fn render_current_line(&mut self) {
-            self.render_scanline(self.current_line);
+            if self.get_lcdc_value(LCDCFlags::Bg_enable) {
+                self.render_background(self.current_line);
+            }
+
+            if self.get_lcdc_value(LCDCFlags::Obj_enable) {
+                self.render_sprites(self.current_line);
+            }
         }
 
-        pub(crate) fn render_scanline(&mut self, line: u32) -> TileRow {
+        pub(crate) fn render_background(&mut self, line: u32) -> TileRow {
             //the tile map contains the index of the tile to be displayed
             let background_tile_map_starting_address: usize = if self.get_lcdc_value(LCDCFlags::BG_tile_map_area) { 0x1C00 } else { 0x1800 };
 
@@ -367,6 +373,34 @@ pub mod ppu {
             used_tiles
         }
 
+        pub(crate) fn render_sprites(&mut self, line: u32) {
+            for sprite_index in 0..PPU_SPRITES_NUMBER-1 {
+                let sprite = self.sprite_set[sprite_index];
+
+                //check if sprite is in current line
+                //todo 8 should be sprite height
+                if sprite.y as i32 <= line as i32 && sprite.y as i32 + 8 > line as i32 {
+                    let palette = if sprite.palette { self.obj_1_palette_data } else { self.obj_0_palette_data };
+
+                    //current tile row
+                    let current_tile = self.tile_set[sprite.tile_number as usize];
+                    let tile_row = current_tile[(line - sprite.y as u32) as usize];
+                    //todo check sprite y flip
+
+                    for x in 0..7 {
+                        //todo priority and background check
+                        //if sprite is visible and sprite is within viewport and pixel is not transparent
+                        if (sprite.x + x) > 0 && (sprite.x as i32 + 8 as i32) < 160 && tile_row[x as usize] != TilePixelValue::Zero {
+                            //todo check x-flip
+                            let color_number_at_coordinates: TilePixelValue = tile_row[x as usize];
+                            let color_at_coordinate = self.get_color_from_palette(color_number_at_coordinates, palette);
+                            self.image_buffer.put_pixel((sprite.x + x) as u32, line, Rgba(color_at_coordinate));
+                        }
+                    }
+                }
+            }
+        }
+
         //given a TilePixelValue returns corresponding palette color, using palette map (stored at 0xFF47)
         pub(crate) fn get_color_from_palette(&mut self, color_number: TilePixelValue, palette: u8) -> [u8; 4] {
             let color_number = color_number as u8;
@@ -381,13 +415,11 @@ pub mod ppu {
         pub(crate) fn update_sprite(&mut self, address: usize, value: u8){
             let value_as_i8 = value as i8;
             let sprite_index = address >> 2; // /4
-            println!("updating sprite {}", value);
 
             if sprite_index < 40 {
-
                 match address & 3 {
-                    0 => self.sprite_set[sprite_index].y_coordinate = value_as_i8 - 16,
-                    1 => self.sprite_set[sprite_index].x_coordinate = value_as_i8 - 8,
+                    0 => self.sprite_set[sprite_index].y = value_as_i8 - 16,
+                    1 => self.sprite_set[sprite_index].x = value_as_i8 - 8,
                     2 => self.sprite_set[sprite_index].tile_number = value,
                     3 => {
                         self.sprite_set[sprite_index].palette = (value & 0x10) == 1;
@@ -397,7 +429,6 @@ pub mod ppu {
                     },
                     _ => {}
                 }
-
             }
         }
 
