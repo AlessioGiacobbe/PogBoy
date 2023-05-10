@@ -376,6 +376,7 @@ pub mod ppu {
         pub(crate) fn render_sprites(&mut self, line: u32) {
             for sprite_index in 0..PPU_SPRITES_NUMBER-1 {
                 let sprite = self.sprite_set[sprite_index];
+                let sprite_height = if self.get_lcdc_value(LCDCFlags::Obj_size) { 16 } else { 8 };
 
                 //check if sprite is in current line
                 //todo 8 should be sprite height
@@ -387,7 +388,7 @@ pub mod ppu {
                     let tile_row = current_tile[(line - sprite.y as u32) as usize];
                     //todo check sprite y flip
 
-                    for x in 0..7 {
+                    for x in 0..8 {
                         //todo priority and background check
                         //if sprite is visible and sprite is within viewport and pixel is not transparent
                         if (sprite.x + x) > 0 && (sprite.x as i32 + 8 as i32) < 160 && tile_row[x as usize] != TilePixelValue::Zero {
