@@ -18,7 +18,7 @@ pub mod CPU{
         pub(crate) logging: bool,
     }
 
-    #[derive(Debug, EnumIter)]
+    #[derive(Debug, EnumIter, Clone, Copy, PartialEq)]
     pub enum InterruptType {
         VBlank = 1,
         LCD_STAT = 2,
@@ -86,6 +86,7 @@ pub mod CPU{
                     println!("0x{:02X} Executing {} (op code 0x{:02X})", address, instruction, instruction.opcode);
                 }
 
+                self.MMU.interrupt_queued = false;
                 //println!("Executing {} (op code 0x{:02X})", instruction, instruction.opcode);
                 match self.execute(instruction) {
                     Err(instruction) => {
@@ -102,6 +103,7 @@ pub mod CPU{
                         return (self.clock, clock_increment)
                     }
                 };
+
         }
 
         pub(crate) fn execute(&mut self, instruction: Instruction) -> Result<(), Instruction> {

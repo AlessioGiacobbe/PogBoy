@@ -25,6 +25,7 @@ pub mod mmu {
         pub interrupt_master_enabled: u8, //ime
         pub interrupt_enabled: u8, //ie
         pub interrupt_flag: u8, //if
+        pub interrupt_queued: bool,
 
         pub timer_divider_clock: i32,   //div counter
         pub timer_clock: i32,   //tima counter
@@ -85,7 +86,8 @@ pub mod mmu {
                 timer_control: 0,
 
                 unprefixed_op_codes,
-                prefixed_op_codes
+                prefixed_op_codes,
+                interrupt_queued: false,
             }
         }
 
@@ -304,7 +306,7 @@ pub mod mmu {
                     self.timer_control = value;
                 },
                 0xFF0F => {
-                    self.interrupt_flag = 0xE0 | value  // IF, most significant first 3 bits are always 1, hence 0xE0
+                    self.interrupt_flag = value  // IF, most significant first 3 bits are always 1, hence 0xE0
                 },
                 //PPU special registers
                 0xFF40..=0xFF4F => {

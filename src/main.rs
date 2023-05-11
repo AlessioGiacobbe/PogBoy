@@ -104,6 +104,7 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     'main: loop {
         let (clock, clock_delta) = cpu.step();
         let (current_ppu_mode, should_rise_vblank_interrupt, should_rise_stat_interrupt) = cpu.MMU.PPU.step(clock);
+        cpu.increment_timer(clock_delta as i32);
 
         cycles_delta += clock_delta;
 

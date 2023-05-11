@@ -16,6 +16,7 @@ pub mod timer {
         }
 
         pub fn increment_timer(&mut self, clock: i32) {
+
             self.MMU.timer_divider_clock += clock;
             self.MMU.timer_divider += (self.MMU.timer_divider_clock >> 8) as u8;
             self.MMU.timer_divider_clock &= 0xFF;
@@ -27,9 +28,9 @@ pub mod timer {
             let divider = self.get_timer_frequency();
 
             if self.MMU.timer_clock >= divider {
+
                 self.MMU.timer_clock -= divider;
                 self.MMU.timer_counter = self.MMU.timer_counter.wrapping_add(1);
-
                 if self.MMU.timer_counter == 0 {
                     self.MMU.timer_counter = self.MMU.timer_modulo;
                     self.request_interrupt(InterruptType::Timer);
