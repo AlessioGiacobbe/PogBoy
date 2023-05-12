@@ -1,7 +1,7 @@
 mod registers;
 mod timer;
-mod interrupts;
 mod op;
+mod interrupts;
 
 pub mod CPU{
     use std::fmt::{Display, Formatter};
@@ -64,6 +64,11 @@ pub mod CPU{
         }
 
         pub(crate) fn step(&mut self) -> (u32, u32) {
+                if self.check_interrupts(){
+                    self.is_halted = false;
+                    return (self.clock, 0)
+                }
+
                 if self.is_halted {
                     if self.logging {
                         println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"));
@@ -71,7 +76,6 @@ pub mod CPU{
                     //what to do while halted?
                 }
 
-                self.check_interrupts();
 
                 let address = self.Registers.get_item("PC");
 
@@ -100,10 +104,10 @@ pub mod CPU{
                         if self.logging {
                             println!("STATUS AFTER EXECUTING 0x{:04X} {}", address, self);
                         }
+                        self.MMU.interrupt_queued = false;
                         return (self.clock, clock_increment)
                     }
                 };
-
         }
 
         pub(crate) fn execute(&mut self, instruction: Instruction) -> Result<(), Instruction> {
