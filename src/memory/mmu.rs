@@ -280,7 +280,7 @@ pub mod mmu {
                         0xFF01 => {
                             //do serial stuff
                             self.io_registers[address - 0xFF00] = value
-                        }
+                        },
                         _ => self.io_registers[address - 0xFF00] = value,
                         0xFF04 => {
                             self.timer_divider_clock = 0;
