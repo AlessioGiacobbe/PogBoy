@@ -201,7 +201,6 @@ pub mod mmu {
                 0xFF00..=0xFF4B => {
                     return match address {
                         0xFF00 => self.gamepad.read(),
-                        _ => self.io_registers[address - 0xFF00],
                         0xFF04 => self.timer_divider,
                         0xFF05 => self.timer_counter,
                         0xFF06 => self.timer_modulo,
@@ -220,6 +219,7 @@ pub mod mmu {
                         0xFF49 => self.PPU.read_byte(address),
                         0xFF4A => self.PPU.read_byte(address),
                         0xFF4B => self.PPU.read_byte(address),
+                        _ => self.io_registers[address - 0xFF00],
                     }
                 },
                 0xFF4C..=0xFF7F => {
@@ -281,7 +281,6 @@ pub mod mmu {
                             //do serial stuff
                             self.io_registers[address - 0xFF00] = value
                         },
-                        _ => self.io_registers[address - 0xFF00] = value,
                         0xFF04 => {
                             self.timer_divider_clock = 0;
                             self.timer_clock = 0;
@@ -304,6 +303,7 @@ pub mod mmu {
                         0xFF49 => self.PPU.write_byte(address, value),
                         0xFF4A => self.PPU.write_byte(address, value),
                         0xFF4B => self.PPU.write_byte(address, value),
+                        _ => self.io_registers[address - 0xFF00] = value,
                     }
                 },
                 0xFF4C..=0xFF7F => {
