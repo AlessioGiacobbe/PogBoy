@@ -266,9 +266,8 @@ pub mod ppu {
         }
 
         pub(crate) fn set_current_mode_from_value(&mut self, mut value: u8) {
-            value &= 0b1111000;
-            self.lcd_status &= 0b1000_0111;
-            self.lcd_status |= value;
+            //TODO mask given value
+            self.lcd_status = value
         }
 
         pub(crate) fn set_current_mode(&mut self, ppu_mode: PpuMode) {
