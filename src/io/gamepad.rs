@@ -14,7 +14,8 @@ pub mod gamepad {
     pub struct gamepad {
         pub(crate) value: u8,
         pub(crate) selected_column: ColumnType,
-        pub(crate) rows_value: (u8, u8),
+        pub(crate) directional: u8,
+        pub(crate) standard: u8,
         pub(crate) pressed_buttons: HashMap<String, (u8, u8)>
     }
 
@@ -23,15 +24,14 @@ pub mod gamepad {
             gamepad {
                 value: 0,
                 selected_column: NotSelected,
-                rows_value: (0xF, 0xF),
+                directional: 0xF,
+                standard: 0xF,
                 pressed_buttons: HashMap::new()
             }
         }
     }
 
     impl gamepad {
-
-
         pub fn read(& self) -> u8 {
             let mut result = self.value | 0b11001111;
             for pressed_button in self.pressed_buttons.iter() {
@@ -45,6 +45,24 @@ pub mod gamepad {
 
         pub fn write(&mut self, value: u8) {
             self.value = value & 0b00110000;
+        }
+
+        pub fn pull(&mut self, value: u8)  {
+            let P14 = ((value >> 4) & 1) != 0;
+            let P15 = ((value >> 5) & 1) != 0;
+
+            let mut byte = 0xFF & (value | 0b11001111);
+            if P14 && P15 {
+                return
+            }else if P14 && !P15 {
+                return
+            }else if !P14 {
+                byte &= self.directional
+            }else if !P15 {
+                byte &= self.standard
+            }
+
+            self.value = byte
         }
 
         pub fn get_line_and_mask_from_key(key: Key) -> (u8, u8) {

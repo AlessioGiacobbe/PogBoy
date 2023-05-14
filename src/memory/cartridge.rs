@@ -76,7 +76,16 @@ pub mod cartridge {
                     "BAD HEADER"
                 }
             }
+        }
+    }
 
+    impl Cartridge {
+        pub fn set_item(&self, value: u8, address: usize){
+
+        }
+
+        pub fn get_item(&self, address: usize) -> u8{
+            self.rom[address]
         }
     }
 

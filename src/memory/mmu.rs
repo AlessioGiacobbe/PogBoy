@@ -20,6 +20,8 @@ pub mod mmu {
         pub work_ram: [u8; 0x2000],
         pub io_registers: [u8; 0x100],
         pub high_ram: [u8; 0x80],
+        pub non_io_internal_ram0: [u8; 0x60],
+        pub non_io_internal_ram1: [u8; 0x34],
         pub is_past_bios: bool,
 
         pub interrupt_master_enabled: u8, //ime
@@ -72,6 +74,8 @@ pub mod mmu {
                 work_ram: [0; 0x2000],
                 io_registers: [0; 0x100],
                 high_ram: [0; 0x80],
+                non_io_internal_ram0: [0; 0x60],
+                non_io_internal_ram1: [0; 0x34],
                 is_past_bios: false,
 
                 interrupt_master_enabled: 0,
@@ -157,18 +161,18 @@ pub mod mmu {
                 //BIOS
                 0..=0xFF => {
                     if self.is_past_bios {
-                        self.cartridge.rom[address]
+                        self.cartridge.get_item(address)
                     } else {
                         self.bios[address]
                     }
                 }
                 //ROM bank 0
                 0x100..=0x3FFF => {
-                    self.cartridge.rom[address]
+                    self.cartridge.get_item(address)
                 },
                 //ROM bank 1-NN
                 0x4000..=0x7FFF => {
-                    self.cartridge.rom[address]
+                    self.cartridge.get_item(address)
                 },
                 //VRAM
                 0x8000..=0x9FFF => {
@@ -176,7 +180,7 @@ pub mod mmu {
                 },
                 //External RAM
                 0xA000..=0xBFFF => {
-                    self.external_ram[address - 0xA000]
+                    self.cartridge.get_item(address)
                 },
                 //WRAM (Work RAM)
                 0xC000..=0xDFFF => {
@@ -192,42 +196,36 @@ pub mod mmu {
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
-                    return 0xFF;
+                    return self.non_io_internal_ram0[address - 0xFEA0]
                 },
-                0xFF00 => {
-                    return self.gamepad.read()
+                0xFF00..=0xFF4B => {
+                    return match address {
+                        0xFF00 => self.gamepad.read(),
+                        _ => self.io_registers[address - 0xFF00],
+                        0xFF04 => self.timer_divider,
+                        0xFF05 => self.timer_counter,
+                        0xFF06 => self.timer_modulo,
+                        0xFF07 => self.timer_control,
+                        0xFF0F => self.interrupt_flag,
+                        0xFF10..=0xFF3F => 0,   //TODO get from sound
+                        0xFF40 => self.PPU.lcd_control,
+                        0xFF41 => self.PPU.read_byte(address),
+                        0xFF42 => self.PPU.read_byte(address),
+                        0xFF43 => self.PPU.read_byte(address),
+                        0xFF44 => self.PPU.read_byte(address),
+                        0xFF45 => self.PPU.read_byte(address),
+                        0xFF46 => 0, //DMA is write only
+                        0xFF47 => self.PPU.read_byte(address),
+                        0xFF48 => self.PPU.read_byte(address),
+                        0xFF49 => self.PPU.read_byte(address),
+                        0xFF4A => self.PPU.read_byte(address),
+                        0xFF4B => self.PPU.read_byte(address),
+                    }
                 },
-                //Div - Divider Registry (for timer)
-                0xFF04 => {
-                    self.timer_divider
-                },
-                //TIMA - timer counter
-                0xFF05 => {
-                    self.timer_counter
-                },
-                //TMA - timer modulo
-                0xFF06 => {
-                    self.timer_modulo
-                },
-                //TAC - timer control
-                0xFF07 => {
-                    self.timer_control
-                },
-                0xFF0F => {
-                    return self.interrupt_flag  //IF
-                },
-                //PPU special registers
-                0xFF40..=0xFF4F => {
-                    self.PPU.read_byte(address)
-                },
-                0xFF50 => {
-                    self.is_past_bios as u8
-                },
-                //I/O Registers
-                0xFF00..=0xFF7F => {
-                    self.io_registers[address - 0xFF00]
-                },
-                //High RAM
+                0xFF4C..=0xFF7F => {
+                    //gbc stuff
+                    self.non_io_internal_ram1[address - 0xFF4C]
+                }
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80]
                 },
@@ -242,21 +240,15 @@ pub mod mmu {
         }
 
         pub fn write_byte(&mut self, address: i32, value: u8){
-            //println!("Writing byte {} to 0x{:04x}", value, address);
-
             let address = address as usize;
             return match address {
                 //BIOS
-                0..=0x0FF => {
-                    self.bios[address] = value;
-                }
-                //ROM bank 0
-                0x100..=0x3FFF => {
-                    self.cartridge.rom[address] = value;
+                0..=0x3FFF => {
+                    self.cartridge.set_item(value, address);
                 },
                 //ROM bank 1-NN
                 0x4000..=0x7FFF => {
-                    self.cartridge.rom[address] = value;
+                    self.cartridge.set_item(value, address);
                 },
                 //VRAM
                 0x8000..=0x9FFF => {
@@ -264,7 +256,7 @@ pub mod mmu {
                 },
                 //External RAM
                 0xA000..=0xBFFF => {
-                    self.external_ram[address - 0xA000] = value;
+                    self.cartridge.set_item(value, address);
                 },
                 //WRAM (Work RAM)
                 0xC000..=0xDFFF => {
@@ -280,49 +272,51 @@ pub mod mmu {
                 },
                 //Not usable (prohibited!)
                 0xFEA0..=0xFEFF => {
-                    //panic!("{} address not usable", address)
-                }
-                0xFF00 => {
-                    self.gamepad.write(value)
+                    self.non_io_internal_ram0[address - 0xFEA0] = value;
                 },
-                0xFF01 => {
-                    //serial
-                    //println!("FF01 - 0x{:02X} ({:?})", value, value as char)
+                0xFF00..=0xFF4B => {
+                    match address {
+                        0xFF00 => self.gamepad.pull(value),
+                        0xFF01 => {
+                            //do serial stuff
+                            self.io_registers[address - 0xFF00] = value
+                        }
+                        _ => self.io_registers[address - 0xFF00] = value,
+                        0xFF04 => {
+                            self.timer_divider_clock = 0;
+                            self.timer_clock = 0;
+                            self.timer_divider =0
+                        },
+                        0xFF05 => self.timer_counter = value,
+                        0xFF06 => self.timer_modulo = value,
+                        0xFF07 => self.timer_control = value & 0b111,
+                        0xFF0F => self.interrupt_flag = value,
+                        0xFF10..=0xFF3F => (),   //TODO set sound stuff
+                        0xFF40 => self.PPU.set_lcdc(value),
+                        0xFF41 => self.PPU.set_current_mode_from_value(value),
+                        0xFF42 => self.PPU.write_byte(address, value),
+                        0xFF43 => self.PPU.write_byte(address, value),
+                        0xFF44 => self.PPU.write_byte(address, value),
+                        0xFF45 => self.PPU.write_byte(address, value),
+                        0xFF46 => self.transfer_dma(value), //DMA
+                        0xFF47 => self.PPU.write_byte(address, value),
+                        0xFF48 => self.PPU.write_byte(address, value),
+                        0xFF49 => self.PPU.write_byte(address, value),
+                        0xFF4A => self.PPU.write_byte(address, value),
+                        0xFF4B => self.PPU.write_byte(address, value),
+                    }
                 },
-                //Div - Divider Registry (for timer)
-                0xFF04 => {
-                    self.timer_divider = value;
+                0xFF4C..=0xFF7F => {
+                    //gbc stuff
+                    if address == 0xFF50 && !self.is_past_bios && (value == 0x1 || value == 0x11){
+                        self.is_past_bios = true;
+                    }else{
+                        self.non_io_internal_ram1[address - 0xFF4C] = value
+                    }
                 },
-                //TIMA - timer counter
-                0xFF05 => {
-                    self.timer_counter = value;
-                },
-                //TMA - timer modulo
-                0xFF06 => {
-                    self.timer_modulo = value;
-                },
-                //TAC - timer control
-                0xFF07 => {
-                    self.timer_control = value;
-                },
-                0xFF0F => {
-                    self.interrupt_flag = value  // IF, most significant first 3 bits are always 1, hence 0xE0
-                },
-                //PPU special registers
-                0xFF40..=0xFF4F => {
-                    self.PPU.write_byte(address, value)
-                },
-                0xFF50 => {
-                    self.is_past_bios = value == 1;
-                },
-                0xFF00..=0xFF7F => {
-                    self.io_registers[address - 0xFF00] = value
-                }
-                //High RAM
                 0xFF80..=0xFFFE=> {
                     self.high_ram[address - 0xFF80] = value
                 },
-                //Interrupt Enable register
                 0xFFFF => {
                     self.interrupt_enabled = value
                 },
@@ -341,6 +335,15 @@ pub mod mmu {
             let first_8_bits = self.read_byte(address as i32) as u16;
             let last_8_bits = self.read_byte((address + 1) as i32) as u16;
             (first_8_bits | last_8_bits << 8) as u16
+        }
+
+        //https://gbdev.io/pandocs/OAM_DMA_Transfer.html
+        pub fn transfer_dma(&mut self, value: u8) {
+            let target = 0xFE00;
+            let offset = value as i32 * 0x100;
+            for n in 0..0xA0 {
+                self.write_byte(target + n, self.read_byte(offset + n))
+            }
         }
     }
 

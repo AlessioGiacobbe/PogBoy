@@ -208,6 +208,8 @@ pub mod ppu {
         pub(crate) lcd_control: u8,
         scroll_y: u8,
         scroll_x: u8,
+        window_x: u8,
+        window_y: u8,
         background_palette_data: u8,
         obj_0_palette_data: u8,
         obj_1_palette_data: u8,
@@ -236,6 +238,8 @@ pub mod ppu {
                lcd_control: 0,
                scroll_y: 0,
                scroll_x: 0,
+               window_x: 0,
+               window_y: 0,
                background_palette_data: 0,
                obj_0_palette_data: 0,
                obj_1_palette_data: 0,
@@ -245,8 +249,26 @@ pub mod ppu {
            }
         }
 
+        pub(crate) fn set_lcdc(&mut self, value: u8) {
+            self.lcd_control = value;
+
+            if !self.get_lcdc_value(LCDCFlags::LCD_enabled) {
+                self.clock = 0;
+                //some checks should be performed before hard-changing ppu mode
+                self.set_current_mode(PpuMode::HBlank);
+                //next mode should be 2
+                self.current_line = 0
+            }
+        }
+
         pub(crate) fn get_current_mode(&self) -> PpuMode {
             return PpuMode::try_from((self.lcd_status & 0b11)).unwrap()
+        }
+
+        pub(crate) fn set_current_mode_from_value(&mut self, mut value: u8) {
+            value &= 0b1111000;
+            self.lcd_status &= 0b1000_0111;
+            self.lcd_status |= value;
         }
 
         pub(crate) fn set_current_mode(&mut self, ppu_mode: PpuMode) {
@@ -497,6 +519,9 @@ pub mod ppu {
                 0xFF44 => {
                     self.current_line as u8
                 },
+                0xFF45 => {
+                    self.current_line_compare as u8
+                },
                 0xFF47 => {
                     self.background_palette_data
                 },
@@ -505,7 +530,13 @@ pub mod ppu {
                 },
                 0xFF49 => {
                     self.obj_1_palette_data
-                }
+                },
+                0xFF4A => {
+                    self.window_y
+                },
+                0xFF4B => {
+                    self.window_x
+                },
                 _ => 0
             }
         }
@@ -513,6 +544,7 @@ pub mod ppu {
         pub(crate) fn write_byte(&mut self, address: usize, value: u8) {
             match address {
                 0x8000..=0x9FFF => {
+                    //TODO implement bank switching, this could write to bank vram 0 or 1
                     self.video_ram[address - 0x8000] = value;
                     if address < 0x9800 {
                         self.update_tile(address);
@@ -539,15 +571,28 @@ pub mod ppu {
                 0xFF44 => {
                     self.current_line = value as u32
                 },
+                0xFF45 => {
+                    self.current_line_compare = value as u32
+                },
                 0xFF47 => {
+                    //TODO should clear specific cache
                     self.background_palette_data = value;
                 },
                 0xFF48 => {
+                    //TODO should clear specific cache
                     self.obj_0_palette_data = value;
                 },
                 0xFF49 => {
+                    //TODO should clear specific cache
                     self.obj_1_palette_data = value;
                 },
+                0xFF4A => {
+                    //TODO check window x/y usage in PPU
+                    self.window_y = value;
+                },
+                0xFF4B => {
+                    self.window_y = value;
+                }
                 _ => ()
             }
         }
