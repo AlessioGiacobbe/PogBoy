@@ -39,7 +39,6 @@ pub mod op_codes_parser {
     }
 
 
-    //TODO could be cleaner
     impl fmt::Display for Operand {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             let mut value_as_string= self.name.clone();
@@ -77,7 +76,6 @@ pub mod op_codes_parser {
         }
     }
 
-    //TODO could be cleaner
     impl fmt::Display for Instruction {
         fn fmt(&self, f: &mut Formatter) -> fmt::Result {
             write!(f, "{: <6}", self.mnemonic)?;

@@ -28,7 +28,6 @@ fn memory_can_read_and_write(){
     dummy_mmu.write_byte(0x0, 0xFF);
     assert_eq!(dummy_mmu.read_byte(0x0), 0xFF);
 
-    //TODO implement PPU memory tests
     assert_eq!(dummy_mmu.read_byte(0x8000), 0x1);
     dummy_mmu.write_byte(0x8000, 0xFF);
     assert_eq!(dummy_mmu.read_byte(0x8000), 0xFF);

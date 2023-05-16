@@ -276,7 +276,7 @@ pub mod mmu {
                 },
                 0xFF00..=0xFF4B => {
                     match address {
-                        0xFF00 => self.gamepad.pull(value),
+                        0xFF00 => self.gamepad.write(value),
                         0xFF01 => {
                             //do serial stuff
                             self.io_registers[address - 0xFF00] = value

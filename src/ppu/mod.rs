@@ -347,6 +347,9 @@ pub mod ppu {
         }
 
         pub(crate) fn render_current_line(&mut self) {
+            if self.get_lcdc_value(LCDCFlags::Window_enable) {
+
+            }
             if self.get_lcdc_value(LCDCFlags::Bg_enable) {
                 self.render_background(self.current_line);
             }

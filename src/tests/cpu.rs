@@ -674,4 +674,3 @@ fn a_register_with_d8_operand_instructions_works(){
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
 }
 
-//TODO test ld_hl_sp_r8 & add_sp_r8
