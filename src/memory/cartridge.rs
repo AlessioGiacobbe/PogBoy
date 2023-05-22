@@ -4,12 +4,13 @@ pub mod cartridge {
     use std::fs::File;
     use std::io::Read;
     use serde::{Serialize, Deserialize};
+    use crate::memory::mbc::mbc;
+    use crate::memory::mbc::mbc::MbcType;
 
     #[derive(Clone, Debug)]
     pub struct Cartridge {
         pub cartridge_info: Option<CartridgeInfo>,
-        pub rom: Vec<u8>,
-        pub ram: Vec<u8>
+        pub mbc: MbcType
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -82,24 +83,11 @@ pub mod cartridge {
 
     impl Cartridge {
         pub fn set_item(&mut self, value: u8, address: usize){
-            //TODO
-            match self.cartridge_info.unwrap().cartridge_type {
-
-                    _ => {}
-            }
-
-            if address >= 0x8000{
-                self.ram[address - 0x8000] = value;
-            }else if address >= 0xA000 {
-                self.rom[address] = value;
-            }
+            self.mbc.write(address, value);
         }
 
         pub fn get_item(&self, address: usize) -> u8{
-            if address <= 0x8000 {
-                return self.rom[address]
-            }
-            self.ram[address - 0x8000]
+            self.mbc.read(address)
         }
     }
 
@@ -114,12 +102,11 @@ pub mod cartridge {
 
         let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
         let cartridge_info: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
-        println!("{}", rom_buffer.len());
+        println!("cartridge type {}", cartridge_info.cartridge_type);
 
         Cartridge {
             cartridge_info: Some(cartridge_info),
-            rom: rom_buffer,
-            ram: vec![0; 0x8000]
+            mbc: MbcType::new(cartridge_info.cartridge_type, rom_buffer)
         }
     }
 }
