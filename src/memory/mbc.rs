@@ -32,7 +32,11 @@ pub mod mbc {
 
     #[derive(Clone, Debug)]
     pub struct Mbc5 {
-
+        rom: Vec<u8>,
+        ram: Vec<u8>,
+        selected_rom_bank: usize,
+        selected_ram_bank: usize,
+        ram_enabled: bool,
     }
 
     #[derive(Clone, Debug)]
@@ -201,15 +205,61 @@ pub mod mbc {
 
     impl Mbc5 {
         pub fn new(rom: Vec<u8>) -> Self {
-            Mbc5 {}
+            Mbc5 {
+                rom,
+                ram: vec![0; 0x20000],
+                selected_rom_bank: 0,
+                selected_ram_bank: 0,
+                ram_enabled: false,
+            }
         }
 
         pub fn read(&self, address:usize) -> u8 {
-            1
+            return match address {
+                0..=0x3FFF => {
+                    self.rom[address]
+                },
+                0x4000..=0x7FFF => {
+                    let base = self.selected_rom_bank * 0x4000;
+                    let offset = address - 0x4000;
+                    self.rom[base + offset]
+                },
+                0xA000..=0xBFFF => {
+                    if self.ram_enabled {
+                        let base = self.selected_ram_bank * 0x2000;
+                        let offset = address - 0xA000;
+                        self.ram[base + offset];
+                    }
+                    0
+                },
+                _ => 0,
+            }
+
         }
 
         pub fn write(&mut self, address: usize, value: u8) {
-
+            match address {
+                0..=0x1FFF => {
+                    self.ram_enabled = value & 0xF == 0xA;
+                },
+                0x2000..=0x2FFF => {
+                    self.selected_rom_bank = (self.selected_rom_bank & !0xff) | value as usize;
+                },
+                0x3000..=0x3FFF => {
+                    self.selected_rom_bank = (self.selected_rom_bank & !0x100) | (value as usize & 1) << 8;
+                },
+                0x4000..=0x5FFF => {
+                    self.selected_ram_bank = value as usize & 0xf;
+                },
+                0xA000..=0xBFFF => {
+                    if self.ram_enabled {
+                        let base = self.selected_ram_bank * 0x2000;
+                        let offset = address - 0xa000;
+                        self.ram[base + offset] = value;
+                    }
+                },
+                _ => {}
+            }
         }
     }
 
