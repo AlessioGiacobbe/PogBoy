@@ -145,11 +145,42 @@ pub mod mbc {
         }
 
         pub fn read(&self, address: usize) -> u8 {
-            1
+            return match address {
+                0x0..=0x3FFF => self.rom[address],
+                0x4000..=0x7FFF => {
+                    let base = self.selected_rom_bank.max(1);
+                    let offset = address - 0x4000;
+                    self.rom[base + offset];
+                },
+                0xA000..=0xA1FF => {
+                    if self.ram_enabled {
+                        return self.ram[address - 0xA000]
+                    }
+                    0
+                },
+                _ => 0,
+            };
         }
 
         pub fn write(&mut self, address: usize, value: u8) {
-
+            match address {
+                0x0..=0x1FFF => {
+                    if address & 0x100 == 0 {
+                        self.ram_enabled = (value & 0x0f) == 0x0a;
+                    }
+                },
+                0x2000..=0x3FFF => {
+                    if address & 0x100 != 0 {
+                        self.selected_rom_bank = (value as usize & 0xf).max(1);
+                    }
+                },
+                0xA000..=0xA1FF => {
+                    if self.ram_enabled {
+                        self.ram[address - 0xA000] = value & 0xF
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
