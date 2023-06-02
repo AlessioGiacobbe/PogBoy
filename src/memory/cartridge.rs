@@ -102,7 +102,7 @@ pub mod cartridge {
 
         let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
         let cartridge_info: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
-        println!("cartridge type {}", cartridge_info.cartridge_type);
+        println!("cartridge type {} - size {}", cartridge_info.cartridge_type, rom_buffer.len());
 
         Cartridge {
             cartridge_info: Some(cartridge_info),

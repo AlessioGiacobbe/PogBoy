@@ -150,7 +150,7 @@ pub mod mbc {
                 0x4000..=0x7FFF => {
                     let base = self.selected_rom_bank.max(1);
                     let offset = address - 0x4000;
-                    self.rom[base + offset];
+                    self.rom[base + offset]
                 },
                 0xA000..=0xA1FF => {
                     if self.ram_enabled {
