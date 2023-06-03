@@ -571,7 +571,7 @@ pub mod ppu {
                     self.scroll_x = value;
                 },
                 0xFF44 => {
-                    self.current_line = value as u32
+                    self.current_line = 0
                 },
                 0xFF45 => {
                     self.current_line_compare = value as u32

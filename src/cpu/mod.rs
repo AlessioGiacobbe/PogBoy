@@ -73,12 +73,11 @@ pub mod CPU{
                     if self.logging {
                         println!("STUCK at 0x{:02X}", self.Registers.get_item("PC"));
                     }
-                    //what to do while halted?
+                    return (self.clock, 4);
                 }
 
 
                 let address = self.Registers.get_item("PC");
-
 
                 let (next_address, instruction) = self.MMU.decode(address as i32);
                 self.Registers.set_item("PC", next_address as u16);
