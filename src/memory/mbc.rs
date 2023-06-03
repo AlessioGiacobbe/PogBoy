@@ -27,7 +27,18 @@ pub mod mbc {
 
     #[derive(Clone, Debug)]
     pub struct Mbc3 {
-
+        rom: Vec<u8>,
+        ram: Vec<u8>,
+        rom_bank: usize,
+        enable: bool,
+        select: u8,
+        rtc_secs: u8,
+        rtc_mins: u8,
+        rtc_hours: u8,
+        rtc_day_low: u8,
+        rtc_day_high: u8,
+        epoch: u64,
+        prelatch: bool,
     }
 
     #[derive(Clone, Debug)]
@@ -191,15 +202,100 @@ pub mod mbc {
 
     impl Mbc3 {
         pub fn new(rom: Vec<u8>) -> Self {
-            Mbc3 {}
+            let mut mbc3 = Self {
+                rom,
+                ram: vec![0; 0x8000],
+                rom_bank: 0,
+                enable: false,
+                select: 0,
+                rtc_secs: 0,
+                rtc_mins: 0,
+                rtc_hours: 0,
+                rtc_day_low: 0,
+                rtc_day_high: 0,
+                epoch: 0,
+                prelatch: false,
+            };
+            mbc3.update_epoch();
+            mbc3
+        }
+
+        pub fn update_epoch(&mut self) {
+            //TODO
+            self.epoch = 0;
         }
 
         pub fn read(&self, address: usize) -> u8 {
-            1
+            return match address {
+                0x0..=0x3FFF => {
+                    self.rom[address]
+                },
+                0x4000..=0x7FFF => {
+                    let rom_bank = self.rom_bank.max(1);
+                    let base = rom_bank * 0x4000;
+                    let offset = address - 0x4000;
+                    self.rom[base + offset]
+                },
+                0xA000..=0xBFFF => {
+                    match self.select {
+                        x if x == 0x00 || x == 0x01 || x == 0x02 || x == 0x03 => {
+                            let base = x as usize * 0x2000;
+                            let offset = address as usize - 0xa000;
+                            self.ram[base + offset]
+                        }
+                        0x08 => self.rtc_secs,
+                        0x09 => self.rtc_mins,
+                        0x0a => self.rtc_hours,
+                        0x0b => self.rtc_day_low,
+                        0x0c => self.rtc_day_high,
+                        _ => 0,
+                    }
+                },
+                _ => 0
+            }
         }
 
         pub fn write(&mut self, address: usize, value: u8) {
-
+            match address {
+                0..=0x1FFF => {
+                    self.enable = value != 0x00;
+                },
+                0x2000..=0x3FFF => {
+                    self.rom_bank = value as usize & 0x7f;
+                },
+                0x4000..=0x5FFF => {
+                    self.select = value;
+                },
+                0x6000..=0x7FFF => {
+                    //TODO
+                },
+                0xA000..=0xBFFF => {
+                    match self.select {
+                        x if x == 0x00 || x == 0x01 || x == 0x02 || x == 0x03 => {
+                            let base = x as usize * 0x2000;
+                            let offset = address as usize - 0xa000;
+                            self.ram[base + offset] = value;
+                        }
+                        0x08 => {
+                            self.rtc_secs = value;
+                        }
+                        0x09 => {
+                            self.rtc_mins = value;
+                        }
+                        0x0a => {
+                            self.rtc_hours = value;
+                        }
+                        0x0b => {
+                            self.rtc_day_low = value;
+                        }
+                        0x0c => {
+                            self.rtc_day_high = value;
+                        }
+                        s => unimplemented!("Unknown selector: {:02x}", s),
+                    }
+                },
+                _ => {}
+            }
         }
     }
 
