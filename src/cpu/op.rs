@@ -708,7 +708,7 @@ pub mod op {
                     self.clock += 12;
                 }
                 if EnableInterrupts {
-                    self.MMU.interrupt_master_enabled = 1;
+                    self.enable_interrupt();
                 }
             }
         }

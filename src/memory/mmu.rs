@@ -24,7 +24,7 @@ pub mod mmu {
         pub non_io_internal_ram1: [u8; 0x34],
         pub is_past_bios: bool,
 
-        pub interrupt_master_enabled: u8, //ime
+        pub interrupt_master_enabled: bool, //ime
         pub interrupt_enabled: u8, //ie
         pub interrupt_flag: u8, //if
         pub interrupt_queued: bool,
@@ -78,7 +78,7 @@ pub mod mmu {
                 non_io_internal_ram1: [0; 0x34],
                 is_past_bios: false,
 
-                interrupt_master_enabled: 0,
+                interrupt_master_enabled: false,
                 interrupt_enabled: 0,
                 interrupt_flag: 0xE0,
 
@@ -234,6 +234,7 @@ pub mod mmu {
                     self.interrupt_enabled as u8
                 },
                 _ => {
+                    return 0;
                     panic!("Address {} out of range!", address)
                 }
             }

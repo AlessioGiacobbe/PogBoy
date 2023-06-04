@@ -102,7 +102,8 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
     let mut time_ref = Instant::now();
 
     'main: loop {
-        let (clock, clock_delta) = cpu.step();
+        let (clock, mut clock_delta) = cpu.step();
+        clock_delta += cpu.check_interrupts();
         let (current_ppu_mode, should_rise_vblank_interrupt, should_rise_stat_interrupt) = cpu.MMU.PPU.step(clock_delta);
         cpu.increment_timer(clock_delta as i32);
 
@@ -175,7 +176,7 @@ fn run_cpu(_: Sender<&Vec<u8>>, cpu_receiver: Receiver<(Key, ButtonState)>, imag
                             fs::write("current_screen_tiles.txt", current_screen_tiles).expect("Unable to write file");
 
                             //dump interrupt related flags
-                            println!("Interrupts: IF: {:02X}, IE: {:02X}, IME: {:02X}", cpu.MMU.interrupt_flag, cpu.MMU.interrupt_enabled, cpu.MMU.interrupt_master_enabled)
+                            println!("Interrupts: IF: {:02X}, IE: {:02X}, IME: {}", cpu.MMU.interrupt_flag, cpu.MMU.interrupt_enabled, cpu.MMU.interrupt_master_enabled)
                         },
                         Key::Down | Key::Up | Key::Left | Key::Right | Key::Space | Key::Comma | Key::X | Key::Z => {
                             cpu.MMU.gamepad.key_pressed(key);
