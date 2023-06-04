@@ -19,10 +19,7 @@ use crate::ppu::ppu::{
 use image;
 use image::ColorType::{Rgb8, Rgba8};
 use image::RgbaImage;
-use piston_window::{
-    image as draw_image, Button, ButtonState, Context, Event, Input, Key, PistonWindow, Texture,
-    TextureContext, TextureSettings, WindowSettings,
-};
+use piston_window::{image as draw_image, Button, ButtonState, Context, Event, Input, Key, PistonWindow, Texture, TextureContext, TextureSettings, WindowSettings, AdvancedWindow};
 use std::fs::File;
 use std::path::Path;
 use std::sync::mpsc::{Receiver, Sender};
@@ -34,7 +31,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let rom_name = args.last().unwrap().clone();
 
-    let (cpu_sender, _): (Sender<&Vec<u8>>, Receiver<&Vec<u8>>) = mpsc::channel();
+    let (cpu_sender, window_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
     let (window_sender, cpu_receiver): (Sender<(Key, ButtonState)>, Receiver<(Key, ButtonState)>) =
         mpsc::channel();
 
@@ -74,10 +71,17 @@ fn main() {
                     window_sender
                         .send((Key::Escape, ButtonState::Press))
                         .unwrap();
+                },
+                Input::Resize(resize_args) => {
+                    //println!("{} - {}", resize_args.window_size[0], resize_args.window_size[1])
                 }
                 _ => {}
             },
             Event::Loop(_) => {
+                let received = window_receiver.try_recv();
+                if received.is_ok() {
+                    window.set_title(received.unwrap());
+                }
                 window.draw_2d(&event, |c: Context, g, device| {
                     texture
                         .update(&mut texture_context, &*image_buffer.lock().unwrap())
@@ -94,12 +98,15 @@ fn main() {
 }
 
 fn run_cpu(
-    _: Sender<&Vec<u8>>,
+    cpu_sender: Sender<String>,
     cpu_receiver: Receiver<(Key, ButtonState)>,
     image_buffer_reference: Arc<Mutex<RgbaImage>>,
     rom_name: String,
 ) {
     let cartridge: Cartridge = read_cartridge(&rom_name);
+    if let cartridge_info = cartridge.cartridge_info.unwrap() {
+        cpu_sender.send(cartridge_info.game_title().to_owned()).expect("Can't read cartridge title");
+    }
 
     let mut ppu: PPU = PPU::new();
     let mmu: MMU = MMU::new(Some(cartridge), &mut ppu);

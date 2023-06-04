@@ -78,7 +78,7 @@ pub mod cartridge {
     }
 
     impl CartridgeInfo {
-        fn game_title(&self) -> &str {
+        pub fn game_title(&self) -> &str {
             match std::str::from_utf8(&self.title) {
                 Ok(value) => value,
                 Err(error) => {
@@ -111,9 +111,10 @@ pub mod cartridge {
         let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS + 1];
         let cartridge_info: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
         println!(
-            "cartridge type {:#01x} - size {}",
+            "cartridge type {:#01x} - size {} - name {}",
             cartridge_info.cartridge_type,
-            rom_buffer.len()
+            rom_buffer.len(),
+            cartridge_info.game_title(),
         );
 
         Cartridge {
