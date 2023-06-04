@@ -1,11 +1,10 @@
 # PogBoy
-A work in progress Gameboy emulator i made to learn Rust, using [Piston](https://www.piston.rs/) for the rendering.
-
 <p align="center">
-<img width="350px" src="https://i.imgur.com/gB4gPDs.png"/>
+<img width="650px" src="https://imgur.com/YHdXH07.png"/>
 </p>
 
-The emulator is still in early development, most of the basic stuff is yet to be implemented, but it can boot the original BIOS 🎉
+A work in progress Gameboy emulator i made to learn Rust, using [Piston](https://www.piston.rs/) for the rendering.
+The emulator is still in early development, most of the basic stuff is yet to be implemented, but it can boot the original BIOS, Tetris and Dr Mario 🎉
 
 ## Starting and debugging ROM
 Roms should be placed inside `/src/roms`, the emulator must be compiled in release mode to create an optimized build (for performance issues) and ran with `cargo run --release -- rom-name.gb`.
