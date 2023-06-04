@@ -2,25 +2,32 @@ use crate::cpu::CPU::CPU;
 use crate::tests::factories::{create_dummy_mmu, create_dummy_ppu};
 
 #[test]
-fn decoder_can_parse_correctly(){
+fn decoder_can_parse_correctly() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let (next_address, nop_instruction) = dummy_mmu.decode(0x100);
     let (next_address, ld_a_d8_instruction) = dummy_mmu.decode(next_address);
-    let (next_address, bit_7_h) = dummy_mmu.decode(next_address);  //CB PREFIXED
+    let (next_address, bit_7_h) = dummy_mmu.decode(next_address); //CB PREFIXED
     let (_, ld_hl_d16_instruction) = dummy_mmu.decode(next_address);
     println!("{} NOP INSTRUCT2iO", nop_instruction);
     assert_eq!(nop_instruction.mnemonic, "NOP");
-    let d8 = ld_a_d8_instruction.operands.into_iter().find(|operand| operand.name == "d8").unwrap();
+    let d8 = ld_a_d8_instruction
+        .operands
+        .into_iter()
+        .find(|operand| operand.name == "d8")
+        .unwrap();
     assert_eq!(d8.value.unwrap(), 0x0F);
     assert_eq!(bit_7_h.prefixed, true);
-    let d16 = ld_hl_d16_instruction.operands.into_iter().find(|operand| operand.name == "d16").unwrap();
+    let d16 = ld_hl_d16_instruction
+        .operands
+        .into_iter()
+        .find(|operand| operand.name == "d16")
+        .unwrap();
     assert_eq!(d16.value.unwrap(), 0xC0FE);
 }
 
-
 #[test]
-fn memory_can_read_and_write(){
+fn memory_can_read_and_write() {
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
@@ -52,9 +59,8 @@ fn memory_can_read_and_write(){
     assert_eq!(dummy_mmu.read_word(0xA000), 0xC0FE);
 }
 
-
 #[test]
-fn push_and_pop_works(){
+fn push_and_pop_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);

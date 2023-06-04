@@ -1,4 +1,4 @@
-use crate::cpu::CPU::{CPU, JumpCondition};
+use crate::cpu::CPU::{JumpCondition, CPU};
 use crate::ppu::ppu::LCDCFlags;
 use crate::tests::factories::{create_dummy_instruction, create_dummy_mmu, create_dummy_ppu};
 
@@ -19,12 +19,11 @@ fn add_sets_right_flags() {
     cpu.Registers.set_item("B", 0xFF);
 
     cpu.add_a_r("B");
-    assert_eq!(cpu.Registers.get_item("A"), 254);   //should be rounded bitmasking with 0xFF
-    assert_eq!(cpu.Registers.get_item("c"), 1);     //carry should be 1 since 0xFF + 0xFF > 0xFF
+    assert_eq!(cpu.Registers.get_item("A"), 254); //should be rounded bitmasking with 0xFF
+    assert_eq!(cpu.Registers.get_item("c"), 1); //carry should be 1 since 0xFF + 0xFF > 0xFF
     assert_eq!(cpu.Registers.get_item("n"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 0);
     assert_eq!(cpu.Registers.get_item("h"), 1);
-
 
     cpu.Registers.set_item("A", 0x8);
     cpu.Registers.set_item("B", 0x8);
@@ -35,15 +34,14 @@ fn add_sets_right_flags() {
     assert_eq!(cpu.Registers.get_item("z"), 0);
     assert_eq!(cpu.Registers.get_item("h"), 1); //should be setted, 8+8 > 0xF
 
-    cpu.Registers.set_item("HL", 0xA000);   //should point to memory filled with 0x2
+    cpu.Registers.set_item("HL", 0xA000); //should point to memory filled with 0x2
     cpu.Registers.set_item("A", 0x1);
     cpu.add_a_hl();
     assert_eq!(cpu.Registers.get_item("A"), 0x3);
 }
 
-
 #[test]
-fn adc_sets_right_flags(){
+fn adc_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -59,13 +57,13 @@ fn adc_sets_right_flags(){
 
     cpu.Registers.set_item("A", 0x1);
     cpu.Registers.set_item("c", 0x0);
-    cpu.Registers.set_item("HL", 0xA000);   //should point to memory filled with 0x2
+    cpu.Registers.set_item("HL", 0xA000); //should point to memory filled with 0x2
     cpu.adc_a_hl();
     assert_eq!(cpu.Registers.get_item("A"), 0x3);
 }
 
 #[test]
-fn lcdc_flags_are_read_correctly(){
+fn lcdc_flags_are_read_correctly() {
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
@@ -82,11 +80,10 @@ fn lcdc_flags_are_read_correctly(){
     dummy_mmu.write_byte(0xFF40, 0x20);
     assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Window_enable), true);
     assert_eq!(dummy_mmu.PPU.get_lcdc_value(LCDCFlags::Obj_size), false);
-
 }
 
 #[test]
-fn sub_sets_right_flags(){
+fn sub_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -115,7 +112,7 @@ fn sub_sets_right_flags(){
 }
 
 #[test]
-fn subc_sets_right_flags(){
+fn subc_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -134,7 +131,7 @@ fn subc_sets_right_flags(){
 }
 
 #[test]
-fn and_sets_right_flags(){
+fn and_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -155,7 +152,7 @@ fn and_sets_right_flags(){
 }
 
 #[test]
-fn or_sets_right_flags(){
+fn or_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -181,9 +178,8 @@ fn or_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("A"), 3);
 }
 
-
 #[test]
-fn xor_sets_right_flags(){
+fn xor_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -206,7 +202,7 @@ fn xor_sets_right_flags(){
 }
 
 #[test]
-fn cp_sets_right_flags(){
+fn cp_sets_right_flags() {
     //same as sub but we check that A didn't change
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
@@ -232,7 +228,7 @@ fn cp_sets_right_flags(){
 }
 
 #[test]
-fn inc_sets_right_flags(){
+fn inc_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -255,9 +251,8 @@ fn inc_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("BC"), 0x0);
 }
 
-
 #[test]
-fn dec_sets_right_flags(){
+fn dec_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -284,7 +279,7 @@ fn dec_sets_right_flags(){
 }
 
 #[test]
-fn right_rotations_works(){
+fn right_rotations_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -303,7 +298,7 @@ fn right_rotations_works(){
     cpu.Registers.set_item("c", 1);
     cpu.rr_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 1);
-    assert_eq!(cpu.Registers.get_item("A"), 0x81);  //carry is putted on 7th position
+    assert_eq!(cpu.Registers.get_item("A"), 0x81); //carry is putted on 7th position
 
     cpu.Registers.set_item("A", 0x04);
     cpu.Registers.set_item("c", 0);
@@ -322,7 +317,7 @@ fn right_rotations_works(){
 }
 
 #[test]
-fn left_rotations_works(){
+fn left_rotations_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -335,7 +330,7 @@ fn left_rotations_works(){
 
     cpu.rl_r("A");
     assert_eq!(cpu.Registers.get_item("c"), 0);
-    assert_eq!(cpu.Registers.get_item("A"), 0x7);      //carry is putted in 0th position
+    assert_eq!(cpu.Registers.get_item("A"), 0x7); //carry is putted in 0th position
 
     cpu.Registers.set_item("HL", 0xC000);
     cpu.MMU.write_byte(0xC000, 0x81);
@@ -392,7 +387,6 @@ fn sla_sra_and_srl_sets_right_flags() {
     assert_eq!(cpu.MMU.read_byte(0xC000), 0x50);
 }
 
-
 #[test]
 fn swap_works() {
     let mut dummy_ppu = create_dummy_ppu();
@@ -407,9 +401,9 @@ fn swap_works() {
     assert_eq!(cpu.Registers.get_item("c"), 0);
     assert_eq!(cpu.Registers.get_item("z"), 1);
 
-    cpu.Registers.set_item("A", 0x38);  // 0011 1000
+    cpu.Registers.set_item("A", 0x38); // 0011 1000
     cpu.swap_r("A");
-    assert_eq!(cpu.Registers.get_item("A"), 0x83);  // 1000 0011
+    assert_eq!(cpu.Registers.get_item("A"), 0x83); // 1000 0011
 
     cpu.Registers.set_item("HL", 0xC000);
     cpu.MMU.write_byte(0xC000, 0x38);
@@ -492,7 +486,7 @@ fn set_works() {
 }
 
 #[test]
-fn add_hl_nn_sets_right_flags(){
+fn add_hl_nn_sets_right_flags() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -504,7 +498,6 @@ fn add_hl_nn_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("c"), 1);
     assert_eq!(cpu.Registers.get_item("h"), 1);
 
-
     cpu.Registers.set_item("HL", 0x0FFF);
     cpu.Registers.set_item("BC", 0x0001);
 
@@ -514,16 +507,15 @@ fn add_hl_nn_sets_right_flags(){
     assert_eq!(cpu.Registers.get_item("h"), 1);
 }
 
-
 #[test]
-fn ld_hl_works(){
+fn ld_hl_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
 
     cpu.Registers.set_item("HL", 0xC000);
     cpu.Registers.set_item("B", 0x4);
-    cpu.ld_address_value("HL","B");
+    cpu.ld_address_value("HL", "B");
     assert_eq!(cpu.MMU.read_byte(0xC000), 0x4);
 
     cpu.Registers.set_item("BC", 0xC001);
@@ -533,7 +525,7 @@ fn ld_hl_works(){
 }
 
 #[test]
-fn inc_and_dec_hl_pointer_works(){
+fn inc_and_dec_hl_pointer_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -548,7 +540,7 @@ fn inc_and_dec_hl_pointer_works(){
 }
 
 #[test]
-fn memory_pointer_ops_works(){
+fn memory_pointer_ops_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -569,7 +561,6 @@ fn memory_pointer_ops_works(){
     cpu.ld_a16_pointer_sp(ld_a16_pointer_sp_instruction);
     assert_eq!(cpu.MMU.read_word(0xC000), 0xC0FE);
 }
-
 
 #[test]
 fn rst_works() {
@@ -597,16 +588,16 @@ fn jump_works() {
     let jp_r8_instruction = create_dummy_instruction("r8", 0x1);
     cpu.Registers.set_item("z", 0);
     cpu.Registers.set_item("PC", 0);
-    cpu.jr_r8(jp_r8_instruction.clone(),  JumpCondition::NotZero);
+    cpu.jr_r8(jp_r8_instruction.clone(), JumpCondition::NotZero);
     assert_eq!(cpu.clock, 0x4);
     assert_eq!(cpu.Registers.get_item("PC"), 1);
     cpu.Registers.set_item("z", 1);
-    cpu.jr_r8(jp_r8_instruction,  JumpCondition::NotZero);
-    assert_eq!(cpu.Registers.get_item("PC"), 1);    //jump should not happen so PC shouldn't be changed
+    cpu.jr_r8(jp_r8_instruction, JumpCondition::NotZero);
+    assert_eq!(cpu.Registers.get_item("PC"), 1); //jump should not happen so PC shouldn't be changed
 }
 
 #[test]
-fn return_works(){
+fn return_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -639,7 +630,7 @@ fn c_pointer_instructions_works() {
 }
 
 #[test]
-fn a_register_with_d8_operand_instructions_works(){
+fn a_register_with_d8_operand_instructions_works() {
     let mut dummy_ppu = create_dummy_ppu();
     let dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let mut cpu = CPU::new(dummy_mmu);
@@ -673,4 +664,3 @@ fn a_register_with_d8_operand_instructions_works(){
     assert_eq!(cpu.Registers.get_item("A"), 0x0F);
     assert_eq!(cpu.Registers.get_item("c"), 1); //should be set, B > A
 }
-

@@ -1,16 +1,16 @@
 pub mod cartridge {
+    use crate::memory::mbc::mbc;
+    use crate::memory::mbc::mbc::MbcType;
+    use serde::{Deserialize, Serialize};
     use std::fmt;
     use std::fmt::Formatter;
     use std::fs::File;
     use std::io::Read;
-    use serde::{Serialize, Deserialize};
-    use crate::memory::mbc::mbc;
-    use crate::memory::mbc::mbc::MbcType;
 
     #[derive(Clone, Debug)]
     pub struct Cartridge {
         pub cartridge_info: Option<CartridgeInfo>,
-        pub mbc: MbcType
+        pub mbc: MbcType,
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -42,7 +42,9 @@ pub mod cartridge {
 
     impl fmt::Display for CartridgeInfo {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "Cartridge : {{
+            write!(
+                f,
+                "Cartridge : {{
             entry_point: 0x{:02X} 0x{:02X} 0x{:02X} 0x{:02X}
             cgb: {:?}
             game_title: {:?}
@@ -54,25 +56,31 @@ pub mod cartridge {
             header_checksum: 0x{:04X}
             global_checksum: 0x{:04X}
         }}",
-                   self.entry_point[0], self.entry_point[1], self.entry_point[2], self.entry_point[3],
-                   self.cgb_flag,
-                   self.game_title(),
-                   self.sgb_flag,
-                   self.cartridge_type,
-                   self.rom_size,
-                   self.ram_size,
-                   if self.destination_code == 0 {"Jap"} else {"Non-Jap"},
-                   self.header_checksum,
-                   self.global_checksum)
+                self.entry_point[0],
+                self.entry_point[1],
+                self.entry_point[2],
+                self.entry_point[3],
+                self.cgb_flag,
+                self.game_title(),
+                self.sgb_flag,
+                self.cartridge_type,
+                self.rom_size,
+                self.ram_size,
+                if self.destination_code == 0 {
+                    "Jap"
+                } else {
+                    "Non-Jap"
+                },
+                self.header_checksum,
+                self.global_checksum
+            )
         }
     }
 
     impl CartridgeInfo {
         fn game_title(&self) -> &str {
             match std::str::from_utf8(&self.title) {
-                Ok(value) => {
-                    value
-                }
+                Ok(value) => value,
                 Err(error) => {
                     println!("Can't read rom name from header! :( {}", error);
                     "BAD HEADER"
@@ -82,11 +90,11 @@ pub mod cartridge {
     }
 
     impl Cartridge {
-        pub fn set_item(&mut self, value: u8, address: usize){
+        pub fn set_item(&mut self, value: u8, address: usize) {
             self.mbc.write(address, value);
         }
 
-        pub fn get_item(&self, address: usize) -> u8{
+        pub fn get_item(&self, address: usize) -> u8 {
             self.mbc.read(address)
         }
     }
@@ -100,13 +108,17 @@ pub mod cartridge {
         let mut rom_buffer = Vec::new();
         rom.read_to_end(&mut rom_buffer).expect("Can't read ROM");
 
-        let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS+1];
+        let rom_header: &[u8] = &rom_buffer[HEX_HEADER_START_ADDRESS..HEX_HEADER_END_ADDRESS + 1];
         let cartridge_info: CartridgeInfo = bincode::deserialize(rom_header).unwrap();
-        println!("cartridge type {:#01x} - size {}", cartridge_info.cartridge_type, rom_buffer.len());
+        println!(
+            "cartridge type {:#01x} - size {}",
+            cartridge_info.cartridge_type,
+            rom_buffer.len()
+        );
 
         Cartridge {
             cartridge_info: Some(cartridge_info),
-            mbc: MbcType::new(cartridge_info.cartridge_type, rom_buffer)
+            mbc: MbcType::new(cartridge_info.cartridge_type, rom_buffer),
         }
     }
 }

@@ -1,5 +1,5 @@
-mod factories;
 mod cpu;
-mod memory;
+mod factories;
 mod io;
+mod memory;
 mod ppu;

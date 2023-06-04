@@ -1,7 +1,7 @@
 pub mod Registers {
+    use phf::phf_map;
     use std::fmt;
     use std::fmt::Formatter;
-    use phf::phf_map;
 
     const LOW_REGISTERS: phf::Map<&'static str, &'static str> = phf_map! {
          "F" => "AF",
@@ -38,7 +38,14 @@ pub mod Registers {
     impl fmt::Display for Registers {
         fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
             writeln!(f, "REGISTERS - AF : 0x{:04X} BC : 0x{:04X} DE : 0x{:04X} HL : 0x{:04X} PC : 0x{:04X} SP : {:b}", self.AF, self.BC, self.DE, self.HL, self.PC, self.SP);
-            write!(f, "FLAGS - z:{} n:{} h:{} c:{}", self.get_item("z"), self.get_item("n"), self.get_item("h"), self.get_item("c"))
+            write!(
+                f,
+                "FLAGS - z:{} n:{} h:{} c:{}",
+                self.get_item("z"),
+                self.get_item("n"),
+                self.get_item("h"),
+                self.get_item("c")
+            )
         }
     }
 
@@ -50,7 +57,7 @@ pub mod Registers {
                 DE: 0,
                 HL: 0,
                 PC: 0,
-                SP: 0xFFFE,   // 0xFFFE : end of high ram (stack pointer goes backwards)
+                SP: 0xFFFE, // 0xFFFE : end of high ram (stack pointer goes backwards)
             }
         }
 
@@ -62,7 +69,7 @@ pub mod Registers {
                 "HL" => self.HL,
                 "PC" => self.PC,
                 "SP" => self.SP,
-                _ => panic!("register {} does not exists", name)
+                _ => panic!("register {} does not exists", name),
             };
         }
 
@@ -74,7 +81,7 @@ pub mod Registers {
                 "HL" => self.HL = value,
                 "PC" => self.PC = value,
                 "SP" => self.SP = value,
-                _ => panic!("register {} does not exists", name)
+                _ => panic!("register {} does not exists", name),
             };
         }
 
@@ -82,7 +89,7 @@ pub mod Registers {
             if LOW_REGISTERS.contains_key(item) {
                 let register_name = LOW_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                return register_value & 0xFF // bitmask with 0xFF, get lower 8 bits
+                return register_value & 0xFF; // bitmask with 0xFF, get lower 8 bits
             }
             if HIGH_REGISTERS.contains_key(item) {
                 let register_name = HIGH_REGISTERS[item];
@@ -104,7 +111,7 @@ pub mod Registers {
                 let value = value & 0xFF;
                 let register_name = LOW_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                let updated_register_value = (register_value & 0xFF00) | value;  // clear last 8 bits masking with 0xFF00 then OR with passed value
+                let updated_register_value = (register_value & 0xFF00) | value; // clear last 8 bits masking with 0xFF00 then OR with passed value
                 self.set_register_value_from_name(register_name, updated_register_value);
                 return;
             }
@@ -112,7 +119,7 @@ pub mod Registers {
                 let value = value & 0xFF;
                 let register_name = HIGH_REGISTERS[item];
                 let register_value = self.get_register_value_from_name(register_name);
-                let updated_register_value = (register_value & 0xFF) | value << 8;  // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
+                let updated_register_value = (register_value & 0xFF) | value << 8; // clear first 8 bits masking with 0x00FF then OR with passed value shifted to position
                 self.set_register_value_from_name(register_name, updated_register_value);
                 return;
             }
@@ -123,8 +130,8 @@ pub mod Registers {
                 let mut register_value = self.get_register_value_from_name("AF");
                 let bit_position = FLAGS[item];
                 if value == 1 {
-                    register_value |= 1 << bit_position;  // set flag at x position by OR-ing with 1 shifted by x positions
-                }else{
+                    register_value |= 1 << bit_position; // set flag at x position by OR-ing with 1 shifted by x positions
+                } else {
                     register_value &= !(1 << bit_position); // unset flag at x position by NAND (& !something) with 1 shifted by x positions
                 }
                 self.set_register_value_from_name("AF", register_value);
@@ -136,7 +143,7 @@ pub mod Registers {
                     value &= 0xFFF0;
                 }
                 self.set_register_value_from_name(item, value);
-                return
+                return;
             }
             panic!("item {} not fonud", item);
         }

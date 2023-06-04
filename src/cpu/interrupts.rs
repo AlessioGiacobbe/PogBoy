@@ -1,5 +1,5 @@
 pub mod interrupts {
-    use crate::cpu::CPU::{CPU, InterruptType};
+    use crate::cpu::CPU::{InterruptType, CPU};
     use strum::IntoEnumIterator;
 
     impl CPU<'_> {
@@ -29,11 +29,19 @@ pub mod interrupts {
                 None => 0,
                 Some(interrupt_type) => {
                     match interrupt_type {
-                        InterruptType::VBlank => self.handle_interrupt(InterruptType::VBlank, 0x0040),
-                        InterruptType::LCD_STAT => self.handle_interrupt(InterruptType::LCD_STAT, 0x0048),
+                        InterruptType::VBlank => {
+                            self.handle_interrupt(InterruptType::VBlank, 0x0040)
+                        }
+                        InterruptType::LCD_STAT => {
+                            self.handle_interrupt(InterruptType::LCD_STAT, 0x0048)
+                        }
                         InterruptType::Timer => self.handle_interrupt(InterruptType::Timer, 0x0050),
-                        InterruptType::Serial => self.handle_interrupt(InterruptType::Serial, 0x0058),
-                        InterruptType::Joypad => self.handle_interrupt(InterruptType::Joypad, 0x0060)
+                        InterruptType::Serial => {
+                            self.handle_interrupt(InterruptType::Serial, 0x0058)
+                        }
+                        InterruptType::Joypad => {
+                            self.handle_interrupt(InterruptType::Joypad, 0x0060)
+                        }
                     };
                     self.is_halted = false;
                     16
@@ -43,13 +51,16 @@ pub mod interrupts {
 
         fn should_handle_something(&self) -> Option<InterruptType> {
             for interrupt_type in InterruptType::iter() {
-                if self.should_handle(interrupt_type) { return Some(interrupt_type); }
-            };
-            return None
+                if self.should_handle(interrupt_type) {
+                    return Some(interrupt_type);
+                }
+            }
+            return None;
         }
 
         fn should_handle(&self, interrupt_type: InterruptType) -> bool {
-            (self.MMU.interrupt_enabled & interrupt_type as u8) != 0 && (self.MMU.interrupt_flag & interrupt_type as u8) != 0
+            (self.MMU.interrupt_enabled & interrupt_type as u8) != 0
+                && (self.MMU.interrupt_flag & interrupt_type as u8) != 0
         }
 
         pub(crate) fn handle_interrupt(&mut self, interrupt_type: InterruptType, address: u16) {

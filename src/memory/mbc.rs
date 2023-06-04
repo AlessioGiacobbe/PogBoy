@@ -4,7 +4,7 @@ pub mod mbc {
     #[derive(Clone, Debug)]
     pub struct MbcNone {
         rom: Vec<u8>,
-        ram: Vec<u8>
+        ram: Vec<u8>,
     }
 
     #[derive(Clone, Debug)]
@@ -56,28 +56,28 @@ pub mod mbc {
         Mbc1(Mbc1),
         Mbc2(Mbc2),
         Mbc3(Mbc3),
-        Mbc5(Mbc5)
+        Mbc5(Mbc5),
     }
 
     impl MbcNone {
         pub fn new(rom: Vec<u8>) -> Self {
             MbcNone {
                 rom,
-                ram: vec![0; 0x4000]
+                ram: vec![0; 0x4000],
             }
         }
 
         pub fn read(&self, address: usize) -> u8 {
             return match address {
                 0x0..=0x7FFF => self.rom[address],
-                0x8000..=0xBFFF => self.ram[address-0x8000],
+                0x8000..=0xBFFF => self.ram[address - 0x8000],
                 _ => panic!("can't read address {}", address),
             };
         }
 
         pub fn write(&mut self, address: usize, value: u8) {
             if 0x7FFF < address && address < 0xC000 {
-                self.ram[address-0x8000] = value;
+                self.ram[address - 0x8000] = value;
             }
         }
     }
@@ -99,12 +99,16 @@ pub mod mbc {
                 0x0..=0x3FFF => self.rom[address],
                 0x4000..=0x7FFF => {
                     let rom_bank = self.selected_rom_bank.max(1);
-                    let rom_bank = if rom_bank == 0x20 || rom_bank == 0x40 || rom_bank == 0x60 { rom_bank + 1 } else { rom_bank };
+                    let rom_bank = if rom_bank == 0x20 || rom_bank == 0x40 || rom_bank == 0x60 {
+                        rom_bank + 1
+                    } else {
+                        rom_bank
+                    };
                     let base_address = rom_bank as usize * 0x4000;
                     let offset = address - 0x4000;
                     let address = (base_address + offset) & (self.rom.len() - 1);
                     self.rom[address]
-                },
+                }
                 0xA000..=0xBFFF => {
                     if self.ram_enabled {
                         let base = self.selected_ram_bank as usize * 0x2000;
@@ -113,7 +117,7 @@ pub mod mbc {
                         return self.ram[addr];
                     }
                     0
-                },
+                }
                 _ => panic!("can't read address {}", address),
             };
         }
@@ -122,32 +126,33 @@ pub mod mbc {
             match address {
                 0..=0x1FFF => {
                     self.ram_enabled = value & 0xF == 0x0A;
-                },
+                }
                 0x2000..=0x3FFF => {
-                    self.selected_rom_bank = (self.selected_rom_bank & !0x1F) | (value as usize & 0x1F);
-                },
+                    self.selected_rom_bank =
+                        (self.selected_rom_bank & !0x1F) | (value as usize & 0x1F);
+                }
                 0x4000..=0x5FFF => {
                     if self.ram_selected {
                         self.selected_ram_bank = value as usize & 0x3;
                     } else {
-                        self.selected_rom_bank = (self.selected_rom_bank & !0x60) | ((value as usize & 0x3) << 5);
+                        self.selected_rom_bank =
+                            (self.selected_rom_bank & !0x60) | ((value as usize & 0x3) << 5);
                     }
-                },
+                }
                 0x6000..=0x7FFF => {
                     self.ram_selected = value != 0x00;
-                },
+                }
                 0xA000..=0xBFFF => {
                     if self.ram_enabled {
                         let base = self.selected_ram_bank * 0x2000;
                         let offset = address as usize - 0xA000;
                         self.ram[base + offset] = value;
                     }
-                },
+                }
                 _ => {}
             }
         }
     }
-
 
     impl Mbc2 {
         pub fn new(rom: Vec<u8>) -> Self {
@@ -166,13 +171,13 @@ pub mod mbc {
                     let base = self.selected_rom_bank.max(1);
                     let offset = address - 0x4000;
                     self.rom[base + offset]
-                },
+                }
                 0xA000..=0xA1FF => {
                     if self.ram_enabled {
-                        return self.ram[address - 0xA000]
+                        return self.ram[address - 0xA000];
                     }
                     0
-                },
+                }
                 _ => 0,
             };
         }
@@ -183,12 +188,12 @@ pub mod mbc {
                     if address & 0x100 == 0 {
                         self.ram_enabled = (value & 0x0f) == 0x0a;
                     }
-                },
+                }
                 0x2000..=0x3FFF => {
                     if address & 0x100 != 0 {
                         self.selected_rom_bank = (value as usize & 0xf).max(1);
                     }
-                },
+                }
                 0xA000..=0xA1FF => {
                     if self.ram_enabled {
                         self.ram[address - 0xA000] = value & 0xF
@@ -198,7 +203,6 @@ pub mod mbc {
             }
         }
     }
-
 
     impl Mbc3 {
         pub fn new(rom: Vec<u8>) -> Self {
@@ -227,72 +231,66 @@ pub mod mbc {
 
         pub fn read(&self, address: usize) -> u8 {
             return match address {
-                0x0..=0x3FFF => {
-                    self.rom[address]
-                },
+                0x0..=0x3FFF => self.rom[address],
                 0x4000..=0x7FFF => {
                     let rom_bank = self.rom_bank.max(1);
                     let base = rom_bank * 0x4000;
                     let offset = address - 0x4000;
                     self.rom[base + offset]
-                },
-                0xA000..=0xBFFF => {
-                    match self.select {
-                        x if x == 0x00 || x == 0x01 || x == 0x02 || x == 0x03 => {
-                            let base = x as usize * 0x2000;
-                            let offset = address as usize - 0xa000;
-                            self.ram[base + offset]
-                        }
-                        0x08 => self.rtc_secs,
-                        0x09 => self.rtc_mins,
-                        0x0a => self.rtc_hours,
-                        0x0b => self.rtc_day_low,
-                        0x0c => self.rtc_day_high,
-                        _ => 0,
+                }
+                0xA000..=0xBFFF => match self.select {
+                    x if x == 0x00 || x == 0x01 || x == 0x02 || x == 0x03 => {
+                        let base = x as usize * 0x2000;
+                        let offset = address as usize - 0xa000;
+                        self.ram[base + offset]
                     }
+                    0x08 => self.rtc_secs,
+                    0x09 => self.rtc_mins,
+                    0x0a => self.rtc_hours,
+                    0x0b => self.rtc_day_low,
+                    0x0c => self.rtc_day_high,
+                    _ => 0,
                 },
-                _ => 0
-            }
+                _ => 0,
+            };
         }
 
         pub fn write(&mut self, address: usize, value: u8) {
             match address {
                 0..=0x1FFF => {
                     self.enable = value != 0x00;
-                },
+                }
                 0x2000..=0x3FFF => {
                     self.rom_bank = value as usize & 0x7f;
-                },
+                }
                 0x4000..=0x5FFF => {
                     self.select = value;
-                },
+                }
                 0x6000..=0x7FFF => {
                     //TODO
-                },
-                0xA000..=0xBFFF => {
-                    match self.select {
-                        x if x == 0x00 || x == 0x01 || x == 0x02 || x == 0x03 => {
-                            let base = x as usize * 0x2000;
-                            let offset = address as usize - 0xa000;
-                            self.ram[base + offset] = value;
-                        }
-                        0x08 => {
-                            self.rtc_secs = value;
-                        }
-                        0x09 => {
-                            self.rtc_mins = value;
-                        }
-                        0x0a => {
-                            self.rtc_hours = value;
-                        }
-                        0x0b => {
-                            self.rtc_day_low = value;
-                        }
-                        0x0c => {
-                            self.rtc_day_high = value;
-                        }
-                        s => unimplemented!("Unknown selector: {:02x}", s),
+                }
+                0xA000..=0xBFFF => match self.select {
+                    x if x == 0x00 || x == 0x01 || x == 0x02 || x == 0x03 => {
+                        let base = x as usize * 0x2000;
+                        let offset = address as usize - 0xa000;
+                        self.ram[base + offset] = value;
                     }
+                    0x08 => {
+                        self.rtc_secs = value;
+                    }
+                    0x09 => {
+                        self.rtc_mins = value;
+                    }
+                    0x0a => {
+                        self.rtc_hours = value;
+                    }
+                    0x0b => {
+                        self.rtc_day_low = value;
+                    }
+                    0x0c => {
+                        self.rtc_day_high = value;
+                    }
+                    s => unimplemented!("Unknown selector: {:02x}", s),
                 },
                 _ => {}
             }
@@ -310,16 +308,14 @@ pub mod mbc {
             }
         }
 
-        pub fn read(&self, address:usize) -> u8 {
+        pub fn read(&self, address: usize) -> u8 {
             return match address {
-                0..=0x3FFF => {
-                    self.rom[address]
-                },
+                0..=0x3FFF => self.rom[address],
                 0x4000..=0x7FFF => {
                     let base = self.selected_rom_bank * 0x4000;
                     let offset = address - 0x4000;
                     self.rom[base + offset]
-                },
+                }
                 0xA000..=0xBFFF => {
                     if self.ram_enabled {
                         let base = self.selected_ram_bank * 0x2000;
@@ -327,38 +323,37 @@ pub mod mbc {
                         self.ram[base + offset];
                     }
                     0
-                },
+                }
                 _ => 0,
-            }
-
+            };
         }
 
         pub fn write(&mut self, address: usize, value: u8) {
             match address {
                 0..=0x1FFF => {
                     self.ram_enabled = value & 0xF == 0xA;
-                },
+                }
                 0x2000..=0x2FFF => {
                     self.selected_rom_bank = (self.selected_rom_bank & !0xff) | value as usize;
-                },
+                }
                 0x3000..=0x3FFF => {
-                    self.selected_rom_bank = (self.selected_rom_bank & !0x100) | (value as usize & 1) << 8;
-                },
+                    self.selected_rom_bank =
+                        (self.selected_rom_bank & !0x100) | (value as usize & 1) << 8;
+                }
                 0x4000..=0x5FFF => {
                     self.selected_ram_bank = value as usize & 0xf;
-                },
+                }
                 0xA000..=0xBFFF => {
                     if self.ram_enabled {
                         let base = self.selected_ram_bank * 0x2000;
                         let offset = address - 0xa000;
                         self.ram[base + offset] = value;
                     }
-                },
+                }
                 _ => {}
             }
         }
     }
-
 
     impl MbcType {
         pub fn write(&mut self, address: usize, value: u8) {
@@ -367,7 +362,7 @@ pub mod mbc {
                 MbcType::Mbc1(mbc) => mbc.write(address, value),
                 MbcType::Mbc2(mbc) => mbc.write(address, value),
                 MbcType::Mbc3(mbc) => mbc.write(address, value),
-                MbcType::Mbc5(mbc) => mbc.write(address, value)
+                MbcType::Mbc5(mbc) => mbc.write(address, value),
             }
         }
 
@@ -377,7 +372,7 @@ pub mod mbc {
                 MbcType::Mbc1(mbc) => mbc.read(address),
                 MbcType::Mbc2(mbc) => mbc.read(address),
                 MbcType::Mbc3(mbc) => mbc.read(address),
-                MbcType::Mbc5(mbc) => mbc.read(address)
+                MbcType::Mbc5(mbc) => mbc.read(address),
             }
         }
 
@@ -388,7 +383,7 @@ pub mod mbc {
                 0x05..=0x06 => MbcType::Mbc2(Mbc2::new(rom)),
                 0x0F..=0x13 => MbcType::Mbc3(Mbc3::new(rom)),
                 0x19..=0x1E => MbcType::Mbc5(Mbc5::new(rom)),
-                _ => panic!("unhandled {} mbc code (not implemented)", mbc_code)
+                _ => panic!("unhandled {} mbc code (not implemented)", mbc_code),
             }
         }
     }

@@ -1,8 +1,8 @@
-use crate::ppu::ppu::{COLORS, Tile, TilePixelValue};
+use crate::ppu::ppu::{Tile, TilePixelValue, COLORS};
 use crate::tests::factories::{create_dummy_mmu, create_dummy_ppu, create_dummy_tile};
 
 #[test]
-fn tiles_are_generated_correctly(){
+fn tiles_are_generated_correctly() {
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
 
@@ -30,23 +30,47 @@ fn tiles_are_generated_correctly(){
 
     for (tile_row, _) in tile.iter().enumerate() {
         for (tile_column, _) in tile[tile_row].iter().enumerate() {
-            assert_eq!(tile[tile_row][tile_column], dummy_tile[tile_row][tile_column])
+            assert_eq!(
+                tile[tile_row][tile_column],
+                dummy_tile[tile_row][tile_column]
+            )
         }
     }
 }
 
 #[test]
-fn color_from_bg_palette_is_loaded_correctly(){
+fn color_from_bg_palette_is_loaded_correctly() {
     let mut dummy_ppu = create_dummy_ppu();
     let mut dummy_mmu = create_dummy_mmu(&mut dummy_ppu);
     let ppu_colors = COLORS;
 
     dummy_mmu.write_byte(0xFF47, 0xFF);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
+    assert_eq!(
+        dummy_mmu
+            .PPU
+            .get_color_from_bg_palette(TilePixelValue::Zero),
+        ppu_colors[3]
+    );
 
     dummy_mmu.write_byte(0xFF47, 0x1B); //0b00-01-10-11
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Zero), ppu_colors[3]);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::One), ppu_colors[2]);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Two), ppu_colors[1]);
-    assert_eq!(dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Three), ppu_colors[0]);
+    assert_eq!(
+        dummy_mmu
+            .PPU
+            .get_color_from_bg_palette(TilePixelValue::Zero),
+        ppu_colors[3]
+    );
+    assert_eq!(
+        dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::One),
+        ppu_colors[2]
+    );
+    assert_eq!(
+        dummy_mmu.PPU.get_color_from_bg_palette(TilePixelValue::Two),
+        ppu_colors[1]
+    );
+    assert_eq!(
+        dummy_mmu
+            .PPU
+            .get_color_from_bg_palette(TilePixelValue::Three),
+        ppu_colors[0]
+    );
 }

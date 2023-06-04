@@ -1,4 +1,4 @@
-pub mod op_codes_parser;
 pub mod cartridge;
-pub mod mmu;
 pub mod mbc;
+pub mod mmu;
+pub mod op_codes_parser;
